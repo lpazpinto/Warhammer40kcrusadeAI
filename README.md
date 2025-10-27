@@ -34,6 +34,23 @@ Este software foi desenvolvido para auxiliar jogadores de Warhammer 40k a gerenc
 - Histórico de batalhas jogadas e sobrevividas
 - Unidades inimigas destruídas
 
+### ✅ Sistema de IA da Horda
+- Tabelas de spawn importadas do Excel (21 facções, 1200+ unidades)
+- Sistema de rolagem 2D6 + modificadores por rodada
+- Seleção automática de unidades por bracket (2, 3-4, 5-6, 7-9, 10+)
+- IA de movimento (inimigo mais próximo > objetivo > borda do defensor)
+- IA de tiro (alvo legal mais próximo)
+- IA de carga (verificação de armas corpo-a-corpo)
+- Suporte para 2 ou 4 zonas de spawn (1000 ou 2000 pontos)
+
+### ✅ Lógica Pós-Batalha
+- Cálculo automático de XP (base + objetivo + kills)
+- Progressão automática de Ranks (Battle Ready → Legendary)
+- Rolagens de Out of Action (sobreviveu, battle scar, destruído)
+- Seleção aleatória de Battle Honours por rank
+- Cálculo de Pontos de Requisição (RP)
+- Bônus de XP do Horde Mode para objetivos completados
+
 ## 🏗️ Arquitetura Técnica
 
 ### Stack Tecnológico
@@ -250,22 +267,22 @@ Death Korps of Krieg (145 Points)
 
 ### Funcionalidades Pendentes
 
-#### Sistema de IA da Horda (Prioridade Alta)
-- [ ] Importar tabelas de spawn do Excel (`40KHordeModeSpawnTablesMasterv1.0.xlsx`)
-- [ ] Implementar lógica de rolagem 2D6 + modificadores
-- [ ] Sistema de spawning por zonas
-- [ ] IA de movimento (inimigo mais próximo > objetivo > borda)
-- [ ] IA de tiro (alvo legal mais próximo)
-- [ ] IA de carga (verificação de armas corpo-a-corpo)
-- [ ] Gerenciamento de estado de batalha turno-a-turno
+#### Sistema de IA da Horda ✅ CONCLUÍDO
+- ✅ Importar tabelas de spawn do Excel (`40KHordeModeSpawnTablesMasterv1.0.xlsx`)
+- ✅ Implementar lógica de rolagem 2D6 + modificadores
+- ✅ Sistema de spawning por zonas
+- ✅ IA de movimento (inimigo mais próximo > objetivo > borda)
+- ✅ IA de tiro (alvo legal mais próximo)
+- ✅ IA de carga (verificação de armas corpo-a-corpo)
+- ✅ Gerenciamento de estado de batalha turno-a-turno
 
-#### Lógica Pós-Batalha (Prioridade Alta)
-- [ ] Rolagens automáticas de Out of Action
-- [ ] Cálculo de XP (incluindo bônus do Horde Mode)
-- [ ] Sistema de progressão de Ranks
-- [ ] Seleção aleatória de Battle Honours
-- [ ] Seleção aleatória de Battle Traits
-- [ ] Sistema de Battle Scars
+#### Lógica Pós-Batalha ✅ CONCLUÍDO
+- ✅ Rolagens automáticas de Out of Action
+- ✅ Cálculo de XP (incluindo bônus do Horde Mode)
+- ✅ Sistema de progressão de Ranks
+- ✅ Seleção aleatória de Battle Honours
+- ✅ Seleção aleatória de Battle Traits
+- ✅ Sistema de Battle Scars
 
 #### Interface do Usuário (Prioridade Média)
 - [ ] Tela de seleção/criação de campanha
