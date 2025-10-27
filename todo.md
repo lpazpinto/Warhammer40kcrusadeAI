@@ -79,3 +79,9 @@
 - [x] Add Portuguese translations throughout
 - [x] Create dashboard layout with navigation
 
+
+
+
+## Bug Fixes
+- [x] Fix NaN error in campaign query when accessing /campaigns page
+

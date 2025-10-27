@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
-  const campaignId = parseInt(id);
+  const campaignId = parseInt(id || '0');
   const [, setLocation] = useLocation();
   
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
@@ -28,8 +28,14 @@ export default function CampaignDetail() {
   
   const [armyListContent, setArmyListContent] = useState("");
 
-  const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery({ id: campaignId });
-  const { data: players, isLoading: playersLoading, refetch: refetchPlayers } = trpc.player.list.useQuery({ campaignId });
+  const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
+    { id: campaignId },
+    { enabled: !isNaN(campaignId) && campaignId > 0 }
+  );
+  const { data: players, isLoading: playersLoading, refetch: refetchPlayers } = trpc.player.list.useQuery(
+    { campaignId },
+    { enabled: !isNaN(campaignId) && campaignId > 0 }
+  );
 
   const createPlayer = trpc.player.create.useMutation({
     onSuccess: () => {

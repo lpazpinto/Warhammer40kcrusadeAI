@@ -7,10 +7,16 @@ import { Link, useParams } from "wouter";
 
 export default function PlayerDetail() {
   const { id } = useParams<{ id: string }>();
-  const playerId = parseInt(id);
+  const playerId = parseInt(id || '0');
 
-  const { data: player, isLoading: playerLoading } = trpc.player.get.useQuery({ id: playerId });
-  const { data: units, isLoading: unitsLoading } = trpc.crusadeUnit.list.useQuery({ playerId });
+  const { data: player, isLoading: playerLoading } = trpc.player.get.useQuery(
+    { id: playerId },
+    { enabled: !isNaN(playerId) && playerId > 0 }
+  );
+  const { data: units, isLoading: unitsLoading } = trpc.crusadeUnit.list.useQuery(
+    { playerId },
+    { enabled: !isNaN(playerId) && playerId > 0 }
+  );
 
   if (playerLoading || unitsLoading) {
     return (
