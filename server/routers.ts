@@ -133,7 +133,12 @@ export const appRouter = router({
     // Import army list from .txt file
     importArmy: protectedProcedure
       .input(z.object({
-        playerId: z.number(),
+        playerId: z.number()
+          .int()
+          .positive()
+          .refine((val) => !isNaN(val) && isFinite(val), {
+            message: "Player ID must be a valid finite number"
+          }),
         armyListContent: z.string(),
       }))
       .mutation(async ({ input }) => {

@@ -245,8 +245,14 @@ export default function CampaignDetail() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedPlayerId(player.id);
-                                  setImportDialogOpen(true);
+                                  // Validate player ID before setting
+                                  if (player.id && !isNaN(player.id) && player.id > 0) {
+                                    setSelectedPlayerId(player.id);
+                                    setImportDialogOpen(true);
+                                  } else {
+                                    console.error('Invalid player ID:', player.id);
+                                    toast.error('ID do jogador inválido');
+                                  }
                                 }}
                               >
                                 <Upload className="mr-2 h-4 w-4" />

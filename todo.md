@@ -100,3 +100,6 @@
 
 - [x] Investigate why campaign.get is being called from /campaigns page without an ID - added first-line validation
 
+
+- [x] Fix NaN being passed to player.get from CampaignDetail page
+
