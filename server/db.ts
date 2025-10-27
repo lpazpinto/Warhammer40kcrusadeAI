@@ -113,7 +113,24 @@ export async function createCampaign(campaign: InsertCampaign): Promise<Campaign
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(campaigns).values(campaign);
-  const [newCampaign] = await db.select().from(campaigns).where(eq(campaigns.id, Number(result.insertId)));
+  
+  // Validate insertId before using it
+  const insertId = Number(result.insertId);
+  console.log('[createCampaign] Insert result:', result, 'insertId:', insertId);
+  
+  if (isNaN(insertId) || insertId <= 0) {
+    console.error('[createCampaign] Invalid insertId:', result.insertId);
+    throw new Error('Failed to create campaign: invalid ID returned from database');
+  }
+  
+  const [newCampaign] = await db.select().from(campaigns).where(eq(campaigns.id, insertId));
+  
+  if (!newCampaign) {
+    console.error('[createCampaign] Campaign not found after insert, ID:', insertId);
+    throw new Error('Failed to retrieve created campaign');
+  }
+  
+  console.log('[createCampaign] Successfully created campaign:', newCampaign.id);
   return newCampaign;
 }
 
