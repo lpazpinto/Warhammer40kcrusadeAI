@@ -114,12 +114,31 @@ export async function createCampaign(campaign: InsertCampaign): Promise<Campaign
 
   const result: any = await db.insert(campaigns).values(campaign);
   
-  // Validate insertId before using it
-  const insertId = Number(result.insertId);
-  console.log('[createCampaign] Insert result:', result, 'insertId:', insertId);
+  // Log the full result object to debug
+  console.log('[createCampaign] Full insert result:', JSON.stringify(result, null, 2));
+  console.log('[createCampaign] result.insertId:', result.insertId, 'type:', typeof result.insertId);
+  console.log('[createCampaign] result[0]:', result[0]);
   
-  if (isNaN(insertId) || insertId <= 0) {
-    console.error('[createCampaign] Invalid insertId:', result.insertId);
+  // Try multiple ways to extract the ID from the result
+  let insertId: number | undefined;
+  
+  // Method 1: Direct insertId property
+  if (result.insertId !== undefined && result.insertId !== null) {
+    insertId = Number(result.insertId);
+  }
+  // Method 2: Check if result is an array with insertId
+  else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+    insertId = Number(result[0].insertId);
+  }
+  // Method 3: Check for id property directly
+  else if (result.id !== undefined) {
+    insertId = Number(result.id);
+  }
+  
+  console.log('[createCampaign] Extracted insertId:', insertId);
+  
+  if (insertId === undefined || isNaN(insertId) || insertId <= 0) {
+    console.error('[createCampaign] Failed to extract valid insertId from result');
     throw new Error('Failed to create campaign: invalid ID returned from database');
   }
   
@@ -177,7 +196,37 @@ export async function createPlayer(player: InsertPlayer): Promise<Player> {
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(players).values(player);
-  const [newPlayer] = await db.select().from(players).where(eq(players.id, Number(result.insertId)));
+  
+  // Log the full result object to debug
+  console.log('[createPlayer] Full insert result:', JSON.stringify(result, null, 2));
+  console.log('[createPlayer] result.insertId:', result.insertId, 'type:', typeof result.insertId);
+  
+  // Try multiple ways to extract the ID from the result
+  let insertId: number | undefined;
+  
+  if (result.insertId !== undefined && result.insertId !== null) {
+    insertId = Number(result.insertId);
+  } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+    insertId = Number(result[0].insertId);
+  } else if (result.id !== undefined) {
+    insertId = Number(result.id);
+  }
+  
+  console.log('[createPlayer] Extracted insertId:', insertId);
+  
+  if (insertId === undefined || isNaN(insertId) || insertId <= 0) {
+    console.error('[createPlayer] Failed to extract valid insertId from result');
+    throw new Error('Failed to create player: invalid ID returned from database');
+  }
+  
+  const [newPlayer] = await db.select().from(players).where(eq(players.id, insertId));
+  
+  if (!newPlayer) {
+    console.error('[createPlayer] Player not found after insert, ID:', insertId);
+    throw new Error('Failed to retrieve created player');
+  }
+  
+  console.log('[createPlayer] Successfully created player:', newPlayer.id);
   return newPlayer;
 }
 
@@ -243,11 +292,23 @@ export async function getCrusadeUnitsByPlayerId(playerId: number): Promise<Crusa
 }
 
 export async function getCrusadeUnitById(id: number): Promise<CrusadeUnit | undefined> {
+  // Validate ID FIRST before any other logic
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[Database] Invalid crusade unit ID rejected: ${id} (type: ${typeof id})`);
+    console.error(`[Database] Stack trace:`, new Error().stack);
+    return undefined;
+  }
+
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  try {
+    const result = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error: any) {
+    console.error(`[Database] Query failed for crusade unit ID ${id}:`, error.message);
+    return undefined;
+  }
 }
 
 export async function updateCrusadeUnit(id: number, updates: Partial<CrusadeUnit>): Promise<void> {

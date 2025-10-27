@@ -123,3 +123,9 @@
 - [x] Fix NaN error on player creation - same issue as campaign creation
 - [x] Fix import army dialog - button not visible when text is too long (needs scroll)
 
+
+- [x] CRITICAL: "invalid ID returned from database" error when creating campaigns - ID validation too strict or database returning unexpected format
+
+
+- [x] CRITICAL: NaN being passed to crusadeUnits.get query - need to validate unit ID before query
+

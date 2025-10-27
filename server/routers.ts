@@ -203,7 +203,14 @@ export const appRouter = router({
 
     // Get a specific unit
     get: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ 
+        id: z.number()
+          .int()
+          .positive()
+          .refine((val) => !isNaN(val) && isFinite(val), {
+            message: "Unit ID must be a valid finite number"
+          })
+      }))
       .query(async ({ input }) => {
         const unit = await db.getCrusadeUnitById(input.id);
         if (!unit) return null;
