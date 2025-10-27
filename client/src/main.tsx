@@ -8,7 +8,15 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
@@ -37,11 +45,32 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Custom transformer that validates data before sending
+const validatingTransformer = {
+  input: {
+    serialize: (object: any) => {
+      const serialized = superjson.serialize(object);
+      // Check for NaN in the serialized data
+      const jsonString = JSON.stringify(serialized);
+      if (jsonString.includes('NaN')) {
+        console.error('[TRPC Client] NaN detected in request:', object);
+        throw new Error('Invalid data: NaN values are not allowed');
+      }
+      return serialized;
+    },
+    deserialize: (object: any) => superjson.deserialize(object),
+  },
+  output: {
+    serialize: (object: any) => superjson.serialize(object),
+    deserialize: (object: any) => superjson.deserialize(object),
+  },
+};
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "/api/trpc",
-      transformer: superjson,
+      transformer: validatingTransformer,
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),
