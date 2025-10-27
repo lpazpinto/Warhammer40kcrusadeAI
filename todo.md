@@ -103,3 +103,6 @@
 
 - [x] Fix NaN being passed to player.get from CampaignDetail page
 
+
+- [x] CRITICAL: campaign.get NaN error persists despite all validation layers - added try-catch to prevent propagation
+

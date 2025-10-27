@@ -134,8 +134,13 @@ export async function getCampaignById(id: number): Promise<Campaign | undefined>
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  try {
+    const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error: any) {
+    console.error(`[Database] Query failed for campaign ID ${id}:`, error.message);
+    return undefined;
+  }
 }
 
 export async function updateCampaign(id: number, updates: Partial<Campaign>): Promise<void> {
@@ -172,8 +177,13 @@ export async function getPlayerById(id: number): Promise<Player | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db.select().from(players).where(eq(players.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  try {
+    const result = await db.select().from(players).where(eq(players.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error: any) {
+    console.error(`[Database] Query failed for player ID ${id}:`, error.message);
+    return undefined;
+  }
 }
 
 export async function updatePlayer(id: number, updates: Partial<Player>): Promise<void> {
@@ -203,7 +213,12 @@ export async function getCrusadeUnitsByPlayerId(playerId: number): Promise<Crusa
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(crusadeUnits).where(eq(crusadeUnits.playerId, playerId));
+  try {
+    return await db.select().from(crusadeUnits).where(eq(crusadeUnits.playerId, playerId));
+  } catch (error: any) {
+    console.error(`[Database] Query failed for crusade units with player ID ${playerId}:`, error.message);
+    return [];
+  }
 }
 
 export async function getCrusadeUnitById(id: number): Promise<CrusadeUnit | undefined> {
