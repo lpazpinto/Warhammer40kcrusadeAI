@@ -97,3 +97,6 @@
 
 - [x] CRITICAL: NaN still bypassing all validation layers - added client-side transformer validation
 
+
+- [x] Investigate why campaign.get is being called from /campaigns page without an ID - added first-line validation
+
