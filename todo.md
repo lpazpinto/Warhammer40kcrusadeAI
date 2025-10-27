@@ -49,3 +49,19 @@
 - [ ] Create detailed README.md with installation steps
 - [ ] Add code documentation and comments
 
+
+
+
+## Current Sprint - Horde AI & Battle System
+- [x] Parse and import Horde Mode spawn tables from Excel
+- [x] Create spawn table data structure in backend
+- [x] Implement battle creation and setup wizard
+- [x] Implement turn-by-turn battle state management
+- [x] Create Horde AI movement decision system
+- [x] Create Horde AI shooting decision system
+- [x] Create Horde AI charge decision system
+- [x] Implement post-battle XP and RP calculations
+- [x] Implement Out of Action automatic rolls
+- [x] Implement rank progression system
+- [ ] Create basic battle interface UI
+

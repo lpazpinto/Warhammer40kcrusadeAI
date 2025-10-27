@@ -5,6 +5,9 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { parseArmyList, estimatePowerRating } from "./armyParser";
+import * as hordeSpawn from "./hordeSpawn";
+import * as hordeAI from "./hordeAI";
+import * as postBattle from "./postBattle";
 
 export const appRouter = router({
   system: systemRouter,
@@ -223,6 +226,161 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.deleteCrusadeUnit(input.id);
         return { success: true };
+      }),
+  }),
+
+  // Battle management
+  battle: router({
+    // Create a new battle
+    create: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        deployment: z.string().optional(),
+        missionPack: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const campaign = await db.getCampaignById(input.campaignId);
+        if (!campaign) throw new Error('Campaign not found');
+        
+        const battles = await db.getBattlesByCampaignId(input.campaignId);
+        const battleNumber = battles.length + 1;
+        
+        return await db.createBattle({
+          campaignId: input.campaignId,
+          battleNumber,
+          deployment: input.deployment,
+          missionPack: input.missionPack,
+        });
+      }),
+
+    // Get battle by ID
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const battle = await db.getBattleById(input.id);
+        if (!battle) return null;
+        
+        return {
+          ...battle,
+          victors: battle.victors ? JSON.parse(battle.victors) : [],
+          miseryCards: battle.miseryCards ? JSON.parse(battle.miseryCards) : [],
+          secondaryMissions: battle.secondaryMissions ? JSON.parse(battle.secondaryMissions) : [],
+          hordeUnits: battle.hordeUnits ? JSON.parse(battle.hordeUnits) : [],
+        };
+      }),
+
+    // Update battle state
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        battleRound: z.number().optional(),
+        status: z.enum(['setup', 'in_progress', 'completed']).optional(),
+        hordeUnits: z.array(z.any()).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, hordeUnits, ...updates } = input;
+        
+        const finalUpdates: any = { ...updates };
+        if (hordeUnits) finalUpdates.hordeUnits = JSON.stringify(hordeUnits);
+        
+        await db.updateBattle(id, finalUpdates);
+        return { success: true };
+      }),
+  }),
+
+  // Horde spawn system
+  horde: router({
+    // Get available factions
+    factions: publicProcedure.query(() => {
+      return hordeSpawn.getAvailableFactions();
+    }),
+
+    // Perform spawn roll
+    spawn: publicProcedure
+      .input(z.object({
+        faction: z.string(),
+        battleRound: z.number(),
+        additionalModifiers: z.number().default(0),
+      }))
+      .mutation(({ input }) => {
+        return hordeSpawn.performSpawnRoll(
+          input.faction,
+          input.battleRound,
+          input.additionalModifiers
+        );
+      }),
+
+    // Spawn for all zones
+    spawnAll: publicProcedure
+      .input(z.object({
+        faction: z.string(),
+        battleRound: z.number(),
+        pointsLimit: z.number(),
+        additionalModifiers: z.number().default(0),
+      }))
+      .mutation(({ input }) => {
+        const zones = hordeSpawn.getNumberOfSpawningZones(input.pointsLimit);
+        return hordeSpawn.spawnForAllZones(
+          input.faction,
+          input.battleRound,
+          zones,
+          input.additionalModifiers
+        );
+      }),
+
+    // Generate AI decisions
+    decisions: publicProcedure
+      .input(z.object({
+        hordeUnits: z.array(z.any()),
+        playerUnits: z.array(z.any()),
+        objectives: z.array(z.any()),
+      }))
+      .mutation(({ input }) => {
+        const decisions = hordeAI.generateAllDecisions(
+          input.hordeUnits,
+          input.playerUnits,
+          input.objectives
+        );
+        return Object.fromEntries(decisions);
+      }),
+  }),
+
+  // Post-battle processing
+  postBattle: router({
+    // Process a single unit
+    processUnit: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+        currentXP: z.number(),
+        currentRank: z.string(),
+        wasDestroyed: z.boolean(),
+        completedObjective: z.boolean(),
+        enemyUnitsKilled: z.number(),
+        battlesPlayed: z.number(),
+      }))
+      .mutation(({ input }) => {
+        return postBattle.processUnitPostBattle(
+          input.unitId,
+          input.currentXP,
+          input.currentRank,
+          input.wasDestroyed,
+          input.completedObjective,
+          input.enemyUnitsKilled,
+          input.battlesPlayed
+        );
+      }),
+
+    // Calculate RP
+    calculateRP: publicProcedure
+      .input(z.object({
+        completedObjective: z.boolean(),
+        isVictorious: z.boolean(),
+      }))
+      .query(({ input }) => {
+        return postBattle.calculateRequisitionPoints(
+          input.completedObjective,
+          input.isVictorious
+        );
       }),
   }),
 });
