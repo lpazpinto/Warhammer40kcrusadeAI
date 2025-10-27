@@ -45,51 +45,96 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 3. O OAuth funcionará corretamente após a publicação
 4. Acesse a URL fornecida e faça login
 
-### Opção 2: Executar Localmente
+### Opção 2: Executar Localmente no Windows
 
 #### Pré-requisitos
-- Node.js 22.x ou superior
-- pnpm instalado: `npm install -g pnpm`
-- Banco de dados MySQL/TiDB
 
-#### Passos
+1. **Node.js 22.x ou superior**
+   - Baixe em: https://nodejs.org/
+   - Durante a instalação, marque "Add to PATH"
+   - Verifique a instalação: abra PowerShell e digite `node --version`
+
+2. **Git para Windows**
+   - Baixe em: https://git-scm.com/download/win
+   - Use as configurações padrão durante a instalação
+
+3. **Banco de Dados MySQL** (opcional - pode usar o do Manus)
+   - Baixe XAMPP: https://www.apachefriends.org/
+   - Ou MySQL Community: https://dev.mysql.com/downloads/mysql/
+
+#### Passos de Instalação
 
 **1. Clone o repositório**
-\`\`\`bash
+
+Abra o PowerShell ou CMD e execute:
+
+\`\`\`powershell
 git clone https://github.com/lpazpinto/Warhammer40kcrusadeAI.git
 cd Warhammer40kcrusadeAI
 \`\`\`
 
-**2. Instale as dependências**
-\`\`\`bash
+**2. Instale o pnpm**
+
+\`\`\`powershell
+npm install -g pnpm
+\`\`\`
+
+**3. Instale as dependências do projeto**
+
+\`\`\`powershell
 pnpm install
 \`\`\`
 
-**3. Configure as variáveis de ambiente**
+**4. Configure as variáveis de ambiente**
 
-Crie um arquivo \`.env\` na raiz:
+Crie um arquivo chamado `.env` na pasta raiz do projeto (use o Notepad):
+
 \`\`\`env
-DATABASE_URL=mysql://user:password@host:port/database
-VITE_APP_ID=your_app_id
-JWT_SECRET=your_jwt_secret
+DATABASE_URL=mysql://user:password@localhost:3306/crusade_db
+VITE_APP_ID=seu_app_id_do_manus
+JWT_SECRET=uma_chave_secreta_qualquer_aqui
 OAUTH_SERVER_URL=https://api.manus.im
 VITE_OAUTH_PORTAL_URL=https://auth.manus.im
-OWNER_OPEN_ID=your_open_id
-OWNER_NAME=your_name
+OWNER_OPEN_ID=seu_open_id
+OWNER_NAME=Seu Nome
 VITE_APP_TITLE=Warhammer 40k Crusade AI Manager
 \`\`\`
 
-**4. Configure o banco de dados**
-\`\`\`bash
+**Nota**: Se não tiver banco de dados local, você pode usar o banco fornecido pelo Manus ao publicar a aplicação.
+
+**5. Configure o banco de dados** (se estiver usando MySQL local)
+
+\`\`\`powershell
 pnpm db:push
 \`\`\`
 
-**5. Inicie o servidor**
-\`\`\`bash
+**6. Inicie o servidor de desenvolvimento**
+
+\`\`\`powershell
 pnpm dev
 \`\`\`
 
-**6. Acesse** `http://localhost:3000`
+**7. Acesse a aplicação**
+
+Abra seu navegador e vá para: `http://localhost:3000`
+
+#### Solução de Problemas no Windows
+
+**Erro "pnpm não é reconhecido":**
+- Feche e reabra o PowerShell/CMD após instalar o pnpm
+- Ou adicione manualmente ao PATH: `C:\Users\SeuUsuario\AppData\Roaming\npm`
+
+**Erro de permissão no PowerShell:**
+- Execute como Administrador
+- Ou execute: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
+
+**Porta 3000 já em uso:**
+- Mude a porta no arquivo `package.json` ou
+- Mate o processo: `netstat -ano | findstr :3000` e depois `taskkill /PID <numero> /F`
+
+**Problemas com MySQL:**
+- Verifique se o serviço MySQL está rodando no Painel de Controle → Serviços
+- Ou use XAMPP e inicie o MySQL pelo painel de controle do XAMPP
 
 ## 📁 Estrutura do Projeto
 
