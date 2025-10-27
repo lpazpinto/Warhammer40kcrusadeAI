@@ -115,3 +115,6 @@
 
 - [x] Fix login redirect - user gets stuck on home page after login
 
+
+- [ ] CRITICAL: OAuth login not working - user cannot authenticate even after login
+
