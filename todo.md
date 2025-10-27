@@ -106,3 +106,12 @@
 
 - [x] CRITICAL: campaign.get NaN error persists despite all validation layers - added try-catch to prevent propagation
 
+
+- [ ] Investigate why NaN error still occurs after server restart - may need to clear browser cache
+
+
+- [x] Fix logging middleware error - JSON.stringify can return undefined
+
+
+- [x] Fix login redirect - user gets stuck on home page after login
+

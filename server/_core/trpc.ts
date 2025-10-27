@@ -7,8 +7,22 @@ const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
 });
 
+// Global logging middleware to debug NaN issues
+const loggingMiddleware = t.middleware(async ({ path, type, input, next }) => {
+  const inputStr = input !== undefined ? JSON.stringify(input) : 'undefined';
+  console.log(`[tRPC] ${type} ${path}`, 'Input:', inputStr);
+  
+  // Check for NaN in input
+  if (inputStr && inputStr.includes('NaN')) {
+    console.error(`[tRPC] WARNING: NaN detected in input for ${path}:`, input);
+    console.error(`[tRPC] Stack:`, new Error().stack);
+  }
+  
+  return next();
+});
+
 export const router = t.router;
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure.use(loggingMiddleware);
 
 const requireUser = t.middleware(async opts => {
   const { ctx, next } = opts;
@@ -25,7 +39,7 @@ const requireUser = t.middleware(async opts => {
   });
 });
 
-export const protectedProcedure = t.procedure.use(requireUser);
+export const protectedProcedure = t.procedure.use(loggingMiddleware).use(requireUser);
 
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {

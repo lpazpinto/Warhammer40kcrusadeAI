@@ -125,9 +125,13 @@ export async function getCampaignsByUserId(userId: number): Promise<Campaign[]> 
 }
 
 export async function getCampaignById(id: number): Promise<Campaign | undefined> {
+  // Log every call to this function
+  console.log(`[getCampaignById] Called with id:`, id, `type:`, typeof id, `isNaN:`, isNaN(id));
+  
   // Validate ID FIRST before any other logic
   if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
     console.error(`[Database] Invalid campaign ID rejected: ${id} (type: ${typeof id})`);
+    console.error(`[Database] Stack trace:`, new Error().stack);
     return undefined;
   }
 

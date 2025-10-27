@@ -3,10 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sword } from "lucide-react";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Auto-redirect authenticated users to campaigns
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      setLocation('/campaigns');
+    }
+  }, [isAuthenticated, loading, setLocation]);
 
   if (loading) {
     return (
@@ -44,25 +53,10 @@ export default function Home() {
     );
   }
 
-  // Redirect authenticated users to campaigns page
+  // Show loading while redirecting
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <CardTitle>Warhammer 40k Crusade AI Manager</CardTitle>
-          <CardDescription>
-            Bem-vindo de volta, {user?.name}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild className="w-full" size="lg">
-            <Link href="/campaigns">
-              <Sword className="mr-2 h-5 w-5" />
-              Ver Campanhas
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 }
