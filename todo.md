@@ -91,3 +91,6 @@
 
 - [x] Fix NaN still being passed to campaign.get from /campaigns page
 
+
+- [x] Debug and fix persistent NaN error reaching database despite multiple validation layers
+
