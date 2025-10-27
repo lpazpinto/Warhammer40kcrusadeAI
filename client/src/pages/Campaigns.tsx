@@ -31,13 +31,29 @@ export default function Campaigns() {
   const { data: factions } = trpc.horde.factions.useQuery();
 
   const createCampaign = trpc.campaign.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      console.log('[createCampaign] Success response:', data);
+      
+      // Validate that we received a valid ID
+      if (!data || !data.id || isNaN(data.id) || data.id <= 0) {
+        console.error('[createCampaign] Invalid ID received:', data);
+        toast.error('Erro: ID inválido retornado ao criar campanha');
+        return;
+      }
+      
       toast.success("Campanha criada com sucesso!");
       setDialogOpen(false);
-      refetch();
-      setLocation(`/campaign/${data.id}`);
+      
+      // Wait for refetch to complete before redirecting
+      await refetch();
+      
+      // Use setTimeout to ensure React has time to update
+      setTimeout(() => {
+        setLocation(`/campaign/${data.id}`);
+      }, 100);
     },
     onError: (error) => {
+      console.error('[createCampaign] Error:', error);
       toast.error(`Erro ao criar campanha: ${error.message}`);
     },
   });

@@ -118,3 +118,8 @@
 
 - [ ] CRITICAL: OAuth login not working - user cannot authenticate even after login
 
+
+- [x] Fix NaN error on campaign creation - campaign is created but frontend receives NaN (works after refresh)
+- [x] Fix NaN error on player creation - same issue as campaign creation
+- [x] Fix import army dialog - button not visible when text is too long (needs scroll)
+

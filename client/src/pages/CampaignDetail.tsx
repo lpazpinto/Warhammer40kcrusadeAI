@@ -38,13 +38,25 @@ export default function CampaignDetail() {
   );
 
   const createPlayer = trpc.player.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      console.log('[createPlayer] Success response:', data);
+      
+      // Validate that we received a valid ID
+      if (!data || !data.id || isNaN(data.id) || data.id <= 0) {
+        console.error('[createPlayer] Invalid ID received:', data);
+        toast.error('Erro: ID inválido retornado ao criar jogador');
+        return;
+      }
+      
       toast.success("Lord Commander criado com sucesso!");
       setPlayerDialogOpen(false);
       setNewPlayer({ name: "", faction: "", detachment: "", crusadeForceName: "" });
-      refetchPlayers();
+      
+      // Wait for refetch to complete
+      await refetchPlayers();
     },
     onError: (error) => {
+      console.error('[createPlayer] Error:', error);
       toast.error(`Erro ao criar jogador: ${error.message}`);
     },
   });
@@ -319,7 +331,7 @@ export default function CampaignDetail() {
         </div>
 
         <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Importar Lista de Exército</DialogTitle>
               <DialogDescription>
@@ -327,7 +339,7 @@ export default function CampaignDetail() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 overflow-y-auto flex-1">
               <div className="grid gap-2">
                 <Label htmlFor="file">Arquivo .txt</Label>
                 <Input
@@ -345,13 +357,13 @@ export default function CampaignDetail() {
                   placeholder="Cole o conteúdo da lista de exército aqui..."
                   value={armyListContent}
                   onChange={(e) => setArmyListContent(e.target.value)}
-                  rows={10}
-                  className="font-mono text-xs"
+                  rows={15}
+                  className="font-mono text-xs min-h-[300px]"
                 />
               </div>
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0">
               <Button
                 onClick={() => {
                   if (selectedPlayerId) {
