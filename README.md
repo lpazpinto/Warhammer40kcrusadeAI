@@ -90,17 +90,68 @@ pnpm install
 Crie um arquivo chamado `.env` na pasta raiz do projeto (use o Notepad):
 
 \`\`\`env
-DATABASE_URL=mysql://user:password@localhost:3306/crusade_db
-VITE_APP_ID=seu_app_id_do_manus
-JWT_SECRET=uma_chave_secreta_qualquer_aqui
+DATABASE_URL=mysql://root:@localhost:3306/crusade_db
+VITE_APP_ID=deixe_em_branco_por_enquanto
+JWT_SECRET=qualquer_texto_longo_e_aleatorio_aqui_12345
 OAUTH_SERVER_URL=https://api.manus.im
 VITE_OAUTH_PORTAL_URL=https://auth.manus.im
-OWNER_OPEN_ID=seu_open_id
+OWNER_OPEN_ID=seu_usuario
 OWNER_NAME=Seu Nome
 VITE_APP_TITLE=Warhammer 40k Crusade AI Manager
 \`\`\`
 
-**Nota**: Se não tiver banco de dados local, você pode usar o banco fornecido pelo Manus ao publicar a aplicação.
+#### 📝 Explicação das Variáveis
+
+**DATABASE_URL** (Banco de Dados)
+- Se usar **XAMPP**: `mysql://root:@localhost:3306/crusade_db`
+  - `root` = usuário padrão do XAMPP
+  - senha vazia (sem senha por padrão)
+  - `crusade_db` = nome do banco (será criado automaticamente)
+- Se usar **MySQL Community**: `mysql://root:SuaSenha@localhost:3306/crusade_db`
+  - Use a senha que você definiu na instalação
+
+**VITE_APP_ID, OWNER_OPEN_ID** (OAuth do Manus)
+- ⚠️ **Essas variáveis só são necessárias se você quiser usar autenticação**
+- Para testar localmente **sem login**, você pode:
+  1. Deixar em branco por enquanto
+  2. Ou comentar a verificação de autenticação no código
+- Para obter essas variáveis:
+  1. Publique a aplicação no Manus (botão "Publish")
+  2. O Manus fornecerá automaticamente todas as variáveis OAuth
+  3. Você pode então copiar essas variáveis para o `.env` local
+
+**JWT_SECRET** (Segurança)
+- Qualquer texto longo e aleatório
+- Exemplo: `minha_chave_super_secreta_warhammer_40k_2024`
+- Ou gere um aleatório: abra PowerShell e execute:
+  \`\`\`powershell
+  -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+  \`\`\`
+
+**OWNER_NAME** (Seu Nome)
+- Seu nome de usuário
+- Exemplo: `Lucas Pinto`
+
+**VITE_APP_TITLE** (Título da Aplicação)
+- Nome que aparecerá no navegador
+- Pode deixar como está: `Warhammer 40k Crusade AI Manager`
+
+**OAUTH_SERVER_URL e VITE_OAUTH_PORTAL_URL**
+- Deixe como está (URLs oficiais do Manus)
+
+#### 🚀 Modo de Desenvolvimento Sem Autenticação
+
+Para testar localmente **sem precisar de login**, use este `.env` simplificado:
+
+\`\`\`env
+DATABASE_URL=mysql://root:@localhost:3306/crusade_db
+JWT_SECRET=desenvolvimento_local_teste_123
+VITE_APP_TITLE=Warhammer 40k Crusade AI Manager
+\`\`\`
+
+E comente as verificações de autenticação no código (ou a aplicação funcionará sem login).
+
+**Nota**: Para produção com login funcionando, **publique no Manus** - todas as variáveis OAuth serão configuradas automaticamente!
 
 **5. Configure o banco de dados** (se estiver usando MySQL local)
 
