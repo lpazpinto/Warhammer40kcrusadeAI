@@ -1,6 +1,24 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, 
+  users, 
+  campaigns, 
+  Campaign, 
+  InsertCampaign,
+  players,
+  Player,
+  InsertPlayer,
+  crusadeUnits,
+  CrusadeUnit,
+  InsertCrusadeUnit,
+  battles,
+  Battle,
+  InsertBattle,
+  battleParticipants,
+  BattleParticipant,
+  InsertBattleParticipant
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +107,162 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Campaign helpers
+export async function createCampaign(campaign: InsertCampaign): Promise<Campaign> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result: any = await db.insert(campaigns).values(campaign);
+  const [newCampaign] = await db.select().from(campaigns).where(eq(campaigns.id, Number(result.insertId)));
+  return newCampaign;
+}
+
+export async function getCampaignsByUserId(userId: number): Promise<Campaign[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(campaigns).where(eq(campaigns.userId, userId)).orderBy(desc(campaigns.createdAt));
+}
+
+export async function getCampaignById(id: number): Promise<Campaign | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateCampaign(id: number, updates: Partial<Campaign>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(campaigns).set(updates).where(eq(campaigns.id, id));
+}
+
+// Player helpers
+export async function createPlayer(player: InsertPlayer): Promise<Player> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result: any = await db.insert(players).values(player);
+  const [newPlayer] = await db.select().from(players).where(eq(players.id, Number(result.insertId)));
+  return newPlayer;
+}
+
+export async function getPlayersByCampaignId(campaignId: number): Promise<Player[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(players).where(eq(players.campaignId, campaignId));
+}
+
+export async function getPlayerById(id: number): Promise<Player | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(players).where(eq(players.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updatePlayer(id: number, updates: Partial<Player>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(players).set(updates).where(eq(players.id, id));
+}
+
+// Crusade Unit helpers
+export async function createCrusadeUnit(unit: InsertCrusadeUnit): Promise<CrusadeUnit> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result: any = await db.insert(crusadeUnits).values(unit);
+  const [newUnit] = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, Number(result.insertId)));
+  return newUnit;
+}
+
+export async function getCrusadeUnitsByPlayerId(playerId: number): Promise<CrusadeUnit[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(crusadeUnits).where(eq(crusadeUnits.playerId, playerId));
+}
+
+export async function getCrusadeUnitById(id: number): Promise<CrusadeUnit | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateCrusadeUnit(id: number, updates: Partial<CrusadeUnit>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(crusadeUnits).set(updates).where(eq(crusadeUnits.id, id));
+}
+
+export async function deleteCrusadeUnit(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(crusadeUnits).where(eq(crusadeUnits.id, id));
+}
+
+// Battle helpers
+export async function createBattle(battle: InsertBattle): Promise<Battle> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result: any = await db.insert(battles).values(battle);
+  const [newBattle] = await db.select().from(battles).where(eq(battles.id, Number(result.insertId)));
+  return newBattle;
+}
+
+export async function getBattlesByCampaignId(campaignId: number): Promise<Battle[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(battles).where(eq(battles.campaignId, campaignId)).orderBy(desc(battles.battleNumber));
+}
+
+export async function getBattleById(id: number): Promise<Battle | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(battles).where(eq(battles.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateBattle(id: number, updates: Partial<Battle>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(battles).set(updates).where(eq(battles.id, id));
+}
+
+// Battle Participant helpers
+export async function createBattleParticipant(participant: InsertBattleParticipant): Promise<BattleParticipant> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result: any = await db.insert(battleParticipants).values(participant);
+  const [newParticipant] = await db.select().from(battleParticipants).where(eq(battleParticipants.id, Number(result.insertId)));
+  return newParticipant;
+}
+
+export async function getBattleParticipantsByBattleId(battleId: number): Promise<BattleParticipant[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(battleParticipants).where(eq(battleParticipants.battleId, battleId));
+}
+
+export async function updateBattleParticipant(id: number, updates: Partial<BattleParticipant>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(battleParticipants).set(updates).where(eq(battleParticipants.id, id));
+}
+
