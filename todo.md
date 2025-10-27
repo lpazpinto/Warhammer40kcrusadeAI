@@ -65,3 +65,17 @@
 - [x] Implement rank progression system
 - [ ] Create basic battle interface UI
 
+
+
+
+## Current Sprint - User Interface (Portuguese)
+- [x] Create campaign selection/creation screen
+- [x] Create player configuration screen with army import
+- [x] Create Order of Battle visualization (official format)
+- [x] Create Crusade Card detail view
+- [ ] Create battle setup wizard (placeholder created)
+- [ ] Create battle interface with AI guidance (placeholder created)
+- [ ] Create post-battle results screen
+- [x] Add Portuguese translations throughout
+- [x] Create dashboard layout with navigation
+
