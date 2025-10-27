@@ -32,8 +32,11 @@ export const appRouter = router({
 
     // Get a specific campaign by ID
     get: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .query(async ({ input }) => {
+        if (isNaN(input.id) || input.id <= 0) {
+          throw new Error(`Invalid campaign ID: ${input.id}`);
+        }
         return await db.getCampaignById(input.id);
       }),
 
@@ -80,8 +83,11 @@ export const appRouter = router({
 
     // Get a specific player
     get: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .query(async ({ input }) => {
+        if (isNaN(input.id) || input.id <= 0) {
+          throw new Error(`Invalid player ID: ${input.id}`);
+        }
         return await db.getPlayerById(input.id);
       }),
 
@@ -161,8 +167,11 @@ export const appRouter = router({
   crusadeUnit: router({
     // List all units for a player
     list: protectedProcedure
-      .input(z.object({ playerId: z.number() }))
+      .input(z.object({ playerId: z.number().int().positive() }))
       .query(async ({ input }) => {
+        if (isNaN(input.playerId) || input.playerId <= 0) {
+          throw new Error(`Invalid player ID: ${input.playerId}`);
+        }
         const units = await db.getCrusadeUnitsByPlayerId(input.playerId);
         // Parse JSON fields for frontend
         return units.map(unit => ({

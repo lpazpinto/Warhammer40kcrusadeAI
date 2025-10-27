@@ -85,3 +85,6 @@
 ## Bug Fixes
 - [x] Fix NaN error in campaign query when accessing /campaigns page
 
+
+- [x] Fix NaN error in player query when accessing campaign detail page
+
