@@ -88,3 +88,6 @@
 
 - [x] Fix NaN error in player query when accessing campaign detail page
 
+
+- [x] Fix NaN still being passed to campaign.get from /campaigns page
+

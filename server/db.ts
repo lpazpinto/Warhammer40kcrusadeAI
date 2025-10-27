@@ -128,6 +128,12 @@ export async function getCampaignById(id: number): Promise<Campaign | undefined>
   const db = await getDb();
   if (!db) return undefined;
 
+  // Validate ID before querying
+  if (isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[Database] Invalid campaign ID: ${id}`);
+    return undefined;
+  }
+
   const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
@@ -160,6 +166,12 @@ export async function getPlayerById(id: number): Promise<Player | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
+  // Validate ID before querying
+  if (isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[Database] Invalid player ID: ${id}`);
+    return undefined;
+  }
+
   const result = await db.select().from(players).where(eq(players.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
@@ -184,6 +196,12 @@ export async function createCrusadeUnit(unit: InsertCrusadeUnit): Promise<Crusad
 export async function getCrusadeUnitsByPlayerId(playerId: number): Promise<CrusadeUnit[]> {
   const db = await getDb();
   if (!db) return [];
+
+  // Validate ID before querying
+  if (isNaN(playerId) || !isFinite(playerId) || playerId <= 0) {
+    console.error(`[Database] Invalid player ID for crusade units: ${playerId}`);
+    return [];
+  }
 
   return await db.select().from(crusadeUnits).where(eq(crusadeUnits.playerId, playerId));
 }
