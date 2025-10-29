@@ -1,13 +1,84 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, Star, Skull, Award } from "lucide-react";
+import { Loader2, ArrowLeft, Star, Skull, Award, Pencil } from "lucide-react";
 import { Link, useParams } from "wouter";
+import { useState } from "react";
+
+interface EditCrusadeNameDialogProps {
+  unitId: number;
+  unitName: string;
+  currentName: string;
+  onNameChange: (name: string) => void;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function EditCrusadeNameDialog({ unitId, unitName, currentName, onNameChange, onClose, onSuccess }: EditCrusadeNameDialogProps) {
+  const updateUnit = trpc.crusadeUnit.update.useMutation({
+    onSuccess: () => {
+      onSuccess();
+      onClose();
+    },
+  });
+
+  const handleSave = () => {
+    updateUnit.mutate({
+      id: unitId,
+      crusadeName: currentName || undefined,
+    });
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Editar Nome de Cruzada</DialogTitle>
+        <DialogDescription>
+          Dê um nome único para {unitName}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="grid gap-2">
+          <Label htmlFor="crusadeName">Nome de Cruzada</Label>
+          <Input
+            id="crusadeName"
+            value={currentName}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder="Ex: Os Vingadores de Terra"
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button onClick={handleSave} disabled={updateUnit.isPending}>
+          {updateUnit.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            'Salvar'
+          )}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
 
 export default function PlayerDetail() {
   const { id } = useParams<{ id: string }>();
   const playerId = parseInt(id || '0');
+  const [editingUnitId, setEditingUnitId] = useState<number | null>(null);
+  const [crusadeName, setCrusadeName] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const utils = trpc.useUtils();
 
   const { data: player, isLoading: playerLoading } = trpc.player.get.useQuery(
     { id: playerId },
@@ -143,6 +214,38 @@ export default function PlayerDetail() {
                                 "{unit.crusadeName}"
                               </span>
                             )}
+                            <Dialog open={isDialogOpen && editingUnitId === unit.id} onOpenChange={(open) => {
+                              setIsDialogOpen(open);
+                              if (!open) setEditingUnitId(null);
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => {
+                                    setEditingUnitId(unit.id);
+                                    setCrusadeName(unit.crusadeName || '');
+                                    setIsDialogOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                              </DialogTrigger>
+                              <EditCrusadeNameDialog
+                                unitId={unit.id}
+                                unitName={unit.unitName}
+                                currentName={crusadeName}
+                                onNameChange={setCrusadeName}
+                                onClose={() => {
+                                  setIsDialogOpen(false);
+                                  setEditingUnitId(null);
+                                }}
+                                onSuccess={() => {
+                                  utils.crusadeUnit.list.invalidate({ playerId });
+                                }}
+                              />
+                            </Dialog>
                           </div>
                           
                           <div className="flex items-center gap-2 mb-3">

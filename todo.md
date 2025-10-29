@@ -129,3 +129,15 @@
 
 - [x] CRITICAL: NaN being passed to crusadeUnits.get query - need to validate unit ID before query
 
+
+- [x] CRITICAL: Army parser only importing first unit from CHARACTERS section - need to fix parser to handle all units in all categories
+
+
+- [x] Fix army parser to correctly handle vehicles - weapons should not be counted as separate models
+
+
+- [ ] Add player management page - view all players, edit, and delete players
+
+
+- [x] Allow players to edit crusade name (custom name) for each unit after import
+

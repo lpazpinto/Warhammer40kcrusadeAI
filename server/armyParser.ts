@@ -13,7 +13,7 @@ export interface ParsedModel {
 export interface ParsedUnit {
   unitName: string;
   pointsCost: number;
-  category: 'CHARACTERS' | 'BATTLELINE' | 'OTHER DATASHEETS' | 'UNKNOWN';
+  category: 'CHARACTERS' | 'BATTLELINE' | 'DEDICATED TRANSPORTS' | 'OTHER DATASHEETS' | 'UNKNOWN';
   models: ParsedModel[];
 }
 
@@ -39,7 +39,7 @@ export function parseArmyList(content: string): ParsedArmy {
     units: []
   };
 
-  let currentCategory: 'CHARACTERS' | 'BATTLELINE' | 'OTHER DATASHEETS' | 'UNKNOWN' = 'UNKNOWN';
+  let currentCategory: 'CHARACTERS' | 'BATTLELINE' | 'DEDICATED TRANSPORTS' | 'OTHER DATASHEETS' | 'UNKNOWN' = 'UNKNOWN';
   let currentUnit: ParsedUnit | null = null;
   let currentModel: ParsedModel | null = null;
 
@@ -59,7 +59,7 @@ export function parseArmyList(content: string): ParsedArmy {
     // Extract faction
     if (!result.faction && i > 0 && !line.includes('(') && !line.includes('•') && !line.includes('◦')) {
       // Check if this looks like a faction name (not a category header)
-      if (!['CHARACTERS', 'BATTLELINE', 'OTHER DATASHEETS'].includes(line.toUpperCase())) {
+      if (!['CHARACTERS', 'BATTLELINE', 'DEDICATED TRANSPORTS', 'OTHER DATASHEETS'].includes(line.toUpperCase())) {
         result.faction = line;
         continue;
       }
@@ -67,7 +67,7 @@ export function parseArmyList(content: string): ParsedArmy {
 
     // Extract detachment
     if (!result.detachment && line && !line.includes('(') && !line.includes('•') && !line.includes('◦') && result.faction) {
-      if (!['CHARACTERS', 'BATTLELINE', 'OTHER DATASHEETS'].includes(line.toUpperCase())) {
+      if (!['CHARACTERS', 'BATTLELINE', 'DEDICATED TRANSPORTS', 'OTHER DATASHEETS'].includes(line.toUpperCase())) {
         result.detachment = line;
         continue;
       }
@@ -76,26 +76,45 @@ export function parseArmyList(content: string): ParsedArmy {
     // Detect category headers
     if (line.toUpperCase() === 'CHARACTERS') {
       currentCategory = 'CHARACTERS';
+      if (currentModel && currentUnit) currentUnit.models.push(currentModel);
       if (currentUnit) result.units.push(currentUnit);
       currentUnit = null;
+      currentModel = null;
       continue;
     }
     if (line.toUpperCase() === 'BATTLELINE') {
       currentCategory = 'BATTLELINE';
+      if (currentModel && currentUnit) currentUnit.models.push(currentModel);
       if (currentUnit) result.units.push(currentUnit);
       currentUnit = null;
+      currentModel = null;
+      continue;
+    }
+    if (line.toUpperCase() === 'DEDICATED TRANSPORTS') {
+      currentCategory = 'DEDICATED TRANSPORTS';
+      if (currentModel && currentUnit) currentUnit.models.push(currentModel);
+      if (currentUnit) result.units.push(currentUnit);
+      currentUnit = null;
+      currentModel = null;
       continue;
     }
     if (line.toUpperCase() === 'OTHER DATASHEETS') {
       currentCategory = 'OTHER DATASHEETS';
+      if (currentModel && currentUnit) currentUnit.models.push(currentModel);
       if (currentUnit) result.units.push(currentUnit);
       currentUnit = null;
+      currentModel = null;
       continue;
     }
 
     // Parse unit name and points (e.g., "Death Korps of Krieg (145 Points)")
     const unitMatch = line.match(/^(.+?)\s*\((\d+)\s*Points\)$/);
     if (unitMatch) {
+      // Save the last model of the previous unit
+      if (currentModel && currentUnit) {
+        currentUnit.models.push(currentModel);
+      }
+      
       // Save previous unit
       if (currentUnit) {
         result.units.push(currentUnit);
@@ -118,6 +137,7 @@ export function parseArmyList(content: string): ParsedArmy {
       // Extract model count and name (e.g., "1x Lord Commissar" or "18x Death Korps Trooper")
       const modelMatch = modelLine.match(/^(\d+)x\s+(.+)$/);
       if (modelMatch && currentUnit) {
+        // Save previous model before creating new one
         if (currentModel) {
           currentUnit.models.push(currentModel);
         }
@@ -128,6 +148,7 @@ export function parseArmyList(content: string): ParsedArmy {
           weapons: []
         };
       }
+      // If line doesn't match model format (e.g., "Warlord"), just skip it
       continue;
     }
 
@@ -155,9 +176,37 @@ export function parseArmyList(content: string): ParsedArmy {
     }
   }
 
+  // Add the last model to the last unit
+  if (currentModel && currentUnit) {
+    currentUnit.models.push(currentModel);
+  }
+  
   // Add the last unit
   if (currentUnit) {
     result.units.push(currentUnit);
+  }
+
+  // Post-process: Fix vehicle units
+  // Vehicles have their weapons listed with • instead of ◦, so they appear as multiple "models"
+  // If a unit has multiple "models" but none of them have weapons, it's likely a vehicle
+  for (const unit of result.units) {
+    if (unit.models.length > 1) {
+      const hasAnyWeapons = unit.models.some(model => model.weapons.length > 0);
+      
+      if (!hasAnyWeapons) {
+        // This is likely a vehicle - consolidate all "models" into weapons of a single model
+        const vehicleWeapons: string[] = [];
+        for (const model of unit.models) {
+          vehicleWeapons.push(model.name);
+        }
+        
+        unit.models = [{
+          name: unit.unitName,
+          count: 1,
+          weapons: vehicleWeapons
+        }];
+      }
+    }
   }
 
   return result;

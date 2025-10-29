@@ -269,7 +269,37 @@ export async function createCrusadeUnit(unit: InsertCrusadeUnit): Promise<Crusad
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(crusadeUnits).values(unit);
-  const [newUnit] = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, Number(result.insertId)));
+  
+  // Log the full result object to debug
+  console.log('[createCrusadeUnit] Full insert result:', JSON.stringify(result, null, 2));
+  console.log('[createCrusadeUnit] result.insertId:', result.insertId, 'type:', typeof result.insertId);
+  
+  // Try multiple ways to extract the ID from the result
+  let insertId: number | undefined;
+  
+  if (result.insertId !== undefined && result.insertId !== null) {
+    insertId = Number(result.insertId);
+  } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+    insertId = Number(result[0].insertId);
+  } else if (result.id !== undefined) {
+    insertId = Number(result.id);
+  }
+  
+  console.log('[createCrusadeUnit] Extracted insertId:', insertId);
+  
+  if (insertId === undefined || isNaN(insertId) || insertId <= 0) {
+    console.error('[createCrusadeUnit] Failed to extract valid insertId from result');
+    throw new Error('Failed to create crusade unit: invalid ID returned from database');
+  }
+  
+  const [newUnit] = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, insertId));
+  
+  if (!newUnit) {
+    console.error('[createCrusadeUnit] Unit not found after insert, ID:', insertId);
+    throw new Error('Failed to retrieve created crusade unit');
+  }
+  
+  console.log('[createCrusadeUnit] Successfully created unit:', newUnit.id, newUnit.unitName);
   return newUnit;
 }
 
