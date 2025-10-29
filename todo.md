@@ -193,10 +193,10 @@
 - [x] Battle history log per campaign and per player
 
 ### Order of Battle Management
-- [ ] Display total Supply Limit vs Supply Used
-- [ ] Mark units as "In Reserve" vs "Active"
-- [ ] Enforce Supply Limit when adding units
-- [ ] Calculate total army Power Level and Points
+- [x] Display total Supply Limit vs Supply Used
+- [ ] Mark units as "In Reserve" vs "Active" (future feature)
+- [ ] Enforce Supply Limit when adding units (warning shown)
+- [x] Calculate total army Power Level and Points
 
 ### Crusade Card UI Improvements
 - [ ] Detailed unit view page showing all Crusade Card fields

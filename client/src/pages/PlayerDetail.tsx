@@ -905,6 +905,10 @@ export default function PlayerDetail() {
     { playerId },
     { enabled: !isNaN(playerId) && playerId > 0 }
   );
+  const { data: orderOfBattle } = trpc.player.getOrderOfBattle.useQuery(
+    { playerId },
+    { enabled: !isNaN(playerId) && playerId > 0 }
+  );
 
   if (playerLoading || unitsLoading) {
     return (
@@ -998,6 +1002,70 @@ export default function PlayerDetail() {
               <div className="text-3xl font-bold">{player.victories}</div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Supply Limit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {orderOfBattle?.supplyUsed || 0} / {orderOfBattle?.supplyLimit || 50}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {orderOfBattle?.supplyRemaining || 0} PL restante
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Order of Battle Summary */}
+        {orderOfBattle && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Order of Battle</CardTitle>
+              <CardDescription>Resumo da sua força de cruzada</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Power Level</div>
+                  <div className="text-2xl font-bold">{orderOfBattle.totalPowerLevel} PL</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Total de Pontos</div>
+                  <div className="text-2xl font-bold">{orderOfBattle.totalPoints} pts</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Unidades</div>
+                  <div className="text-2xl font-bold">
+                    {orderOfBattle.activeUnits} ativas / {orderOfBattle.totalUnits} total
+                  </div>
+                </div>
+              </div>
+              
+              {/* Supply Limit Progress Bar */}
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Supply Used</span>
+                  <span className={orderOfBattle.supplyRemaining < 0 ? 'text-red-500 font-bold' : ''}>
+                    {orderOfBattle.supplyUsed} / {orderOfBattle.supplyLimit} PL
+                  </span>
+                </div>
+                <Progress 
+                  value={Math.min(100, (orderOfBattle.supplyUsed / orderOfBattle.supplyLimit) * 100)} 
+                  className={orderOfBattle.supplyRemaining < 0 ? 'bg-red-500/20' : ''}
+                />
+                {orderOfBattle.supplyRemaining < 0 && (
+                  <p className="text-sm text-red-500 mt-2">
+                    ⚠️ Você excedeu o Supply Limit em {Math.abs(orderOfBattle.supplyRemaining)} PL!
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-4 mb-8">
 
           <Card>
             <CardHeader className="pb-3">

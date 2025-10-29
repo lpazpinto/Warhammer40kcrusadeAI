@@ -1,0 +1,1 @@
+ALTER TABLE `players` ADD `supplyLimit` int DEFAULT 50 NOT NULL;

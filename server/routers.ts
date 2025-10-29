@@ -130,6 +130,32 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Get Order of Battle summary (supply limit, total PL, total points)
+    getOrderOfBattle: protectedProcedure
+      .input(z.object({ playerId: z.number() }))
+      .query(async ({ input }) => {
+        const player = await db.getPlayerById(input.playerId);
+        if (!player) throw new Error('Player not found');
+
+        const units = await db.getCrusadeUnitsByPlayerId(input.playerId);
+        
+        // Calculate totals
+        const totalPowerLevel = units.reduce((sum, unit) => sum + (unit.powerRating || 0), 0);
+        const totalPoints = units.reduce((sum, unit) => sum + (unit.pointsCost || 0), 0);
+        const activeUnits = units.filter(u => !u.isDestroyed).length;
+        const totalUnits = units.length;
+
+        return {
+          supplyLimit: player.supplyLimit,
+          supplyUsed: totalPowerLevel,
+          supplyRemaining: player.supplyLimit - totalPowerLevel,
+          totalPowerLevel,
+          totalPoints,
+          activeUnits,
+          totalUnits,
+        };
+      }),
+
     // Import army list from .txt file
     importArmy: protectedProcedure
       .input(z.object({
