@@ -724,6 +724,120 @@ export const appRouter = router({
         
         return { success: true, newTotal: player.requisitionPoints + input.amount };
       }),
+
+    // Get available Crusade Relics for a unit
+    getAvailableCrusadeRelics: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const unit = await db.getCrusadeUnitById(input.unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        // Check if unit is a CHARACTER
+        if (!unit.category || !unit.category.includes('CHARACTER')) {
+          throw new Error('Only CHARACTER units can have Crusade Relics');
+        }
+        
+        // Get player to know faction
+        const player = await db.getPlayerById(unit.playerId);
+        if (!player) {
+          throw new Error('Player not found');
+        }
+        
+        // Get all units for this player to count total relics
+        const allUnits = await db.getCrusadeUnitsByPlayerId(unit.playerId);
+        let totalRelics = 0;
+        allUnits.forEach(u => {
+          const relics = u.crusadeRelics ? JSON.parse(u.crusadeRelics) : [];
+          totalRelics += relics.length;
+        });
+        
+        const { getCrusadeRelicsForFaction } = await import('./crusadeRelics');
+        const availableRelics = getCrusadeRelicsForFaction(player.faction);
+        const currentRelics = unit.crusadeRelics ? JSON.parse(unit.crusadeRelics) : [];
+        
+        return {
+          availableRelics,
+          currentRelics,
+          totalRelicsInArmy: totalRelics,
+          maxRelicsAllowed: 3,
+        };
+      }),
+
+    // Add a Crusade Relic to a unit
+    addCrusadeRelic: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+        relicId: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const unit = await db.getCrusadeUnitById(input.unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        // Check if unit is a CHARACTER
+        if (!unit.category || !unit.category.includes('CHARACTER')) {
+          throw new Error('Only CHARACTER units can have Crusade Relics');
+        }
+        
+        // Check army-wide relic limit (max 3)
+        const allUnits = await db.getCrusadeUnitsByPlayerId(unit.playerId);
+        let totalRelics = 0;
+        allUnits.forEach(u => {
+          const relics = u.crusadeRelics ? JSON.parse(u.crusadeRelics) : [];
+          totalRelics += relics.length;
+        });
+        
+        if (totalRelics >= 3) {
+          throw new Error('Army already has maximum of 3 Crusade Relics');
+        }
+        
+        const { getCrusadeRelicById } = await import('./crusadeRelics');
+        const relic = getCrusadeRelicById(input.relicId);
+        if (!relic) {
+          throw new Error('Crusade Relic not found');
+        }
+        
+        const currentRelics = unit.crusadeRelics ? JSON.parse(unit.crusadeRelics) : [];
+        
+        // Check if already has this relic
+        if (currentRelics.includes(input.relicId)) {
+          throw new Error('Unit already has this Crusade Relic');
+        }
+        
+        const newRelics = [...currentRelics, input.relicId];
+        await db.updateCrusadeUnit(input.unitId, {
+          crusadeRelics: JSON.stringify(newRelics),
+        });
+        
+        return { success: true, relic };
+      }),
+
+    // Remove a Crusade Relic from a unit
+    removeCrusadeRelic: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+        relicId: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const unit = await db.getCrusadeUnitById(input.unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        const currentRelics = unit.crusadeRelics ? JSON.parse(unit.crusadeRelics) : [];
+        const newRelics = currentRelics.filter((r: string) => r !== input.relicId);
+        
+        await db.updateCrusadeUnit(input.unitId, {
+          crusadeRelics: JSON.stringify(newRelics),
+        });
+        
+        return { success: true };
+      }),
   }),
 
   // Battle management

@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE crusadeUnits ADD COLUMN crusadeRelics TEXT COMMENT 'JSON string of relic IDs (CHARACTER units only, max 3 per army)'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute ALTER TABLE crusadeUnits ADD COLUMN crusadeRelics TEXT COMMENT 'JSON string of relic IDs (CHARACTER units only, max 3 per army)'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 763
+}

@@ -91,6 +91,7 @@ export const crusadeUnits = mysqlTable("crusadeUnits", {
   battleHonours: text("battleHonours"), // JSON string of honour names
   battleTraits: text("battleTraits"), // JSON string of trait names
   battleScars: text("battleScars"), // JSON string of scar names
+  crusadeRelics: text("crusadeRelics"), // JSON string of relic IDs (CHARACTER units only, max 3 per army)
   outOfActionStatus: varchar("outOfActionStatus", { length: 100 }), // Last O.o.A. result
   isDestroyed: boolean("isDestroyed").default(false).notNull(), // Permanently destroyed
   notes: text("notes"), // Additional notes

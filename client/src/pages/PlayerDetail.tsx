@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, Star, Skull, Award, Pencil, Swords } from "lucide-react";
+import { Loader2, ArrowLeft, Star, Skull, Award, Pencil, Swords, Trophy } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { useState } from "react";
 
@@ -675,6 +675,157 @@ function RecordBattleDialog({ unitId, unitName, onSuccess }: RecordBattleDialogP
   );
 }
 
+// Manage Crusade Relics Dialog Component
+interface ManageCrusadeRelicsDialogProps {
+  unitId: number;
+  unitName: string;
+  onSuccess: () => void;
+}
+
+function ManageCrusadeRelicsDialog({ unitId, unitName, onSuccess }: ManageCrusadeRelicsDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedRelic, setSelectedRelic] = useState<string>('');
+
+  const { data: relicsData, isLoading } = trpc.crusadeUnit.getAvailableCrusadeRelics.useQuery(
+    { unitId },
+    { enabled: isOpen }
+  );
+
+  const addRelic = trpc.crusadeUnit.addCrusadeRelic.useMutation({
+    onSuccess: (data) => {
+      onSuccess();
+      setSelectedRelic('');
+      alert(`🏆 Crusade Relic "${data.relic.name}" adicionado!\n\n${data.relic.effect}`);
+    },
+    onError: (error) => {
+      alert(`Erro: ${error.message}`);
+    },
+  });
+
+  const removeRelic = trpc.crusadeUnit.removeCrusadeRelic.useMutation({
+    onSuccess: () => {
+      onSuccess();
+    },
+  });
+
+  const handleAdd = () => {
+    if (!selectedRelic) return;
+    addRelic.mutate({ unitId, relicId: selectedRelic });
+  };
+
+  const handleRemove = (relicId: string) => {
+    if (confirm('Remover esta Crusade Relic?')) {
+      removeRelic.mutate({ unitId, relicId });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Gerenciar Crusade Relics - {unitName}</DialogTitle>
+          <DialogDescription>
+            Relíquias podem ser dadas apenas a unidades CHARACTER. Máximo de 3 relíquias por exército.
+            {relicsData && (
+              <span className="block mt-2 font-semibold">
+                Total de relíquias no exército: {relicsData.totalRelicsInArmy}/{relicsData.maxRelicsAllowed}
+              </span>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {relicsData && relicsData.currentRelics.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Relíquias Atuais:</h4>
+                <div className="space-y-2">
+                  {relicsData.currentRelics.map((relicId: string) => {
+                    const relic = relicsData.availableRelics.find((r: any) => r.id === relicId);
+                    if (!relic) return null;
+                    return (
+                      <div key={relicId} className="flex items-start justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-semibold text-amber-400">🏆 {relic.name}</div>
+                          <div className="text-sm text-muted-foreground mt-1">{relic.description}</div>
+                          <div className="text-sm text-green-400 mt-1">✓ {relic.effect}</div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(relicId)}
+                          disabled={removeRelic.isPending}
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {relicsData && relicsData.totalRelicsInArmy < relicsData.maxRelicsAllowed && (
+              <div>
+                <h4 className="font-semibold mb-2">Adicionar Nova Relíquia:</h4>
+                <div className="space-y-2">
+                  {relicsData.availableRelics
+                    .filter((r: any) => !relicsData.currentRelics.includes(r.id))
+                    .map((relic: any) => (
+                      <div
+                        key={relic.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedRelic === relic.id ? 'border-amber-500 bg-amber-500/10' : 'hover:border-amber-500/50'
+                        }`}
+                        onClick={() => setSelectedRelic(relic.id)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-semibold">{relic.name}</div>
+                            {relic.faction && (
+                              <Badge variant="outline" className="text-xs mt-1">{relic.faction}</Badge>
+                            )}
+                            <div className="text-sm text-muted-foreground mt-1">{relic.description}</div>
+                            <div className="text-sm text-green-400 mt-1">✓ {relic.effect}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Fechar
+          </Button>
+          {relicsData && relicsData.totalRelicsInArmy < relicsData.maxRelicsAllowed && (
+            <Button onClick={handleAdd} disabled={!selectedRelic || addRelic.isPending}>
+              {addRelic.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adicionando...
+                </>
+              ) : (
+                'Adicionar Relic'
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 interface EditCrusadeNameDialogProps {
   unitId: number;
   unitName: string;
@@ -1038,6 +1189,40 @@ export default function PlayerDetail() {
                               </div>
                             )}
                           </div>
+                          
+                          {/* Crusade Relics - Only for CHARACTER units */}
+                          {unit.category && unit.category.includes('CHARACTER') && (
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 text-sm font-semibold">
+                                  <Trophy className="h-4 w-4 text-amber-500" />
+                                  Crusade Relics ({unit.crusadeRelics ? JSON.parse(unit.crusadeRelics).length : 0}/3)
+                                </div>
+                                {!unit.isDestroyed && (
+                                  <ManageCrusadeRelicsDialog
+                                    unitId={unit.id}
+                                    unitName={unit.unitName}
+                                    onSuccess={() => {
+                                      utils.crusadeUnit.list.invalidate({ playerId });
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              {unit.crusadeRelics && JSON.parse(unit.crusadeRelics || '[]').length > 0 ? (
+                                <div className="text-sm space-y-1 pl-6">
+                                  {JSON.parse(unit.crusadeRelics || '[]').map((relicId: string) => (
+                                    <div key={relicId} className="text-amber-400">
+                                      🏆 {relicId}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground pl-6 italic">
+                                  Nenhuma Crusade Relic
+                                </div>
+                              )}
+                            </div>
+                          )}
                           
                           <div>
                             <div className="flex items-center justify-between mb-2">
