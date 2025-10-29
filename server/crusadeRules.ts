@@ -18,6 +18,20 @@ export const RANK_THRESHOLDS: Record<Rank, number> = {
 };
 
 /**
+ * Get the next rank after the current rank
+ */
+export function getNextRank(currentRank: Rank): Rank | null {
+  const ranks: Rank[] = ['battle_ready', 'blooded', 'battle_hardened', 'heroic', 'legendary'];
+  const currentIndex = ranks.indexOf(currentRank);
+  
+  if (currentIndex === -1 || currentIndex === ranks.length - 1) {
+    return null; // Already at max rank or invalid rank
+  }
+  
+  return ranks[currentIndex + 1];
+}
+
+/**
  * Get the next rank based on current XP
  */
 export function getRankFromXP(xp: number): Rank {

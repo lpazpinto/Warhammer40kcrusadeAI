@@ -209,6 +209,341 @@ function ManageBattleHonoursDialog({ unitId, unitName, onSuccess }: ManageBattle
   );
 }
 
+// Manage Battle Scars Dialog Component
+interface ManageBattleScarsDialogProps {
+  unitId: number;
+  unitName: string;
+  onSuccess: () => void;
+}
+
+function ManageBattleScarsDialog({ unitId, unitName, onSuccess }: ManageBattleScarsDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedScar, setSelectedScar] = useState<string>('');
+
+  const { data: scarsData, isLoading } = trpc.crusadeUnit.getAvailableBattleScars.useQuery(
+    { unitId },
+    { enabled: isOpen }
+  );
+
+  const addScar = trpc.crusadeUnit.addBattleScar.useMutation({
+    onSuccess: (data) => {
+      onSuccess();
+      setSelectedScar('');
+      alert(`☠️ Battle Scar "${data.scar.name}" adicionado!\n\n${data.scar.effect}`);
+    },
+  });
+
+  const removeScar = trpc.crusadeUnit.removeBattleScar.useMutation({
+    onSuccess: () => {
+      onSuccess();
+    },
+  });
+
+  const rollRandom = trpc.crusadeUnit.rollRandomBattleScar.useMutation({
+    onSuccess: (data) => {
+      onSuccess();
+      alert(`🎲 Rolou: "${data.scar.name}"!\n\n${data.scar.description}\n\nEfeito: ${data.scar.effect}`);
+    },
+  });
+
+  const handleAdd = () => {
+    if (!selectedScar) return;
+    addScar.mutate({ unitId, scarId: selectedScar });
+  };
+
+  const handleRemove = (scarId: string) => {
+    if (confirm('Remover esta Battle Scar?')) {
+      removeScar.mutate({ unitId, scarId });
+    }
+  };
+
+  const handleRollRandom = () => {
+    if (confirm('Rolar uma Battle Scar aleatória?')) {
+      rollRandom.mutate({ unitId });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Gerenciar Battle Scars</DialogTitle>
+          <DialogDescription>
+            {unitName} - Cicatrizes de batalha
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Current Scars */}
+            {scarsData && scarsData.currentScars.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Battle Scars Atuais:</h4>
+                <div className="space-y-2">
+                  {scarsData.currentScars.map((scarId: string) => {
+                    const scar = scarsData.availableScars.find((s: any) => s.id === scarId);
+                    return (
+                      <div key={scarId} className="flex items-start justify-between p-3 bg-red-950/20 border border-red-900/30 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-semibold text-red-400">{scar?.name || scarId}</div>
+                          {scar && (
+                            <>
+                              <div className="text-sm text-muted-foreground mt-1">{scar.description}</div>
+                              <div className="text-sm font-medium text-red-500 mt-1">
+                                ☠️ {scar.effect}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(scarId)}
+                          disabled={removeScar.isPending}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Roll Random Scar Button */}
+            <div className="flex justify-center">
+              <Button
+                onClick={handleRollRandom}
+                disabled={rollRandom.isPending}
+                variant="destructive"
+              >
+                {rollRandom.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Rolando...
+                  </>
+                ) : (
+                  <>🎲 Rolar Battle Scar Aleatória</>
+                )}
+              </Button>
+            </div>
+            
+            {/* Add Specific Scar */}
+            <div>
+              <h4 className="font-semibold mb-2">Ou escolha uma Battle Scar específica:</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {scarsData?.availableScars
+                  .filter((s: any) => !scarsData.currentScars.includes(s.id))
+                  .map((scar: any) => (
+                    <div
+                      key={scar.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedScar === scar.id
+                          ? 'border-red-500 bg-red-950/20'
+                          : 'hover:border-red-500/50'
+                      }`}
+                      onClick={() => setSelectedScar(scar.id)}
+                    >
+                      <div className="font-semibold text-red-400">{scar.name}</div>
+                      <div className="text-sm text-muted-foreground mt-1">{scar.description}</div>
+                      <div className="text-sm font-medium text-red-500 mt-1">
+                        ☠️ {scar.effect}
+                      </div>
+                      {scar.faction && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Facção: {scar.faction}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Fechar
+          </Button>
+          {selectedScar && (
+            <Button onClick={handleAdd} disabled={addScar.isPending} variant="destructive">
+              {addScar.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adicionando...
+                </>
+              ) : (
+                'Adicionar Scar'
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Manage Battle Traits Dialog Component
+interface ManageBattleTraitsDialogProps {
+  unitId: number;
+  unitName: string;
+  onSuccess: () => void;
+}
+
+function ManageBattleTraitsDialog({ unitId, unitName, onSuccess }: ManageBattleTraitsDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedTrait, setSelectedTrait] = useState<string>('');
+
+  const { data: traitsData, isLoading } = trpc.crusadeUnit.getAvailableBattleTraits.useQuery(
+    { unitId },
+    { enabled: isOpen }
+  );
+
+  const addTrait = trpc.crusadeUnit.addBattleTrait.useMutation({
+    onSuccess: (data) => {
+      onSuccess();
+      setSelectedTrait('');
+      alert(`⭐ Battle Trait "${data.trait.name}" adicionado!\n\n${data.trait.effect}`);
+    },
+  });
+
+  const removeTrait = trpc.crusadeUnit.removeBattleTrait.useMutation({
+    onSuccess: () => {
+      onSuccess();
+    },
+  });
+
+  const handleAdd = () => {
+    if (!selectedTrait) return;
+    addTrait.mutate({ unitId, traitId: selectedTrait });
+  };
+
+  const handleRemove = (traitId: string) => {
+    if (confirm('Remover este Battle Trait?')) {
+      removeTrait.mutate({ unitId, traitId });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Gerenciar Battle Traits</DialogTitle>
+          <DialogDescription>
+            {unitName} - Traços de batalha específicos da facção
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Current Traits */}
+            {traitsData && traitsData.currentTraits.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Battle Traits Atuais:</h4>
+                <div className="space-y-2">
+                  {traitsData.currentTraits.map((traitId: string) => {
+                    const trait = traitsData.availableTraits.find((t: any) => t.id === traitId);
+                    return (
+                      <div key={traitId} className="flex items-start justify-between p-3 bg-blue-950/20 border border-blue-900/30 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-semibold text-blue-400">{trait?.name || traitId}</div>
+                          {trait && (
+                            <>
+                              <div className="text-sm text-muted-foreground mt-1">{trait.description}</div>
+                              <div className="text-sm font-medium text-blue-500 mt-1">
+                                ⭐ {trait.effect}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(traitId)}
+                          disabled={removeTrait.isPending}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Add New Trait */}
+            <div>
+              <h4 className="font-semibold mb-2">Adicionar Battle Trait:</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {traitsData?.availableTraits
+                  .filter((t: any) => !traitsData.currentTraits.includes(t.id))
+                  .map((trait: any) => (
+                    <div
+                      key={trait.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedTrait === trait.id
+                          ? 'border-blue-500 bg-blue-950/20'
+                          : 'hover:border-blue-500/50'
+                      }`}
+                      onClick={() => setSelectedTrait(trait.id)}
+                    >
+                      <div className="font-semibold text-blue-400">{trait.name}</div>
+                      <div className="text-sm text-muted-foreground mt-1">{trait.description}</div>
+                      <div className="text-sm font-medium text-blue-500 mt-1">
+                        ⭐ {trait.effect}
+                      </div>
+                    </div>
+                  ))}
+                {traitsData && traitsData.availableTraits.length === 0 && (
+                  <div className="text-center text-muted-foreground py-4">
+                    Nenhum Battle Trait disponível para esta facção.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Fechar
+          </Button>
+          {selectedTrait && (
+            <Button onClick={handleAdd} disabled={addTrait.isPending}>
+              {addTrait.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adicionando...
+                </>
+              ) : (
+                'Adicionar Trait'
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Record Battle Dialog Component
 interface RecordBattleDialogProps {
   unitId: number;
@@ -673,29 +1008,67 @@ export default function PlayerDetail() {
                             )}
                           </div>
                           
-                          {unit.battleTraits.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm font-semibold mb-1">
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2 text-sm font-semibold">
                                 <Star className="h-4 w-4 text-blue-500" />
-                                Battle Traits
+                                Battle Traits ({unit.battleTraits.length})
                               </div>
-                              <div className="text-sm text-muted-foreground pl-6">
-                                {unit.battleTraits.join(', ')}
-                              </div>
+                              {!unit.isDestroyed && (
+                                <ManageBattleTraitsDialog
+                                  unitId={unit.id}
+                                  unitName={unit.unitName}
+                                  onSuccess={() => {
+                                    utils.crusadeUnit.list.invalidate({ playerId });
+                                  }}
+                                />
+                              )}
                             </div>
-                          )}
+                            {unit.battleTraits.length > 0 ? (
+                              <div className="text-sm space-y-1 pl-6">
+                                {unit.battleTraits.map((traitId: string) => (
+                                  <div key={traitId} className="text-blue-400">
+                                    ⭐ {traitId}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-muted-foreground pl-6 italic">
+                                Nenhum Battle Trait
+                              </div>
+                            )}
+                          </div>
                           
-                          {unit.battleScars.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm font-semibold mb-1">
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2 text-sm font-semibold">
                                 <Skull className="h-4 w-4 text-red-500" />
-                                Battle Scars
+                                Battle Scars ({unit.battleScars.length})
                               </div>
-                              <div className="text-sm text-muted-foreground pl-6">
-                                {unit.battleScars.join(', ')}
-                              </div>
+                              {!unit.isDestroyed && (
+                                <ManageBattleScarsDialog
+                                  unitId={unit.id}
+                                  unitName={unit.unitName}
+                                  onSuccess={() => {
+                                    utils.crusadeUnit.list.invalidate({ playerId });
+                                  }}
+                                />
+                              )}
                             </div>
-                          )}
+                            {unit.battleScars.length > 0 ? (
+                              <div className="text-sm space-y-1 pl-6">
+                                {unit.battleScars.map((scarId: string) => (
+                                  <div key={scarId} className="text-red-400">
+                                    ☠️ {scarId}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-muted-foreground pl-6 italic">
+                                Nenhuma Battle Scar
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 

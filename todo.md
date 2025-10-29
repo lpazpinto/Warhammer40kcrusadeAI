@@ -155,17 +155,17 @@
 - [x] Create Battle Honours database/list by faction
 - [x] UI to select and add Battle Honours to units
 - [x] Display Battle Honours on unit cards with descriptions
-- [x] Maximum Battle Honours based on rank (Blooded: 1, Battle-Hardened: 2, Heroic: 3, Legendary: 4)results (when unit is destroyed/removed)
-- [ ] Roll for Battle Scars when unit goes Out of Action
-- [ ] Create Battle Scars database/list
-- [ ] UI to assign Battle Scars to units
-- [ ] Display Battle Scars on Crusade Card with negative effects
-- [ ] Option to remove Battle Scars via Requisitions
+- [x] Maximum Battle Honours based on rank (Blooded:### Battle Scars System
+- [x] Track Out of Action results (when unit is destroyed/removed)
+- [x] Roll for Battle Scars when unit goes Out of Action
+- [x] Create Battle Scars database/list
+- [x] UI to assign Battle Scars to units
+- [x] Display Battle Scars on Crusade Card with negative effects [ ] Option to remove Battle Scars via Requisitions
 
-### Battle Traits System
-- [ ] Add faction-specific Battle Traits
-- [ ] UI to assign Battle Traits to units
-- [ ] Display Battle Traits on Crusade Card
+#### Battle Traits System
+- [x] Add faction-specific Battle Traits
+- [x] UI to assign Battle Traits to units
+- [x] Display Battle Traits on unit cardsd
 
 ### Requisitions System
 - [ ] Create Requisitions database (Increase Supply Limit, Rearm and Resupply, etc.)
