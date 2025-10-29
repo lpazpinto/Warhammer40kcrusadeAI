@@ -211,3 +211,14 @@
 - [ ] AI opponent for solo play
 - [ ] Strategic advice based on army composition
 
+
+
+## Enhanced Battle Recording Workflow
+- [ ] Create interactive battle recording wizard (step-by-step) - future enhancement
+- [ ] Step 1: Select participating units from player's roster - future enhancement
+- [x] Step 2: For each unit, ask: survived? kills? completed objective?
+- [x] Step 3: Automatically roll and assign Battle Honours when unit gains rank
+- [x] Step 4: Automatically roll and assign Battle Scars when unit is destroyed
+- [x] Step 5: Show summary of all changes (XP gained, ranks promoted, honours/scars assigned)
+- [x] Improve RecordBattleDialog to show automatic Honours/Scars
+

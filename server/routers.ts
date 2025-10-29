@@ -325,6 +325,17 @@ export const appRouter = router({
         const newRank = getRankFromXP(newExperiencePoints);
         const wasPromoted = newRank !== unit.rank;
         
+        // Prepare result data
+        const result: any = {
+          success: true,
+          xpEarned,
+          newExperiencePoints,
+          newRank,
+          wasPromoted,
+          honoursGained: [],
+          scarsGained: [],
+        };
+        
         // Update unit
         const updates: any = {
           battlesPlayed: newBattlesPlayed,
@@ -334,23 +345,40 @@ export const appRouter = router({
           rank: newRank,
         };
         
+        // If promoted, automatically roll and assign Battle Honour
+        if (wasPromoted) {
+          const { rollRandomBattleHonour } = await import('./battleHonours');
+          const player = await db.getPlayerById(unit.playerId);
+          if (player) {
+            const honour = rollRandomBattleHonour(player.faction, unit.category || 'Infantry');
+            const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
+            currentHonours.push(honour.id);
+            updates.battleHonours = JSON.stringify(currentHonours);
+            result.honoursGained.push(honour);
+          }
+        }
+        
+        // If destroyed, automatically roll and assign Battle Scar
+        if (!survived) {
+          const { rollRandomBattleScar } = await import('./battleScars');
+          const player = await db.getPlayerById(unit.playerId);
+          if (player) {
+            const scar = rollRandomBattleScar(player.faction, unit.category || 'Infantry');
+            const currentScars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
+            currentScars.push(scar.id);
+            updates.battleScars = JSON.stringify(currentScars);
+            updates.isDestroyed = true;
+            result.scarsGained.push(scar);
+          }
+        }
+        
         if (outOfActionStatus) {
           updates.outOfActionStatus = outOfActionStatus;
         }
         
-        if (!survived) {
-          updates.isDestroyed = true;
-        }
-        
         await db.updateCrusadeUnit(unitId, updates);
         
-        return {
-          success: true,
-          xpEarned,
-          newExperiencePoints,
-          newRank,
-          wasPromoted,
-        };
+        return result;
       }),
 
     // Get available Battle Honours for a unit

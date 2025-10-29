@@ -253,3 +253,20 @@ export function getBattleHonourById(id: string): BattleHonour | undefined {
   return allHonours.find(h => h.id === id);
 }
 
+
+/**
+ * Roll a random Battle Honour for a unit
+ */
+export function rollRandomBattleHonour(faction: string, unitType?: string): BattleHonour {
+  const availableHonours = getBattleHonoursForUnit(faction, unitType);
+  
+  if (availableHonours.length === 0) {
+    // Fallback to generic if no honours available
+    const randomIndex = Math.floor(Math.random() * GENERIC_BATTLE_HONOURS.length);
+    return GENERIC_BATTLE_HONOURS[randomIndex];
+  }
+  
+  const randomIndex = Math.floor(Math.random() * availableHonours.length);
+  return availableHonours[randomIndex];
+}
+

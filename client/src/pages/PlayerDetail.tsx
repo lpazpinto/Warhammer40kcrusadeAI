@@ -566,10 +566,30 @@ function RecordBattleDialog({ unitId, unitName, onSuccess }: RecordBattleDialogP
       setKills(0);
       setOutOfAction('');
       
-      // Show promotion alert if promoted
+      // Build result message
+      let message = `✅ Batalha registrada!\n\n`;
+      message += `🎯 ${unitName} ganhou ${data.xpEarned} XP\n`;
+      message += `📊 Total: ${data.newExperiencePoints} XP\n\n`;
+      
       if (data.wasPromoted) {
-        alert(`🎉 ${unitName} foi promovido para ${data.newRank}! Ganhou ${data.xpEarned} XP.`);
+        message += `🎉 PROMOVIDO para ${data.newRank}!\n\n`;
       }
+      
+      if (data.honoursGained && data.honoursGained.length > 0) {
+        message += `✨ Battle Honours Ganhos:\n`;
+        data.honoursGained.forEach((honour: any) => {
+          message += `• ${honour.name}\n  ${honour.effect}\n\n`;
+        });
+      }
+      
+      if (data.scarsGained && data.scarsGained.length > 0) {
+        message += `💀 Battle Scars Recebidos:\n`;
+        data.scarsGained.forEach((scar: any) => {
+          message += `• ${scar.name}\n  ${scar.effect}\n\n`;
+        });
+      }
+      
+      alert(message);
     },
   });
 
