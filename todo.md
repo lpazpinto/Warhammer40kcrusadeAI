@@ -230,3 +230,65 @@
 - [x] Update Order of Battle display to show points instead of PL
 - [x] Update database schema (supplyLimit field now stores points)
 
+
+
+
+## Horde Mode Battle System Implementation
+- [ ] Battle Setup Phase
+  - [ ] Select participating players from campaign
+  - [ ] Choose deployment type (Dawn of War, Hammer and Anvil, etc.)
+  - [ ] Select mission from mission pack
+  - [ ] Configure spawn zones based on game size (2 zones for 1000pts, 4 zones for 2000pts)
+  - [ ] Place objective markers
+  - [ ] Choose Horde faction and Primary Faction Rule
+  - [ ] Shuffle Misery Deck, Secret Objectives Deck, Secondary Mission Deck
+  
+- [ ] Battle Round Management
+  - [ ] Display current round number
+  - [ ] Show active Misery cards
+  - [ ] Show current Secondary Mission
+  - [ ] Spawn Horde units in each zone (roll 2D6, choose from bracket)
+  - [ ] Track Supply Points (SP) gained from objectives and kills
+  - [ ] Resupply Step - spend SP on purchases
+  
+- [ ] Horde AI Controller
+  - [ ] Movement AI (move toward closest visible enemy → objective → defender edge)
+  - [ ] Shooting AI (shoot closest legal target, prioritize Anti-X, Precision, Melta)
+  - [ ] Charge AI (charge if unit has melee weapons better than CCW)
+  - [ ] Fight AI (attack closest enemy model)
+  - [ ] Consolidation AI (move toward closest enemy/objective)
+  
+- [ ] Battle Tracking
+  - [ ] Track which player units participated
+  - [ ] Track which units were destroyed
+  - [ ] Track kills per unit
+  - [ ] Track objectives controlled
+  - [ ] Calculate SP rewards
+  
+- [ ] End of Battle
+  - [ ] Resolve Secret Objectives (5 round mode)
+  - [ ] Award Requisition Points (1 RP per battle, +1 if won)
+  - [ ] Automatically update unit stats (battles played, survived, kills, XP)
+  - [ ] Automatically roll and assign Battle Honours for promoted units
+  - [ ] Automatically roll and assign Battle Scars for destroyed units
+  - [ ] Show battle summary with all changes
+  
+- [ ] Battle UI Components
+  - [ ] Round tracker with phase indicators
+  - [ ] Spawn zone visualizer
+  - [ ] Horde unit cards with AI instructions
+  - [ ] Player unit selector for tracking
+  - [ ] SP and CP counters
+  - [ ] Misery card display
+  - [ ] Secondary Mission display
+  - [ ] Quick actions (end phase, end round, spawn units)
+
+
+
+## Current Bug Fixes
+- [x] Fix duplicate function exports in db.ts (createBattle, getBattleById)
+- [x] Fix BattleSetup.tsx to use correct campaign property (currentBattleRound instead of currentRound)
+- [x] Remove duplicate Horde faction selection from BattleSetup (already defined in campaign)
+- [x] Fix routers.ts duplicate property and missing query method errors
+
+

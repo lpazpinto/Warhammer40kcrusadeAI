@@ -1,5 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { sql } from "drizzle-orm";
 import { 
   InsertUser, 
   users, 
@@ -495,5 +496,21 @@ export async function getCrusadeBattlesByPlayerId(playerId: number): Promise<any
   );
 
   return battlesWithDetails.filter(b => b !== null);
+}
+
+
+
+
+
+export async function getNextBattleNumber(campaignId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({ maxNumber: sql<number>`MAX(${battles.battleNumber})` })
+    .from(battles)
+    .where(eq(battles.campaignId, campaignId));
+  
+  return (result[0]?.maxNumber || 0) + 1;
 }
 
