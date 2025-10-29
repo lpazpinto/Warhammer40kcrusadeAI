@@ -1113,6 +1113,35 @@ export default function PlayerDetail() {
                         </div>
                       </div>
 
+                      {/* Models & Wargear Section */}
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold">Modelos & Equipamento</h4>
+                          {!unit.isDestroyed && (
+                            <Button variant="ghost" size="sm">
+                              <Pencil className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          {unit.models.map((model: any, idx: number) => (
+                            <div key={idx} className="text-sm p-2 bg-muted/50 rounded">
+                              <div className="font-semibold">
+                                {model.count}x {model.name}
+                              </div>
+                              {model.weapons && model.weapons.length > 0 && (
+                                <div className="text-muted-foreground text-xs mt-1 pl-4">
+                                  {model.weapons.map((weapon: string, widx: number) => (
+                                    <div key={widx}>• {weapon}</div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Record Battle Button */}
                       {!unit.isDestroyed && (
                         <div className="mt-4 pt-4 border-t">

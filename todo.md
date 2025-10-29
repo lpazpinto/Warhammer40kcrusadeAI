@@ -175,22 +175,22 @@
 - [ ] Log Requisition history
 
 ### Crusade Relics System
-- [ ] Create Crusade Relics database by faction
-- [ ] Assign Relics to CHARACTER units only
-- [ ] Limit 1 Relic per CHARACTER
-- [ ] UI to select and assign Relics
-- [ ] Display Relics on Crusade Card
+- [x] Create Crusade Relics database by faction
+- [x] Assign Relics to CHARACTER units only
+- [x] Limit 3 Relics per army (not per CHARACTER)
+- [x] UI to select and assign Relics
+- [x] Display Relics on Crusade Card
 
 ### Wargear & Equipment
-- [ ] Track wargear changes and upgrades
-- [ ] Update points cost when wargear changes
-- [ ] Display current wargear on Crusade Card
+- [x] Track wargear changes and upgrades
+- [ ] Update points cost when wargear changes (manual for now)
+- [x] Display current wargear on Crusade Card
 
 ### Battle Recording
-- [ ] Create Battle Report form (opponent, mission, result)
-- [ ] Automatically update unit stats after battle (XP, battles played, etc.)
-- [ ] Track which units participated in each battle
-- [ ] Battle history log per campaign
+- [x] Create Battle Report form (opponent, mission, result)
+- [x] Automatically update player stats after battle (battles played, victories, RP)
+- [x] Track which units participated in each battle
+- [x] Battle history log per campaign and per player
 
 ### Order of Battle Management
 - [ ] Display total Supply Limit vs Supply Used

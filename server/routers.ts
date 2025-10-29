@@ -956,6 +956,80 @@ export const appRouter = router({
       }),
   }),
 
+  // Crusade Battle Recording (PvP battles between players)
+  crusadeBattle: router({
+    // Create a new crusade battle record
+    create: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        mission: z.string(),
+        deployment: z.string().optional(),
+        participants: z.array(z.object({
+          playerId: z.number(),
+          won: z.boolean(), // Track winner
+          completedObjective: z.boolean(),
+          survived: z.boolean().default(true),
+          enemyUnitsKilled: z.number().default(0),
+          unitIds: z.array(z.number()), // Units that participated
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const campaign = await db.getCampaignById(input.campaignId);
+        if (!campaign) throw new Error('Campaign not found');
+
+        // Create battle record
+        const battleId = await db.createCrusadeBattle({
+          campaignId: input.campaignId,
+          mission: input.mission,
+          deployment: input.deployment,
+        });
+
+        // Process each participant
+        for (const participant of input.participants) {
+          // Award RP: 1 base + 1 if won + 1 if completed objective
+          let rpEarned = 1;
+          if (participant.won) rpEarned += 1;
+          if (participant.completedObjective) rpEarned += 1;
+
+          // Update player stats
+          const player = await db.getPlayerById(participant.playerId);
+          if (player) {
+            await db.updatePlayer(participant.playerId, {
+              battleTally: player.battleTally + 1,
+              victories: participant.won ? player.victories + 1 : player.victories,
+              requisitionPoints: player.requisitionPoints + rpEarned,
+            });
+          }
+
+          // Record participant
+          await db.createBattleParticipant({
+            battleId,
+            playerId: participant.playerId,
+            unitsDeployed: JSON.stringify(participant.unitIds),
+            survived: participant.survived,
+            completedObjective: participant.completedObjective,
+            enemyUnitsKilled: participant.enemyUnitsKilled,
+          });
+        }
+
+        return { battleId, success: true };
+      }),
+
+    // Get battle history for a campaign
+    listByCampaign: protectedProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCrusadeBattlesByCampaignId(input.campaignId);
+      }),
+
+    // Get battle history for a player
+    listByPlayer: protectedProcedure
+      .input(z.object({ playerId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCrusadeBattlesByPlayerId(input.playerId);
+      }),
+  }),
+
   // Post-battle processing
   postBattle: router({
     // Process a single unit

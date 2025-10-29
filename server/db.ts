@@ -411,3 +411,89 @@ export async function updateBattleParticipant(id: number, updates: Partial<Battl
   await db.update(battleParticipants).set(updates).where(eq(battleParticipants.id, id));
 }
 
+
+// Crusade Battle helpers (simplified battle recording for PvP)
+export async function createCrusadeBattle(data: { campaignId: number; mission: string; deployment?: string }): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Create a simple battle record
+  const result: any = await db.insert(battles).values({
+    campaignId: data.campaignId,
+    battleNumber: 0, // Will be updated by campaign logic
+    deployment: data.deployment || '',
+    missionPack: data.mission,
+  });
+
+  console.log('[createCrusadeBattle] Database result:', result);
+
+  // Try multiple methods to extract the ID
+  let battleId: number | undefined;
+
+  // Method 1: Direct insertId
+  if (result.insertId && !isNaN(Number(result.insertId))) {
+    battleId = Number(result.insertId);
+  }
+  // Method 2: Check if result is an array with insertId
+  else if (Array.isArray(result) && result[0]?.insertId) {
+    battleId = Number(result[0].insertId);
+  }
+  // Method 3: Check nested structure
+  else if (result[0]?.insertId) {
+    battleId = Number(result[0].insertId);
+  }
+
+  if (!battleId || isNaN(battleId) || !isFinite(battleId)) {
+    console.error('[createCrusadeBattle] Failed to extract valid battle ID from result:', result);
+    throw new Error('Failed to create battle: invalid ID returned from database');
+  }
+
+  console.log(`[createCrusadeBattle] Successfully created battle with ID: ${battleId}`);
+  return battleId;
+}
+
+export async function getCrusadeBattlesByCampaignId(campaignId: number): Promise<any[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get all battles for this campaign with participants
+  const battlesList = await db.select().from(battles)
+    .where(eq(battles.campaignId, campaignId))
+    .orderBy(desc(battles.createdAt));
+
+  const battlesWithParticipants = await Promise.all(
+    battlesList.map(async (battle) => {
+      const participants = await getBattleParticipantsByBattleId(battle.id);
+      return {
+        ...battle,
+        participants,
+      };
+    })
+  );
+
+  return battlesWithParticipants;
+}
+
+export async function getCrusadeBattlesByPlayerId(playerId: number): Promise<any[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get all battle participants for this player
+  const participantRecords = await db.select()
+    .from(battleParticipants)
+    .where(eq(battleParticipants.playerId, playerId));
+
+  // Get full battle details for each
+  const battlesWithDetails = await Promise.all(
+    participantRecords.map(async (participant) => {
+      const battle = await getBattleById(participant.battleId);
+      return {
+        ...battle,
+        playerParticipation: participant,
+      };
+    })
+  );
+
+  return battlesWithDetails.filter(b => b !== null);
+}
+
