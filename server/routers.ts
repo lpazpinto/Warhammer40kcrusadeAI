@@ -261,6 +261,165 @@ export const appRouter = router({
         await db.deleteCrusadeUnit(input.id);
         return { success: true };
       }),
+
+    // Record battle result and update unit stats automatically
+    recordBattleResult: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+        survived: z.boolean(),
+        enemyUnitsDestroyed: z.number().min(0).default(0),
+        outOfActionStatus: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { unitId, survived, enemyUnitsDestroyed, outOfActionStatus } = input;
+        
+        // Get current unit stats
+        const unit = await db.getCrusadeUnitById(unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        // Import crusade rules
+        const { calculateBattleXP, getRankFromXP, checkRankPromotion } = await import('./crusadeRules');
+        
+        // Calculate XP earned from this battle
+        const xpEarned = calculateBattleXP({
+          played: true,
+          survived,
+          enemyUnitsDestroyed,
+        });
+        
+        // Update stats
+        const newBattlesPlayed = unit.battlesPlayed + 1;
+        const newBattlesSurvived = survived ? unit.battlesSurvived + 1 : unit.battlesSurvived;
+        const newEnemyUnitsDestroyed = unit.enemyUnitsDestroyed + enemyUnitsDestroyed;
+        const newExperiencePoints = unit.experiencePoints + xpEarned;
+        
+        // Check for rank promotion
+        const newRank = getRankFromXP(newExperiencePoints);
+        const wasPromoted = newRank !== unit.rank;
+        
+        // Update unit
+        const updates: any = {
+          battlesPlayed: newBattlesPlayed,
+          battlesSurvived: newBattlesSurvived,
+          enemyUnitsDestroyed: newEnemyUnitsDestroyed,
+          experiencePoints: newExperiencePoints,
+          rank: newRank,
+        };
+        
+        if (outOfActionStatus) {
+          updates.outOfActionStatus = outOfActionStatus;
+        }
+        
+        if (!survived) {
+          updates.isDestroyed = true;
+        }
+        
+        await db.updateCrusadeUnit(unitId, updates);
+        
+        return {
+          success: true,
+          xpEarned,
+          newExperiencePoints,
+          newRank,
+          wasPromoted,
+        };
+      }),
+
+    // Get available Battle Honours for a unit
+    getAvailableBattleHonours: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const unit = await db.getCrusadeUnitById(input.unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        // Get player to know faction
+        const player = await db.getPlayerById(unit.playerId);
+        if (!player) {
+          throw new Error('Player not found');
+        }
+        
+        const { getBattleHonoursForUnit } = await import('./battleHonours');
+        const { getMaxBattleHonours } = await import('./crusadeRules');
+        
+        const availableHonours = getBattleHonoursForUnit(player.faction, unit.unitType || undefined);
+        const maxHonours = getMaxBattleHonours(unit.rank as any);
+        const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
+        
+        return {
+          availableHonours,
+          maxHonours,
+          currentHonours,
+          canAddMore: currentHonours.length < maxHonours,
+        };
+      }),
+
+    // Add a Battle Honour to a unit
+    addBattleHonour: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+        honourId: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const unit = await db.getCrusadeUnitById(input.unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        const { getMaxBattleHonours } = await import('./crusadeRules');
+        const { getBattleHonourById } = await import('./battleHonours');
+        
+        const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
+        const maxHonours = getMaxBattleHonours(unit.rank as any);
+        
+        if (currentHonours.length >= maxHonours) {
+          throw new Error('Unit already has maximum Battle Honours for its rank');
+        }
+        
+        const honour = getBattleHonourById(input.honourId);
+        if (!honour) {
+          throw new Error('Battle Honour not found');
+        }
+        
+        // Check if already has this honour
+        if (currentHonours.includes(input.honourId)) {
+          throw new Error('Unit already has this Battle Honour');
+        }
+        
+        const newHonours = [...currentHonours, input.honourId];
+        await db.updateCrusadeUnit(input.unitId, {
+          battleHonours: JSON.stringify(newHonours),
+        });
+        
+        return { success: true, honour };
+      }),
+
+    // Remove a Battle Honour from a unit
+    removeBattleHonour: protectedProcedure
+      .input(z.object({
+        unitId: z.number(),
+        honourId: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const unit = await db.getCrusadeUnitById(input.unitId);
+        if (!unit) {
+          throw new Error('Unit not found');
+        }
+        
+        const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
+        const newHonours = currentHonours.filter((h: string) => h !== input.honourId);
+        
+        await db.updateCrusadeUnit(input.unitId, {
+          battleHonours: JSON.stringify(newHonours),
+        });
+        
+        return { success: true };
+      }),
   }),
 
   // Battle management

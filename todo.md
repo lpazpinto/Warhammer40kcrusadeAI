@@ -141,3 +141,73 @@
 
 - [x] Allow players to edit crusade name (custom name) for each unit after import
 
+
+
+## Crusade Card Features (Following Official Rules)
+
+### Battle Tracking & Experience
+- [x] Track battles played and battles survived for each unit
+- [x] Track enemy units destroyed (kills)
+- [x] Automatic XP calculation based on battles and kills
+- [x] Automatic rank progression (Battle Ready → Blooded → Battle-Hardened → Heroic → Legendary)
+- [x] Display XP progress bar showing progress to next### Battle Honours System
+- [x] Add Battle Honours when unit gains rank (1 honour per rank gained)
+- [x] Create Battle Honours database/list by faction
+- [x] UI to select and add Battle Honours to units
+- [x] Display Battle Honours on unit cards with descriptions
+- [x] Maximum Battle Honours based on rank (Blooded: 1, Battle-Hardened: 2, Heroic: 3, Legendary: 4)results (when unit is destroyed/removed)
+- [ ] Roll for Battle Scars when unit goes Out of Action
+- [ ] Create Battle Scars database/list
+- [ ] UI to assign Battle Scars to units
+- [ ] Display Battle Scars on Crusade Card with negative effects
+- [ ] Option to remove Battle Scars via Requisitions
+
+### Battle Traits System
+- [ ] Add faction-specific Battle Traits
+- [ ] UI to assign Battle Traits to units
+- [ ] Display Battle Traits on Crusade Card
+
+### Requisitions System
+- [ ] Create Requisitions database (Increase Supply Limit, Rearm and Resupply, etc.)
+- [ ] Track Requisition Points (RP) per player
+- [ ] UI to spend RP on Requisitions
+- [ ] Apply Requisition effects (add units, remove scars, etc.)
+- [ ] Log Requisition history
+
+### Crusade Relics System
+- [ ] Create Crusade Relics database by faction
+- [ ] Assign Relics to CHARACTER units only
+- [ ] Limit 1 Relic per CHARACTER
+- [ ] UI to select and assign Relics
+- [ ] Display Relics on Crusade Card
+
+### Wargear & Equipment
+- [ ] Track wargear changes and upgrades
+- [ ] Update points cost when wargear changes
+- [ ] Display current wargear on Crusade Card
+
+### Battle Recording
+- [ ] Create Battle Report form (opponent, mission, result)
+- [ ] Automatically update unit stats after battle (XP, battles played, etc.)
+- [ ] Track which units participated in each battle
+- [ ] Battle history log per campaign
+
+### Order of Battle Management
+- [ ] Display total Supply Limit vs Supply Used
+- [ ] Mark units as "In Reserve" vs "Active"
+- [ ] Enforce Supply Limit when adding units
+- [ ] Calculate total army Power Level and Points
+
+### Crusade Card UI Improvements
+- [ ] Detailed unit view page showing all Crusade Card fields
+- [ ] Visual representation of rank progression
+- [ ] Icons for Battle Honours, Scars, Traits, and Relics
+- [ ] Print-friendly Crusade Card layout
+- [ ] Export Crusade Card as PDF
+
+### AI Integration (Future)
+- [ ] AI suggestions for Battle Honours based on unit role
+- [ ] AI-generated battle narratives
+- [ ] AI opponent for solo play
+- [ ] Strategic advice based on army composition
+

@@ -4,10 +4,341 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, Star, Skull, Award, Pencil } from "lucide-react";
+import { Loader2, ArrowLeft, Star, Skull, Award, Pencil, Swords } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { useState } from "react";
+
+// XP Progress Bar Component
+interface XPProgressBarProps {
+  xp: number;
+  rank: string;
+}
+
+function XPProgressBar({ xp, rank }: XPProgressBarProps) {
+  const rankThresholds: Record<string, { current: number; next: number; nextRank: string | null }> = {
+    battle_ready: { current: 0, next: 6, nextRank: 'Experiente' },
+    blooded: { current: 6, next: 16, nextRank: 'Veterano' },
+    battle_hardened: { current: 16, next: 31, nextRank: 'Heroico' },
+    heroic: { current: 31, next: 51, nextRank: 'Lendário' },
+    legendary: { current: 51, next: 51, nextRank: null },
+  };
+
+  const threshold = rankThresholds[rank] || rankThresholds.battle_ready;
+  const xpInCurrentRank = xp - threshold.current;
+  const xpNeededForNextRank = threshold.next - threshold.current;
+  const percentage = threshold.nextRank 
+    ? Math.min(100, Math.round((xpInCurrentRank / xpNeededForNextRank) * 100))
+    : 100;
+
+  return (
+    <div className="w-48">
+      <Progress value={percentage} className="h-2" />
+      {threshold.nextRank && (
+        <div className="text-xs text-muted-foreground mt-1 text-right">
+          {xpInCurrentRank}/{xpNeededForNextRank} XP para {threshold.nextRank}
+        </div>
+      )}
+      {!threshold.nextRank && (
+        <div className="text-xs text-muted-foreground mt-1 text-right">
+          Rank Máximo
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Manage Battle Honours Dialog Component
+interface ManageBattleHonoursDialogProps {
+  unitId: number;
+  unitName: string;
+  onSuccess: () => void;
+}
+
+function ManageBattleHonoursDialog({ unitId, unitName, onSuccess }: ManageBattleHonoursDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedHonour, setSelectedHonour] = useState<string>('');
+
+  const { data: honoursData, isLoading } = trpc.crusadeUnit.getAvailableBattleHonours.useQuery(
+    { unitId },
+    { enabled: isOpen }
+  );
+
+  const addHonour = trpc.crusadeUnit.addBattleHonour.useMutation({
+    onSuccess: (data) => {
+      onSuccess();
+      setSelectedHonour('');
+      alert(`✨ Battle Honour "${data.honour.name}" adicionado!\n\n${data.honour.effect}`);
+    },
+  });
+
+  const removeHonour = trpc.crusadeUnit.removeBattleHonour.useMutation({
+    onSuccess: () => {
+      onSuccess();
+    },
+  });
+
+  const handleAdd = () => {
+    if (!selectedHonour) return;
+    addHonour.mutate({ unitId, honourId: selectedHonour });
+  };
+
+  const handleRemove = (honourId: string) => {
+    if (confirm('Remover esta Battle Honour?')) {
+      removeHonour.mutate({ unitId, honourId });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Gerenciar Battle Honours</DialogTitle>
+          <DialogDescription>
+            {unitName} - Máximo: {honoursData?.maxHonours || 0} honours
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Current Honours */}
+            {honoursData && honoursData.currentHonours.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Battle Honours Atuais:</h4>
+                <div className="space-y-2">
+                  {honoursData.currentHonours.map((honourId: string) => {
+                    const honour = honoursData.availableHonours.find((h: any) => h.id === honourId);
+                    return (
+                      <div key={honourId} className="flex items-start justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-semibold">{honour?.name || honourId}</div>
+                          {honour && (
+                            <>
+                              <div className="text-sm text-muted-foreground mt-1">{honour.description}</div>
+                              <div className="text-sm font-medium text-primary mt-1">
+                                ⚔️ {honour.effect}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(honourId)}
+                          disabled={removeHonour.isPending}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Add New Honour */}
+            {honoursData?.canAddMore && (
+              <div>
+                <h4 className="font-semibold mb-2">Adicionar Battle Honour:</h4>
+                <div className="space-y-2">
+                  {honoursData.availableHonours
+                    .filter((h: any) => !honoursData.currentHonours.includes(h.id))
+                    .map((honour: any) => (
+                      <div
+                        key={honour.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedHonour === honour.id
+                            ? 'border-primary bg-primary/10'
+                            : 'hover:border-primary/50'
+                        }`}
+                        onClick={() => setSelectedHonour(honour.id)}
+                      >
+                        <div className="font-semibold">{honour.name}</div>
+                        <div className="text-sm text-muted-foreground mt-1">{honour.description}</div>
+                        <div className="text-sm font-medium text-primary mt-1">
+                          ⚔️ {honour.effect}
+                        </div>
+                        {honour.faction && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Facção: {honour.faction}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+            
+            {!honoursData?.canAddMore && (
+              <div className="text-center text-muted-foreground py-4">
+                Esta unidade já tem o máximo de Battle Honours para seu rank.
+              </div>
+            )}
+          </div>
+        )}
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Fechar
+          </Button>
+          {honoursData?.canAddMore && selectedHonour && (
+            <Button onClick={handleAdd} disabled={addHonour.isPending}>
+              {addHonour.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adicionando...
+                </>
+              ) : (
+                'Adicionar Honour'
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Record Battle Dialog Component
+interface RecordBattleDialogProps {
+  unitId: number;
+  unitName: string;
+  onSuccess: () => void;
+}
+
+function RecordBattleDialog({ unitId, unitName, onSuccess }: RecordBattleDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [survived, setSurvived] = useState(true);
+  const [kills, setKills] = useState(0);
+  const [outOfAction, setOutOfAction] = useState('');
+
+  const recordBattle = trpc.crusadeUnit.recordBattleResult.useMutation({
+    onSuccess: (data) => {
+      onSuccess();
+      setIsOpen(false);
+      // Reset form
+      setSurvived(true);
+      setKills(0);
+      setOutOfAction('');
+      
+      // Show promotion alert if promoted
+      if (data.wasPromoted) {
+        alert(`🎉 ${unitName} foi promovido para ${data.newRank}! Ganhou ${data.xpEarned} XP.`);
+      }
+    },
+  });
+
+  const handleSubmit = () => {
+    recordBattle.mutate({
+      unitId,
+      survived,
+      enemyUnitsDestroyed: kills,
+      outOfActionStatus: outOfAction || undefined,
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">
+          <Swords className="mr-2 h-4 w-4" />
+          Registrar Batalha
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Registrar Resultado de Batalha</DialogTitle>
+          <DialogDescription>
+            Atualize as estatísticas de {unitName} após a batalha
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label>A unidade sobreviveu?</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={survived ? "default" : "outline"}
+                onClick={() => setSurvived(true)}
+                className="flex-1"
+              >
+                Sim
+              </Button>
+              <Button
+                type="button"
+                variant={!survived ? "destructive" : "outline"}
+                onClick={() => setSurvived(false)}
+                className="flex-1"
+              >
+                Não
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="kills">Unidades inimigas destruídas</Label>
+            <Input
+              id="kills"
+              type="number"
+              min="0"
+              value={kills}
+              onChange={(e) => setKills(parseInt(e.target.value) || 0)}
+            />
+          </div>
+          
+          {!survived && (
+            <div className="grid gap-2">
+              <Label htmlFor="outOfAction">Status Out of Action (opcional)</Label>
+              <Input
+                id="outOfAction"
+                value={outOfAction}
+                onChange={(e) => setOutOfAction(e.target.value)}
+                placeholder="Ex: Ferimento grave"
+              />
+            </div>
+          )}
+          
+          <div className="bg-muted p-3 rounded-md text-sm">
+            <div className="font-semibold mb-1">XP que será ganho:</div>
+            <div className="space-y-1 text-muted-foreground">
+              <div>• Jogou batalha: +1 XP</div>
+              {survived && <div>• Sobreviveu: +1 XP</div>}
+              {kills > 0 && <div>• {kills} kills: +{kills} XP</div>}
+              <div className="font-semibold text-foreground mt-2">
+                Total: +{1 + (survived ? 1 : 0) + kills} XP
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={recordBattle.isPending}>
+            {recordBattle.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Registrar'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface EditCrusadeNameDialogProps {
   unitId: number;
@@ -264,11 +595,14 @@ export default function PlayerDetail() {
                           </div>
                         </div>
                         
-                        <div className="text-right">
-                          <div className="text-2xl font-bold">{unit.experiencePoints} XP</div>
-                          <div className="text-sm text-muted-foreground">
-                            {unit.powerRating} PR • {unit.pointsCost} pts
+                        <div className="text-right space-y-2">
+                          <div>
+                            <div className="text-2xl font-bold">{unit.experiencePoints} XP</div>
+                            <div className="text-sm text-muted-foreground">
+                              {unit.powerRating} PR • {unit.pointsCost} pts
+                            </div>
                           </div>
+                          <XPProgressBar xp={unit.experiencePoints} rank={unit.rank} />
                         </div>
                       </div>
 
@@ -293,19 +627,51 @@ export default function PlayerDetail() {
                         </div>
                       </div>
 
+                      {/* Record Battle Button */}
+                      {!unit.isDestroyed && (
+                        <div className="mt-4 pt-4 border-t">
+                          <RecordBattleDialog
+                            unitId={unit.id}
+                            unitName={unit.unitName}
+                            onSuccess={() => {
+                              utils.crusadeUnit.list.invalidate({ playerId });
+                            }}
+                          />
+                        </div>
+                      )}
+
                       {(unit.battleHonours.length > 0 || unit.battleTraits.length > 0 || unit.battleScars.length > 0) && (
                         <div className="space-y-2 pt-4 border-t">
-                          {unit.battleHonours.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm font-semibold mb-1">
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2 text-sm font-semibold">
                                 <Award className="h-4 w-4 text-yellow-500" />
-                                Battle Honours
+                                Battle Honours ({unit.battleHonours.length})
                               </div>
-                              <div className="text-sm text-muted-foreground pl-6">
-                                {unit.battleHonours.join(', ')}
-                              </div>
+                              {!unit.isDestroyed && (
+                                <ManageBattleHonoursDialog
+                                  unitId={unit.id}
+                                  unitName={unit.unitName}
+                                  onSuccess={() => {
+                                    utils.crusadeUnit.list.invalidate({ playerId });
+                                  }}
+                                />
+                              )}
                             </div>
-                          )}
+                            {unit.battleHonours.length > 0 ? (
+                              <div className="text-sm space-y-1 pl-6">
+                                {unit.battleHonours.map((honourId: string) => (
+                                  <div key={honourId} className="text-muted-foreground">
+                                    • {honourId}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-muted-foreground pl-6 italic">
+                                Nenhuma Battle Honour ainda
+                              </div>
+                            )}
+                          </div>
                           
                           {unit.battleTraits.length > 0 && (
                             <div>
