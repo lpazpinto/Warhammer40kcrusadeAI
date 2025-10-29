@@ -146,9 +146,9 @@ export const appRouter = router({
         const totalUnits = units.length;
 
         return {
-          supplyLimit: player.supplyLimit,
-          supplyUsed: totalPowerLevel,
-          supplyRemaining: player.supplyLimit - totalPowerLevel,
+          supplyLimit: player.supplyLimit || 1000,
+          supplyUsed: totalPoints,
+          supplyRemaining: (player.supplyLimit || 1000) - totalPoints,
           totalPowerLevel,
           totalPoints,
           activeUnits,

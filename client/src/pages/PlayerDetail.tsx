@@ -1068,7 +1068,7 @@ export default function PlayerDetail() {
                 <div className="flex justify-between text-sm mb-2">
                   <span>Supply Used</span>
                   <span className={orderOfBattle.supplyRemaining < 0 ? 'text-red-500 font-bold' : ''}>
-                    {orderOfBattle.supplyUsed} / {orderOfBattle.supplyLimit} PL
+                    {orderOfBattle.supplyUsed} / {orderOfBattle.supplyLimit} pts
                   </span>
                 </div>
                 <Progress 
@@ -1077,7 +1077,7 @@ export default function PlayerDetail() {
                 />
                 {orderOfBattle.supplyRemaining < 0 && (
                   <p className="text-sm text-red-500 mt-2">
-                    ⚠️ Você excedeu o Supply Limit em {Math.abs(orderOfBattle.supplyRemaining)} PL!
+                    ⚠️ Você excedeu o Supply Limit em {Math.abs(orderOfBattle.supplyRemaining)} pts!
                   </p>
                 )}
               </div>

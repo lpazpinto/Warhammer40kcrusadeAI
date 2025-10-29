@@ -49,7 +49,7 @@ export const players = mysqlTable("players", {
   detachment: varchar("detachment", { length: 100 }), // e.g., "Combined Arms"
   crusadeForceName: varchar("crusadeForceName", { length: 255 }), // Name of the crusade force
   requisitionPoints: int("requisitionPoints").default(0).notNull(),
-  supplyLimit: int("supplyLimit").default(50).notNull(), // Crusade Supply Limit (starts at 50 PL)
+  supplyLimit: int('supplyLimit').default(1000), // Crusade Supply Limit (starts at 1000 pts)
   battleTally: int("battleTally").default(0).notNull(),
   victories: int("victories").default(0).notNull(),
   supplyPoints: int("supplyPoints").default(0).notNull(), // Horde Mode SP

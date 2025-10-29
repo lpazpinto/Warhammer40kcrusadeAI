@@ -222,3 +222,11 @@
 - [x] Step 5: Show summary of all changes (XP gained, ranks promoted, honours/scars assigned)
 - [x] Improve RecordBattleDialog to show automatic Honours/Scars
 
+
+
+## CRITICAL: Supply System Bug
+- [x] Change Supply Used from Power Level to Points (sum of pointsCost)
+- [x] Change Supply Limit default from 50 PL to 1000 points
+- [x] Update Order of Battle display to show points instead of PL
+- [x] Update database schema (supplyLimit field now stores points)
+

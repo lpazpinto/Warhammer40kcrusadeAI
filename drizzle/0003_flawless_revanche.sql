@@ -1,0 +1,1 @@
+ALTER TABLE `players` MODIFY COLUMN `supplyLimit` int DEFAULT 1000;
