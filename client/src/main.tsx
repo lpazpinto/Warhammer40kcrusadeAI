@@ -80,9 +80,12 @@ const validatingTransformer = {
       // Check for NaN BEFORE serialization
       const nanPath = hasNaNValue(object);
       if (nanPath) {
+        console.error('[TRPC Client] ============ NaN DETECTED ============');
         console.error('[TRPC Client] NaN detected at path:', nanPath);
-        console.error('[TRPC Client] Full object:', object);
+        console.error('[TRPC Client] Full object:', JSON.stringify(object, null, 2));
+        console.error('[TRPC Client] Current URL:', window.location.href);
         console.error('[TRPC Client] Stack trace:', new Error().stack);
+        console.error('[TRPC Client] ========================================');
         throw new Error(`Invalid data: NaN value found at ${nanPath}`);
       }
       

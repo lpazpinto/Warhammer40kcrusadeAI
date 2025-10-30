@@ -922,6 +922,9 @@ export const appRouter = router({
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
+        if (isNaN(input.id) || !isFinite(input.id)) {
+          throw new Error(`Invalid battle ID: ${input.id}`);
+        }
         const battle = await db.getBattleById(input.id);
         if (!battle) return null;
         

@@ -46,8 +46,17 @@ export default function BattleSetup() {
     spawnZones: 2
   });
 
-  const { data: campaign } = trpc.campaign.get.useQuery({ id: parseInt(campaignId!) });
-  const { data: players } = trpc.player.list.useQuery({ campaignId: parseInt(campaignId!) });
+  const campaignIdNum = campaignId ? parseInt(campaignId) : NaN;
+  const isValidCampaignId = Boolean(campaignId && !isNaN(campaignIdNum));
+  
+  const { data: campaign } = trpc.campaign.get.useQuery(
+    { id: campaignIdNum },
+    { enabled: isValidCampaignId }
+  );
+  const { data: players } = trpc.player.list.useQuery(
+    { campaignId: campaignIdNum },
+    { enabled: isValidCampaignId }
+  );
   const createBattle = trpc.battle.create.useMutation();
 
   const handleNext = () => {

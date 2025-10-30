@@ -292,3 +292,13 @@
 - [x] Fix routers.ts duplicate property and missing query method errors
 
 
+
+
+## New Bug Fix
+- [x] Fix player supplyLimit default value - should be 1000 points instead of 50
+
+
+
+- [x] Fix NaN error in battle.get query when accessing /battle/setup/:campaignId route
+
+
