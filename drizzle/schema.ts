@@ -158,3 +158,20 @@ export const battleParticipants = mysqlTable("battleParticipants", {
 export type BattleParticipant = typeof battleParticipants.$inferSelect;
 export type InsertBattleParticipant = typeof battleParticipants.$inferInsert;
 
+/**
+ * Campaign Phase Templates - predefined phases with narratives and bonuses
+ */
+export const campaignPhaseTemplates = mysqlTable("campaignPhaseTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignType: varchar("campaignType", { length: 100 }).default("armageddon").notNull(), // For future: different campaign types
+  phaseNumber: int("phaseNumber").notNull(), // 1-6 (Armageddon has 6 possible phases)
+  phaseName: varchar("phaseName", { length: 255 }).notNull(), // e.g., "Stabilising the Front"
+  narrative: text("narrative").notNull(), // Story/description of the phase
+  successBonus: text("successBonus").notNull(), // What happens if alliance succeeds
+  failureConsequence: text("failureConsequence").notNull(), // What happens if alliance fails
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CampaignPhaseTemplate = typeof campaignPhaseTemplates.$inferSelect;
+export type InsertCampaignPhaseTemplate = typeof campaignPhaseTemplates.$inferInsert;
+

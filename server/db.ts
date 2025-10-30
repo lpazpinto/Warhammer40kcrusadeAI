@@ -18,7 +18,9 @@ import {
   InsertBattle,
   battleParticipants,
   BattleParticipant,
-  InsertBattleParticipant
+  InsertBattleParticipant,
+  campaignPhaseTemplates,
+  CampaignPhaseTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -512,5 +514,31 @@ export async function getNextBattleNumber(campaignId: number): Promise<number> {
     .where(eq(battles.campaignId, campaignId));
   
   return (result[0]?.maxNumber || 0) + 1;
+}
+
+
+
+// Campaign Phase Templates
+export async function getCampaignPhaseTemplates(campaignType: string = 'armageddon'): Promise<CampaignPhaseTemplate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(campaignPhaseTemplates)
+    .where(eq(campaignPhaseTemplates.campaignType, campaignType))
+    .orderBy(campaignPhaseTemplates.phaseNumber);
+}
+
+export async function getCampaignPhaseTemplate(campaignType: string, phaseNumber: number): Promise<CampaignPhaseTemplate | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(campaignPhaseTemplates)
+    .where(and(
+      eq(campaignPhaseTemplates.campaignType, campaignType),
+      eq(campaignPhaseTemplates.phaseNumber, phaseNumber)
+    ))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
 }
 

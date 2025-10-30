@@ -375,14 +375,14 @@
 - [ ] Add Game Master selection (dropdown of players, or create new player as GM)
 - [x] Add campaign speed selection (1-4 battles per phase: Very Fast, Fast, Normal, Slow)
 - [x] Add strategic points goal input (points needed to win each phase)
-- [ ] Create predefined phase templates with stories and bonuses:
+- [x] Create predefined phase templates with stories and bonuses:
   - Phase I: Stabilising the Front
   - Phase II: Reclaim the Lost Hives  
   - Phase III: Strengthen the Imperator Line
   - Phase IV: Raze the Monoliths
   - Phase V: Light in the Dark
   - Phase VI: Shatter the Red Angel's Gate
-- [ ] Store phase narratives and bonuses in database
-- [ ] Prepare system for custom campaign phases in future
+- [x] Store phase narratives and bonuses in database
+- [x] Prepare system for custom campaign phases in future (campaignType field allows different campaign types)
 
 

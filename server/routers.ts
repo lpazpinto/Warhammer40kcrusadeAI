@@ -82,6 +82,28 @@ export const appRouter = router({
       }),
   }),
 
+  // Campaign Phase Templates
+  phase: router({
+    // Get all phase templates for a campaign type
+    list: publicProcedure
+      .input(z.object({ 
+        campaignType: z.string().default('armageddon') 
+      }))
+      .query(async ({ input }) => {
+        return await db.getCampaignPhaseTemplates(input.campaignType);
+      }),
+
+    // Get a specific phase template
+    get: publicProcedure
+      .input(z.object({ 
+        campaignType: z.string().default('armageddon'),
+        phaseNumber: z.number().min(1).max(6)
+      }))
+      .query(async ({ input }) => {
+        return await db.getCampaignPhaseTemplate(input.campaignType, input.phaseNumber);
+      }),
+  }),
+
   // Player management
   player: router({
     // List all players in a campaign
