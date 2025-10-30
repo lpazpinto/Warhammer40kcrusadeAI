@@ -126,29 +126,6 @@ export default function Campaigns() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="gameMaster">Game Master</Label>
-                  <Select
-                    value={newCampaign.gameMasterId?.toString() || "current"}
-                    onValueChange={(value) => 
-                      setNewCampaign({ 
-                        ...newCampaign, 
-                        gameMasterId: value === "current" ? user?.id : parseInt(value) 
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="current">{user?.name || "Você"} (atual)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    O Game Master gerencia as fases e batalhas da campanha
-                  </p>
-                </div>
-                
-                <div className="grid gap-2">
                   <Label htmlFor="faction">Facção da Horda</Label>
                   <Select
                     value={newCampaign.hordeFaction}

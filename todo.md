@@ -386,3 +386,40 @@
 - [x] Prepare system for custom campaign phases in future (campaignType field allows different campaign types)
 
 
+
+
+
+## Multiplayer Campaign System
+- [x] Update campaign creation: creator is automatically Game Master
+- [ ] Create campaign invitations system:
+  - [x] Add campaignInvitations table (campaignId, invitedUserId, status: pending/accepted/declined)
+  - [ ] Game Master can invite other users by email/username
+  - [ ] Invited users receive notification and can accept/decline
+  - [ ] Accepted users become Lord Commanders in the campaign
+  
+- [x] Update players table:
+  - [x] Add userId field to link player to user account
+  - [x] Add isReady boolean field (default false)
+  - [x] Track which user owns which player/army
+  
+- [ ] Permissions system:
+  - [ ] Only Game Master can modify campaign settings
+  - [ ] Only Game Master can start battles
+  - [ ] Each user can only manage their own player/army
+  - [ ] Users cannot view or edit other players' armies
+  
+- [ ] Ready status system:
+  - [ ] Add "Pronto para Batalha" button for each player
+  - [ ] Show ready status for all players in campaign
+  - [ ] Battle can only start when all players are ready
+  - [ ] Reset all players' ready status after each battle
+  
+- [ ] UI updates:
+  - [ ] Campaign detail page shows Game Master name
+  - [ ] Show list of invited/participating users
+  - [ ] Show ready status indicators for each player
+  - [ ] Invite users button (Game Master only)
+  - [ ] Ready button (visible only for own player)
+  - [ ] Start battle button (Game Master only, enabled when all ready)
+
+

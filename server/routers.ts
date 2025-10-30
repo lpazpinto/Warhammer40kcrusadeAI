@@ -53,9 +53,9 @@ export const appRouter = router({
         pointsLimit: z.number().default(1000),
         battlesPerPhase: z.number().min(1).max(4).default(3),
         strategicPointsToWin: z.number().min(1).default(10),
-        gameMasterId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Creator is automatically the Game Master
         return await db.createCampaign({
           userId: ctx.user.id,
           name: input.name,
@@ -63,7 +63,7 @@ export const appRouter = router({
           pointsLimit: input.pointsLimit,
           battlesPerPhase: input.battlesPerPhase,
           strategicPointsToWin: input.strategicPointsToWin,
-          gameMasterId: input.gameMasterId,
+          gameMasterId: ctx.user.id, // Creator is Game Master
           gameMode: '5_rounds', // Keep for backward compatibility but not used
         });
       }),
@@ -136,8 +136,12 @@ export const appRouter = router({
         detachment: z.string().optional(),
         crusadeForceName: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return await db.createPlayer(input);
+      .mutation(async ({ ctx, input }) => {
+        // Link player to current user
+        return await db.createPlayer({
+          ...input,
+          userId: ctx.user.id,
+        });
       }),
 
     // Update player stats

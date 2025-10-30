@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `players` \nADD COLUMN `userId` int DEFAULT NULL AFTER `campaignId`,\nADD COLUMN `isReady` boolean NOT NULL DEFAULT false AFTER `isAlive`",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute ALTER TABLE `players` \nADD COLUMN `userId` int DEFAULT NULL AFTER `campaignId`,\nADD COLUMN `isReady` boolean NOT NULL DEFAULT false AFTER `isAlive`",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1025
+}

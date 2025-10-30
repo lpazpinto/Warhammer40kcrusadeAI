@@ -55,6 +55,7 @@ export type InsertCampaign = typeof campaigns.$inferInsert;
 export const players = mysqlTable("players", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
+  userId: int("userId"), // User account that owns this player/army
   name: varchar("name", { length: 255 }).notNull(), // Lord Commander name
   faction: varchar("faction", { length: 100 }).notNull(), // e.g., "Astra Militarum"
   detachment: varchar("detachment", { length: 100 }), // e.g., "Combined Arms"
@@ -68,6 +69,7 @@ export const players = mysqlTable("players", {
   secretObjective: text("secretObjective"), // JSON string for current secret objective
   secretObjectiveRevealed: boolean("secretObjectiveRevealed").default(false).notNull(),
   isAlive: boolean("isAlive").default(true).notNull(), // For Horde Mode survival tracking
+  isReady: boolean("isReady").default(false).notNull(), // Ready for next battle
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -174,4 +176,20 @@ export const campaignPhaseTemplates = mysqlTable("campaignPhaseTemplates", {
 
 export type CampaignPhaseTemplate = typeof campaignPhaseTemplates.$inferSelect;
 export type InsertCampaignPhaseTemplate = typeof campaignPhaseTemplates.$inferInsert;
+
+/**
+ * Campaign Invitations - track invitations to join campaigns
+ */
+export const campaignInvitations = mysqlTable("campaignInvitations", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  invitedUserId: int("invitedUserId").notNull(), // User being invited
+  invitedByUserId: int("invitedByUserId").notNull(), // Game Master who sent invite
+  status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  respondedAt: timestamp("respondedAt"),
+});
+
+export type CampaignInvitation = typeof campaignInvitations.$inferSelect;
+export type InsertCampaignInvitation = typeof campaignInvitations.$inferInsert;
 
