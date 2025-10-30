@@ -15,6 +15,7 @@ type BattleConfig = {
   mission: string;
   selectedPlayers: number[];
   spawnZones: number;
+  playerUnits: Record<number, number[]>; // playerId -> array of unitIds
 };
 
 
@@ -38,12 +39,14 @@ export default function BattleSetup() {
   const { campaignId } = useParams<{ campaignId: string }>();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [config, setConfig] = useState<BattleConfig>({
     gameSize: 1000,
     deployment: "",
     mission: "",
     selectedPlayers: [],
-    spawnZones: 2
+    spawnZones: 2,
+    playerUnits: {}
   });
 
   const campaignIdNum = campaignId ? parseInt(campaignId) : NaN;
@@ -60,7 +63,13 @@ export default function BattleSetup() {
   const createBattle = trpc.battle.create.useMutation();
 
   const handleNext = () => {
-    if (step < 4) setStep(step + 1);
+    if (step < 5) {
+      setStep(step + 1);
+      // Reset player index when entering unit selection step
+      if (step === 2) {
+        setCurrentPlayerIndex(0);
+      }
+    }
   };
 
   const handleBack = () => {
@@ -100,8 +109,13 @@ export default function BattleSetup() {
       case 2:
         return config.selectedPlayers.length > 0;
       case 3:
-        return config.deployment !== "" && config.mission !== "";
+        // Check that all selected players have chosen at least one unit
+        return config.selectedPlayers.every(playerId => 
+          config.playerUnits[playerId]?.length > 0
+        );
       case 4:
+        return config.deployment !== "" && config.mission !== "";
+      case 5:
         return true;
       default:
         return false;
@@ -125,7 +139,7 @@ export default function BattleSetup() {
 
         {/* Progress Steps */}
         <div className="flex items-center justify-between mb-8">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div key={s} className="flex items-center flex-1">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
@@ -138,7 +152,7 @@ export default function BattleSetup() {
               >
                 {s < step ? <Check className="h-5 w-5" /> : s}
               </div>
-              {s < 4 && (
+              {s < 5 && (
                 <div
                   className={`h-1 flex-1 mx-2 ${
                     s < step ? "bg-primary" : "bg-muted"
@@ -154,8 +168,9 @@ export default function BattleSetup() {
             <CardTitle>
               {step === 1 && "Passo 1: Tamanho do Jogo"}
               {step === 2 && "Passo 2: Selecionar Jogadores"}
-              {step === 3 && "Passo 3: Deployment e Missão"}
-              {step === 4 && "Passo 4: Revisar e Iniciar"}
+              {step === 3 && "Passo 3: Selecionar Unidades"}
+              {step === 4 && "Passo 4: Deployment e Missão"}
+              {step === 5 && "Passo 5: Revisar e Iniciar"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -232,8 +247,138 @@ export default function BattleSetup() {
               </div>
             )}
 
-            {/* Step 3: Deployment and Mission */}
-            {step === 3 && (
+            {/* Step 3: Unit Selection */}
+            {step === 3 && (() => {
+              const currentPlayerId = config.selectedPlayers[currentPlayerIndex];
+              const currentPlayer = players?.find(p => p.id === currentPlayerId);
+              const pointsPerPlayer = Math.floor(config.gameSize / config.selectedPlayers.length);
+              
+              // Fetch units for current player
+              const { data: units, isLoading } = trpc.crusadeUnit.list.useQuery(
+                { playerId: currentPlayerId },
+                { enabled: !!currentPlayerId }
+              );
+              
+              // Get selected unit IDs for current player
+              const selectedUnitIds = config.playerUnits[currentPlayerId] || [];
+              
+              // Calculate total points of selected units
+              const totalPoints = units?.reduce((sum, unit) => {
+                if (selectedUnitIds.includes(unit.id)) {
+                  return sum + unit.pointsCost;
+                }
+                return sum;
+              }, 0) || 0;
+              
+              const isOverLimit = totalPoints > pointsPerPlayer;
+              
+              const toggleUnit = (unitId: number, unitPoints: number) => {
+                const currentSelected = config.playerUnits[currentPlayerId] || [];
+                const isSelected = currentSelected.includes(unitId);
+                
+                let newSelected: number[];
+                if (isSelected) {
+                  // Remove unit
+                  newSelected = currentSelected.filter(id => id !== unitId);
+                } else {
+                  // Add unit only if it doesn't exceed limit
+                  const newTotal = totalPoints + unitPoints;
+                  if (newTotal <= pointsPerPlayer) {
+                    newSelected = [...currentSelected, unitId];
+                  } else {
+                    return; // Don't add if over limit
+                  }
+                }
+                
+                setConfig(prev => ({
+                  ...prev,
+                  playerUnits: {
+                    ...prev.playerUnits,
+                    [currentPlayerId]: newSelected
+                  }
+                }));
+              };
+              
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-medium">{currentPlayer?.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Jogador {currentPlayerIndex + 1} de {config.selectedPlayers.length}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Pontos Usados</p>
+                      <p className={`text-2xl font-bold ${isOverLimit ? 'text-destructive' : 'text-primary'}`}>
+                        {totalPoints} / {pointsPerPlayer} pts
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {isLoading ? (
+                    <div className="p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
+                      <p>Carregando unidades...</p>
+                    </div>
+                  ) : units && units.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {units.map(unit => {
+                        const isSelected = selectedUnitIds.includes(unit.id);
+                        const wouldExceed = !isSelected && (totalPoints + unit.pointsCost > pointsPerPlayer);
+                        
+                        return (
+                          <div
+                            key={unit.id}
+                            className={`flex items-center space-x-3 p-3 border rounded-lg ${
+                              isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
+                            } ${wouldExceed ? 'opacity-50' : 'cursor-pointer'}`}
+                            onClick={() => !wouldExceed && toggleUnit(unit.id, unit.pointsCost)}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              disabled={wouldExceed}
+                              onCheckedChange={() => toggleUnit(unit.id, unit.pointsCost)}
+                            />
+                            <div className="flex-1">
+                              <p className="font-medium">{unit.unitName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {unit.category} • {unit.powerRating} PL • Rank: {unit.rank}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold">{unit.pointsCost} pts</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
+                      <p>Nenhuma unidade disponível</p>
+                      <p className="text-xs mt-2">Adicione unidades ao Order of Battle primeiro</p>
+                    </div>
+                  )}
+                  
+                  {selectedUnitIds.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Selecione pelo menos uma unidade para continuar
+                    </p>
+                  )}
+                  
+                  {currentPlayerIndex < config.selectedPlayers.length - 1 && selectedUnitIds.length > 0 && (
+                    <Button 
+                      onClick={() => setCurrentPlayerIndex(currentPlayerIndex + 1)}
+                      className="w-full"
+                    >
+                      Próximo Jogador
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Step 4: Deployment and Mission */}
+            {step === 4 && (
               <>
                 <div className="space-y-3">
                   <Label htmlFor="deployment">Deployment</Label>
@@ -279,8 +424,8 @@ export default function BattleSetup() {
               </>
             )}
 
-            {/* Step 4: Review */}
-            {step === 4 && (
+            {/* Step 5: Review */}
+            {step === 5 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -306,14 +451,27 @@ export default function BattleSetup() {
                 </div>
 
                 <div>
-                  <Label className="text-muted-foreground">Jogadores Participantes</Label>
-                  <div className="mt-2 space-y-2">
+                  <Label className="text-muted-foreground">Jogadores e Unidades</Label>
+                  <div className="mt-2 space-y-3">
                     {config.selectedPlayers.map((playerId) => {
                       const player = players?.find(p => p.id === playerId);
+                      const selectedUnitIds = config.playerUnits[playerId] || [];
+                      const pointsPerPlayer = Math.floor(config.gameSize / config.selectedPlayers.length);
+                      
                       return player ? (
-                        <div key={player.id} className="p-3 border rounded-lg">
-                          <p className="font-medium">{player.name}</p>
-                          <p className="text-sm text-muted-foreground">{player.faction}</p>
+                        <div key={player.id} className="p-4 border rounded-lg space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium">{player.name}</p>
+                              <p className="text-sm text-muted-foreground">{player.faction}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Limite: {pointsPerPlayer} pts
+                            </p>
+                          </div>
+                          <div className="text-sm">
+                            <p className="text-muted-foreground mb-1">Unidades selecionadas: {selectedUnitIds.length}</p>
+                          </div>
                         </div>
                       ) : null;
                     })}
@@ -333,7 +491,7 @@ export default function BattleSetup() {
                 Voltar
               </Button>
 
-              {step < 4 ? (
+              {step < 5 ? (
                 <Button
                   onClick={handleNext}
                   disabled={!canProceed()}

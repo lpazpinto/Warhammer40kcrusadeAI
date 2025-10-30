@@ -302,3 +302,14 @@
 - [x] Fix NaN error in battle.get query when accessing /battle/setup/:campaignId route
 
 
+
+
+## Battle Unit Selection Feature
+- [x] Add step in battle wizard for each player to select units from their Order of Battle
+- [x] Calculate points limit per player (battle size / number of players)
+- [x] Show available units with points costs
+- [x] Validate total points don't exceed player's limit
+- [x] Display selected units summary before battle starts
+- [ ] Store selected unit IDs in battle participants table (will be implemented when battle creation is finalized)
+
+
