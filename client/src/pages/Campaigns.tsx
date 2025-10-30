@@ -20,8 +20,10 @@ export default function Campaigns() {
   const [newCampaign, setNewCampaign] = useState({
     name: "",
     hordeFaction: "",
-    gameMode: "5_rounds" as "5_rounds" | "infinite",
     pointsLimit: 1000,
+    battlesPerPhase: 3,
+    strategicPointsToWin: 10,
+    gameMasterId: undefined as number | undefined,
   });
 
   const { data: campaigns, isLoading, refetch } = trpc.campaign.list.useQuery(undefined, {
@@ -143,21 +145,38 @@ export default function Campaigns() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="gameMode">Modo de Jogo</Label>
+                  <Label htmlFor="campaignSpeed">Velocidade da Campanha</Label>
                   <Select
-                    value={newCampaign.gameMode}
-                    onValueChange={(value: "5_rounds" | "infinite") => 
-                      setNewCampaign({ ...newCampaign, gameMode: value })
+                    value={newCampaign.battlesPerPhase.toString()}
+                    onValueChange={(value) => 
+                      setNewCampaign({ ...newCampaign, battlesPerPhase: parseInt(value) })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="5_rounds">5 Rodadas</SelectItem>
-                      <SelectItem value="infinite">Infinito</SelectItem>
+                      <SelectItem value="1">Muito Rápida (1 batalha por fase)</SelectItem>
+                      <SelectItem value="2">Rápida (2 batalhas por fase)</SelectItem>
+                      <SelectItem value="3">Normal (3 batalhas por fase)</SelectItem>
+                      <SelectItem value="4">Lenta (4 batalhas por fase)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="strategicPoints">Pontos Estratégicos para Vitória</Label>
+                  <Input
+                    id="strategicPoints"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={newCampaign.strategicPointsToWin}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, strategicPointsToWin: parseInt(e.target.value) || 10 })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Pontos necessários para a aliança vencer cada fase
+                  </p>
                 </div>
                 
                 <div className="grid gap-2">
@@ -227,12 +246,10 @@ export default function Campaigns() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {campaign.gameMode === '5_rounds' ? '5 Rodadas' : 'Modo Infinito'}
-                        </span>
+                        <span>4 Fases</span>
                       </div>
                       <div className="text-muted-foreground">
-                        Rodada atual: {campaign.currentBattleRound}
+                        Fase atual: {campaign.currentPhase || 1}
                       </div>
                     </div>
                   </CardContent>

@@ -50,16 +50,21 @@ export const appRouter = router({
       .input(z.object({
         name: z.string(),
         hordeFaction: z.string(),
-        gameMode: z.enum(['5_rounds', 'infinite']).default('5_rounds'),
         pointsLimit: z.number().default(1000),
+        battlesPerPhase: z.number().min(1).max(4).default(3),
+        strategicPointsToWin: z.number().min(1).default(10),
+        gameMasterId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return await db.createCampaign({
           userId: ctx.user.id,
           name: input.name,
           hordeFaction: input.hordeFaction,
-          gameMode: input.gameMode,
           pointsLimit: input.pointsLimit,
+          battlesPerPhase: input.battlesPerPhase,
+          strategicPointsToWin: input.strategicPointsToWin,
+          gameMasterId: input.gameMasterId,
+          gameMode: '5_rounds', // Keep for backward compatibility but not used
         });
       }),
 

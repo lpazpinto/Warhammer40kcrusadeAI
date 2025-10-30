@@ -122,7 +122,7 @@ export default function CampaignDetail() {
             <div>
               <h1 className="text-4xl font-bold mb-2">{campaign.name}</h1>
               <p className="text-muted-foreground">
-                vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Rodada {campaign.currentBattleRound}
+                vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Fase {campaign.currentPhase || 1} de 4
               </p>
             </div>
             
@@ -310,10 +310,8 @@ export default function CampaignDetail() {
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Modo de Jogo</div>
-                  <div className="font-semibold">
-                    {campaign.gameMode === '5_rounds' ? '5 Rodadas' : 'Infinito'}
-                  </div>
+                  <div className="text-sm text-muted-foreground">Fase Atual</div>
+                  <div className="font-semibold">Fase {campaign.currentPhase || 1} de 4</div>
                 </div>
                 
                 <div>
@@ -322,8 +320,24 @@ export default function CampaignDetail() {
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Rodada Atual</div>
-                  <div className="font-semibold">{campaign.currentBattleRound}</div>
+                  <div className="text-sm text-muted-foreground">Pontos Estratégicos</div>
+                  <div className="font-semibold">
+                    {(() => {
+                      const phase = campaign.currentPhase || 1;
+                      const points = [
+                        campaign.phase1StrategicPoints || 0,
+                        campaign.phase2StrategicPoints || 0,
+                        campaign.phase3StrategicPoints || 0,
+                        campaign.phase4StrategicPoints || 0
+                      ][phase - 1];
+                      return `${points} / ${campaign.strategicPointsToWin || 10}`;
+                    })()}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-muted-foreground">Batalhas por Fase</div>
+                  <div className="font-semibold">{campaign.battlesPerPhase || 3}</div>
                 </div>
               </CardContent>
             </Card>
