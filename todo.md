@@ -313,3 +313,9 @@
 - [ ] Store selected unit IDs in battle participants table (will be implemented when battle creation is finalized)
 
 
+
+
+## Bug Fix
+- [x] Fix "Rendered more hooks than during the previous render" error in BattleSetup - extracted UnitSelection into separate component
+
+
