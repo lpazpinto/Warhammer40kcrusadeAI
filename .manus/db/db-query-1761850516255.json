@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE campaigns \nADD COLUMN IF NOT EXISTS gameMasterId INT,\nADD COLUMN IF NOT EXISTS battlesPerPhase INT NOT NULL DEFAULT 3,\nADD COLUMN IF NOT EXISTS strategicPointsToWin INT NOT NULL DEFAULT 10,\nADD COLUMN IF NOT EXISTS currentPhase INT NOT NULL DEFAULT 1,\nADD COLUMN IF NOT EXISTS phase1StrategicPoints INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS phase2StrategicPoints INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS phase3StrategicPoints INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS phase4StrategicPoints INT NOT NULL DEFAULT 0",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute ALTER TABLE campaigns \nADD COLUMN IF NOT EXISTS gameMasterId INT,\nADD COLUMN IF NOT EXISTS battlesPerPhase INT NOT NULL DEFAULT 3,\nADD COLUMN IF NOT EXISTS strategicPointsToWin INT NOT NULL DEFAULT 10,\nADD COLUMN IF NOT EXISTS currentPhase INT NOT NULL DEFAULT 1,\nADD COLUMN IF NOT EXISTS phase1StrategicPoints INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS phase2StrategicPoints INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS phase3StrategicPoints INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS phase4StrategicPoints INT NOT NULL DEFAULT 0",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2972
+}

@@ -319,3 +319,52 @@
 - [x] Fix "Rendered more hooks than during the previous render" error in BattleSetup - extracted UnitSelection into separate component
 
 
+
+- [ ] Fix battle.get NaN error - find and remove code trying to fetch battle with invalid ID
+
+
+
+
+## Campaign Phase Management System
+- [x] Update campaign schema to include:
+  - gameMaster (player who manages the campaign)
+  - battlesPerPhase (number of battles each phase should have)
+  - strategicPointsToWin (points needed to win a phase)
+  - currentPhase (1-4)
+  - phaseStrategicPoints (points earned in current phase)
+  
+- [ ] Create campaign phases tracking:
+  - Phase 1, 2, 3, 4
+  - Track strategic points per phase
+  - Determine phase success/failure based on strategic points
+  - Reset strategic points when moving to next phase
+  
+- [x] Update battle schema to include:
+  - phaseNumber (which phase this battle belongs to)
+  - strategicPointsEarned (points earned by alliance in this battle)
+  
+- [ ] Campaign detail page improvements:
+  - Show current phase (1-4)
+  - Show strategic points progress for current phase
+  - Show phase success/failure status
+  - List all battles organized by phase
+  - Show battle results and strategic points earned
+  
+- [ ] Battle completion flow:
+  - Record strategic points earned
+  - Update phase strategic points total
+  - Check if phase is complete (all battles played OR strategic points goal reached)
+  - Automatically advance to next phase when current phase ends
+  - Show phase results (success/failure)
+  
+- [ ] Campaign creation flow:
+  - Select game master from players
+  - Define battles per phase (campaign speed: 1-4 battles)
+  - Define strategic points needed to win each phase
+  
+- [ ] Campaign end condition:
+  - After phase 4, determine overall campaign winner
+  - Show final campaign results
+  - Mark campaign as completed
+
+

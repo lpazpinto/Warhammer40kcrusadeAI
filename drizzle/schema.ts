@@ -31,6 +31,17 @@ export const campaigns = mysqlTable("campaigns", {
   gameMode: mysqlEnum("gameMode", ["5_rounds", "infinite"]).default("5_rounds").notNull(),
   pointsLimit: int("pointsLimit").default(1000).notNull(), // 1000 or 2000
   currentBattleRound: int("currentBattleRound").default(0).notNull(),
+  
+  // Campaign Phase Management
+  gameMasterId: int("gameMasterId"), // Player ID of the game master
+  battlesPerPhase: int("battlesPerPhase").default(3).notNull(), // 1-4 battles per phase (campaign speed)
+  strategicPointsToWin: int("strategicPointsToWin").default(10).notNull(), // Points needed to win a phase
+  currentPhase: int("currentPhase").default(1).notNull(), // 1-4
+  phase1StrategicPoints: int("phase1StrategicPoints").default(0).notNull(),
+  phase2StrategicPoints: int("phase2StrategicPoints").default(0).notNull(),
+  phase3StrategicPoints: int("phase3StrategicPoints").default(0).notNull(),
+  phase4StrategicPoints: int("phase4StrategicPoints").default(0).notNull(),
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -110,6 +121,8 @@ export const battles = mysqlTable("battles", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
   battleNumber: int("battleNumber").notNull(), // Sequential battle number in campaign
+  phaseNumber: int("phaseNumber").default(1).notNull(), // Which phase (1-4) this battle belongs to
+  strategicPointsEarned: int("strategicPointsEarned").default(0).notNull(), // Strategic points earned by alliance
   deployment: varchar("deployment", { length: 100 }), // e.g., "Dawn of War"
   missionPack: varchar("missionPack", { length: 100 }), // e.g., "Leviathan"
   battleRound: int("battleRound").default(1).notNull(), // Current round (1-5 or more)

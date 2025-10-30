@@ -920,11 +920,15 @@ export const appRouter = router({
 
     // Get battle by ID
     get: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        if (isNaN(input.id) || !isFinite(input.id)) {
-          throw new Error(`Invalid battle ID: ${input.id}`);
-        }
+      .input(z.object({ id: z.number().refine((val) => !isNaN(val) && isFinite(val), {
+        message: "Battle ID must be a valid finite number"
+      }) }))
+      .query(async ({ input, ctx }) => {
+        console.log('[battle.get] ===== CALLED =====');
+        console.log('[battle.get] Input:', JSON.stringify(input));
+        console.log('[battle.get] User:', ctx.user?.name);
+        console.log('[battle.get] ========================');
+        
         const battle = await db.getBattleById(input.id);
         if (!battle) return null;
         
