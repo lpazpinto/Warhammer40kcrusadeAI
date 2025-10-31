@@ -20,7 +20,10 @@ import {
   BattleParticipant,
   InsertBattleParticipant,
   campaignPhaseTemplates,
-  CampaignPhaseTemplate
+  CampaignPhaseTemplate,
+  campaignInvitations,
+  CampaignInvitation,
+  InsertCampaignInvitation
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -537,6 +540,90 @@ export async function getCampaignPhaseTemplate(campaignType: string, phaseNumber
       eq(campaignPhaseTemplates.campaignType, campaignType),
       eq(campaignPhaseTemplates.phaseNumber, phaseNumber)
     ))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
+}
+
+
+
+// ==================== Campaign Invitations ====================
+
+export async function createInvitation(invitation: InsertCampaignInvitation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(campaignInvitations).values(invitation);
+  return result;
+}
+
+export async function getInvitationsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(campaignInvitations)
+    .where(eq(campaignInvitations.invitedUserId, userId))
+    .orderBy(desc(campaignInvitations.createdAt));
+}
+
+export async function updateInvitationStatus(
+  invitationId: number,
+  status: "accepted" | "declined"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(campaignInvitations)
+    .set({ status, respondedAt: new Date() })
+    .where(eq(campaignInvitations.id, invitationId));
+}
+
+// ==================== Player Ready Status ====================
+
+export async function togglePlayerReady(playerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get current ready status
+  const player = await db
+    .select()
+    .from(players)
+    .where(eq(players.id, playerId))
+    .limit(1);
+  
+  if (player.length === 0) throw new Error("Player not found");
+  
+  const newStatus = !player[0].isReady;
+  
+  await db
+    .update(players)
+    .set({ isReady: newStatus })
+    .where(eq(players.id, playerId));
+  
+  return newStatus;
+}
+
+export async function resetAllPlayersReady(campaignId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(players)
+    .set({ isReady: false })
+    .where(eq(players.campaignId, campaignId));
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
     .limit(1);
   
   return result.length > 0 ? result[0] : undefined;

@@ -423,3 +423,24 @@
   - [ ] Start battle button (Game Master only, enabled when all ready)
 
 
+
+
+## Ready Status and Invite UI
+- [ ] Create tRPC endpoints for invitations:
+  - [ ] invitation.send (GM only, requires email/username)
+  - [ ] invitation.list (get pending invitations for current user)
+  - [ ] invitation.accept (accept invitation)
+  - [ ] invitation.decline (decline invitation)
+  
+- [ ] Create tRPC endpoints for ready status:
+  - [ ] player.toggleReady (toggle own player's ready status)
+  - [ ] player.resetAllReady (reset all players after battle, GM only)
+  
+- [ ] Update CampaignDetail UI:
+  - [ ] Add "Convidar Jogador" button (GM only, next to "Adicionar Jogador")
+  - [ ] Show ready status indicator for each player (checkmark icon)
+  - [ ] Add "Pronto para Batalha" toggle button for each player (only for own player)
+  - [ ] Update "Iniciar Batalha" button to only enable when all players are ready
+  - [ ] Show count of ready players (e.g., "2/3 jogadores prontos")
+
+

@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { parseArmyList, estimatePowerRating } from "./armyParser";
@@ -231,6 +232,20 @@ export const appRouter = router({
             points: parsed.points,
           }
         };
+      }),
+    
+    // Toggle player ready status
+    toggleReady: protectedProcedure
+      .input(z.object({ playerId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify player belongs to current user
+        const player = await db.getPlayerById(input.playerId);
+        if (!player || player.userId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only toggle ready status for your own player' });
+        }
+        
+        const newStatus = await db.togglePlayerReady(input.playerId);
+        return { isReady: newStatus };
       }),
   }),
 
@@ -1158,6 +1173,60 @@ export const appRouter = router({
           input.completedObjective,
           input.isVictorious
         );
+      }),
+  }),
+
+  // Campaign Invitations
+  invitation: router({
+    // Send invitation (Game Master only)
+    send: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        email: z.string().email(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if user is Game Master
+        const campaign = await db.getCampaignById(input.campaignId);
+        if (!campaign || campaign.gameMasterId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only Game Master can invite players' });
+        }
+        
+        // Find user by email
+        const invitedUser = await db.getUserByEmail(input.email);
+        if (!invitedUser) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found with this email' });
+        }
+        
+        // Create invitation
+        await db.createInvitation({
+          campaignId: input.campaignId,
+          invitedUserId: invitedUser.id,
+          invitedByUserId: ctx.user.id,
+        });
+        
+        return { success: true };
+      }),
+    
+    // List invitations for current user
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getInvitationsByUserId(ctx.user.id);
+      }),
+    
+    // Accept invitation
+    accept: protectedProcedure
+      .input(z.object({ invitationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateInvitationStatus(input.invitationId, 'accepted');
+        return { success: true };
+      }),
+    
+    // Decline invitation
+    decline: protectedProcedure
+      .input(z.object({ invitationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateInvitationStatus(input.invitationId, 'declined');
+        return { success: true };
       }),
   }),
 });

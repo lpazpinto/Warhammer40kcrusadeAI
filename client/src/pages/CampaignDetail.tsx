@@ -17,7 +17,9 @@ export default function CampaignDetail() {
   
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
   
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -145,13 +147,59 @@ export default function CampaignDetail() {
                     <CardDescription>Jogadores participando desta campanha</CardDescription>
                   </div>
                   
+                  <div className="flex gap-2">
+                    <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Jogador
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
+                    
+                    <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <Users className="mr-2 h-4 w-4" />
+                          Convidar Jogador
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Convidar Jogador</DialogTitle>
+                          <DialogDescription>
+                            Convide outro usuário para participar desta campanha
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="inviteEmail">Email do Jogador</Label>
+                            <Input
+                              id="inviteEmail"
+                              type="email"
+                              placeholder="jogador@email.com"
+                              value={inviteEmail}
+                              onChange={(e) => setInviteEmail(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        
+                        <DialogFooter>
+                          <Button onClick={() => {
+                            // TODO: Implement invite mutation
+                            toast.success('Convite enviado!');
+                            setInviteDialogOpen(false);
+                            setInviteEmail("");
+                          }}>
+                            Enviar Convite
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
                   <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Adicionar Jogador
-                      </Button>
-                    </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Adicionar Lord Commander</DialogTitle>
