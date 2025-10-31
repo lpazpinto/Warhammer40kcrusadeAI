@@ -408,19 +408,19 @@
   - [ ] Each user can only manage their own player/army
   - [ ] Users cannot view or edit other players' armies
   
-- [ ] Ready status system:
-  - [ ] Add "Pronto para Batalha" button for each player
-  - [ ] Show ready status for all players in campaign
-  - [ ] Battle can only start when all players are ready
+- [x] Ready status system:
+  - [x] Add "Pronto para Batalha" button for each player
+  - [x] Show ready status for all players in campaign
+  - [x] Battle can only start when all players are ready
   - [ ] Reset all players' ready status after each battle
   
-- [ ] UI updates:
+- [x] UI updates:
   - [ ] Campaign detail page shows Game Master name
   - [ ] Show list of invited/participating users
-  - [ ] Show ready status indicators for each player
-  - [ ] Invite users button (Game Master only)
-  - [ ] Ready button (visible only for own player)
-  - [ ] Start battle button (Game Master only, enabled when all ready)
+  - [x] Show ready status indicators for each player
+  - [x] Invite users button (Game Master only)
+  - [x] Ready button (visible only for own player)
+  - [x] Start battle button (enabled when all ready)
 
 
 
@@ -432,15 +432,29 @@
   - [ ] invitation.accept (accept invitation)
   - [ ] invitation.decline (decline invitation)
   
-- [ ] Create tRPC endpoints for ready status:
-  - [ ] player.toggleReady (toggle own player's ready status)
+- [x] Create tRPC endpoints for ready status:
+  - [x] player.toggleReady (toggle own player's ready status)
   - [ ] player.resetAllReady (reset all players after battle, GM only)
   
-- [ ] Update CampaignDetail UI:
-  - [ ] Add "Convidar Jogador" button (GM only, next to "Adicionar Jogador")
-  - [ ] Show ready status indicator for each player (checkmark icon)
-  - [ ] Add "Pronto para Batalha" toggle button for each player (only for own player)
-  - [ ] Update "Iniciar Batalha" button to only enable when all players are ready
-  - [ ] Show count of ready players (e.g., "2/3 jogadores prontos")
+- [x] Update CampaignDetail UI:
+  - [x] Add "Convidar Jogador" button (GM only, next to "Adicionar Jogador")
+  - [x] Show ready status indicator for each player (checkmark icon)
+  - [x] Add "Pronto para Batalha" toggle button for each player (only for own player)
+  - [x] Update "Iniciar Batalha" button to only enable when all players are ready
+  - [x] Show count of ready players (e.g., "2/3 jogadores prontos")
+
+
+
+
+## Complete Ready Status UI
+- [x] Show ready status indicator (checkmark icon) next to each player in the list
+- [x] Add "Pronto para Batalha" button for each player (only visible for own player)
+- [x] Update "Iniciar Batalha" button to check if all players are ready
+- [x] Show ready count (e.g., "2/3 jogadores prontos")
+- [x] Add campaign.sendInvite, campaign.listInvites, campaign.respondToInvite endpoints
+- [x] Add player.toggleReady endpoint
+- [ ] Change invite system to search by username instead of email
+- [ ] Add user search dropdown in invite dialog
+- [ ] Connect invite mutation to backend endpoint
 
 

@@ -81,6 +81,42 @@ export const appRouter = router({
         await db.updateCampaign(id, updates);
         return { success: true };
       }),
+
+    // Send campaign invitation
+    sendInvite: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        invitedUserId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify user is the Game Master
+        const campaign = await db.getCampaignById(input.campaignId);
+        if (!campaign || campaign.gameMasterId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the Game Master can send invites' });
+        }
+        
+        return await db.createInvitation({
+          campaignId: input.campaignId,
+          invitedUserId: input.invitedUserId,
+          invitedByUserId: ctx.user.id,
+        });
+      }),
+
+    // List invitations for current user
+    listInvites: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getInvitationsByUserId(ctx.user.id);
+    }),
+
+    // Respond to invitation
+    respondToInvite: protectedProcedure
+      .input(z.object({
+        invitationId: z.number(),
+        accept: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const status = input.accept ? 'accepted' : 'declined';
+        return await db.updateInvitationStatus(input.invitationId, status);
+      }),
   }),
 
   // Campaign Phase Templates

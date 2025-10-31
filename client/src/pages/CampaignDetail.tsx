@@ -5,15 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Sword, Upload, Users } from "lucide-react";
+import { CheckCircle2, Loader2, Plus, Sword, Upload, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
   const campaignId = parseInt(id || '0');
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -75,6 +77,16 @@ export default function CampaignDetail() {
     },
   });
 
+  const toggleReady = trpc.player.toggleReady.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isReady ? "Você está pronto para batalha!" : "Status de prontidão removido");
+      refetchPlayers();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao alterar status: ${error.message}`);
+    },
+  });
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -126,14 +138,37 @@ export default function CampaignDetail() {
               <p className="text-muted-foreground">
                 vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Fase {campaign.currentPhase || 1} de 4
               </p>
+              {players && players.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {players.filter(p => p.isReady).length}/{players.length} jogadores prontos
+                </p>
+              )}
             </div>
             
-            <Button size="lg" asChild>
-              <Link href={`/battle/setup/${campaign.id}`}>
-                <Sword className="mr-2 h-5 w-5" />
-                Iniciar Batalha
-              </Link>
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              <Button 
+                size="lg" 
+                asChild={players && players.length > 0 && players.every(p => p.isReady)}
+                disabled={!players || players.length === 0 || !players.every(p => p.isReady)}
+              >
+                {players && players.length > 0 && players.every(p => p.isReady) ? (
+                  <Link href={`/battle/setup/${campaign.id}`}>
+                    <Sword className="mr-2 h-5 w-5" />
+                    Iniciar Batalha
+                  </Link>
+                ) : (
+                  <>
+                    <Sword className="mr-2 h-5 w-5" />
+                    Iniciar Batalha
+                  </>
+                )}
+              </Button>
+              {players && players.length > 0 && !players.every(p => p.isReady) && (
+                <p className="text-xs text-muted-foreground">
+                  Aguardando todos os jogadores ficarem prontos
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -275,7 +310,12 @@ export default function CampaignDetail() {
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold mb-1">{player.name}</h3>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-lg font-semibold">{player.name}</h3>
+                                {player.isReady && (
+                                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground mb-3">
                                 {player.faction} {player.detachment && `• ${player.detachment}`}
                               </p>
@@ -301,6 +341,23 @@ export default function CampaignDetail() {
                             </div>
                             
                             <div className="flex gap-2">
+                              {/* Show Ready button only for own player */}
+                              {player.userId === user?.id && (
+                                <Button
+                                  size="sm"
+                                  variant={player.isReady ? "default" : "outline"}
+                                  onClick={() => toggleReady.mutate({ playerId: player.id })}
+                                  disabled={toggleReady.isPending}
+                                >
+                                  {toggleReady.isPending ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : player.isReady ? (
+                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  ) : null}
+                                  {player.isReady ? "Pronto" : "Marcar Pronto"}
+                                </Button>
+                              )}
+                              
                               <Button
                                 size="sm"
                                 variant="outline"
