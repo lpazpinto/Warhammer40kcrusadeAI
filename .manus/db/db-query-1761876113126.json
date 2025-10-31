@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, name, email FROM users LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, name, email FROM users LIMIT 10",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Lucas Pinto",
+      "email": "were.sl@gmail.com"
+    },
+    {
+      "id": "2",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "3",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "4",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30001",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30002",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30003",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30004",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30005",
+      "name": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30006",
+      "name": "NULL",
+      "email": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\n1\tLucas Pinto\twere.sl@gmail.com\n2\tNULL\tNULL\n3\tNULL\tNULL\n4\tNULL\tNULL\n30001\tNULL\tNULL\n30002\tNULL\tNULL\n30003\tNULL\tNULL\n30004\tNULL\tNULL\n30005\tNULL\tNULL\n30006\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 420
+}

@@ -24,6 +24,16 @@ export const appRouter = router({
     }),
   }),
 
+  // User management
+  user: router({
+    // Search users by name or email
+    search: protectedProcedure
+      .input(z.object({ query: z.string().min(1) }))
+      .query(async ({ input }) => {
+        return await db.searchUsers(input.query);
+      }),
+  }),
+
   // Campaign management
   campaign: router({
     // List all campaigns for the current user

@@ -453,8 +453,20 @@
 - [x] Show ready count (e.g., "2/3 jogadores prontos")
 - [x] Add campaign.sendInvite, campaign.listInvites, campaign.respondToInvite endpoints
 - [x] Add player.toggleReady endpoint
-- [ ] Change invite system to search by username instead of email
-- [ ] Add user search dropdown in invite dialog
-- [ ] Connect invite mutation to backend endpoint
+- [x] Change invite system to search by username instead of email
+- [x] Add user search dropdown in invite dialog
+- [x] Connect invite mutation to backend endpoint
+
+
+
+
+## Improve Invite System - Search Registered Users
+- [x] Create user.search endpoint to search users by name or email
+- [x] Update invite dialog to show user search dropdown/autocomplete
+- [x] Replace email input with user selection
+- [x] Validate that selected user is registered before sending invite
+- [x] Show user's name and email in search results
+- [x] Prevent inviting users who are already in the campaign
+- [x] Fix case-insensitive search with LOWER() in SQL query
 
 

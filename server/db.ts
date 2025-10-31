@@ -113,6 +113,30 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function searchUsers(query: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot search users: database not available");
+    return [];
+  }
+
+  // Search by name or email (case-insensitive)
+  const searchPattern = `%${query.toLowerCase()}%`;
+  const result = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    })
+    .from(users)
+    .where(
+      sql`LOWER(${users.name}) LIKE ${searchPattern} OR LOWER(${users.email}) LIKE ${searchPattern}`
+    )
+    .limit(10);
+
+  return result;
+}
+
 // Campaign helpers
 export async function createCampaign(campaign: InsertCampaign): Promise<Campaign> {
   const db = await getDb();

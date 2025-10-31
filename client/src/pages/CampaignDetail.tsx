@@ -21,7 +21,8 @@ export default function CampaignDetail() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<{ id: number; name: string | null; email: string | null } | null>(null);
   
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -84,6 +85,24 @@ export default function CampaignDetail() {
     },
     onError: (error) => {
       toast.error(`Erro ao alterar status: ${error.message}`);
+    },
+  });
+
+  // Search users for invites
+  const { data: searchResults } = trpc.user.search.useQuery(
+    { query: userSearchQuery },
+    { enabled: userSearchQuery.length >= 2 }
+  );
+
+  const sendInvite = trpc.campaign.sendInvite.useMutation({
+    onSuccess: () => {
+      toast.success('Convite enviado com sucesso!');
+      setInviteDialogOpen(false);
+      setUserSearchQuery("");
+      setSelectedUser(null);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao enviar convite: ${error.message}`);
     },
   });
 
@@ -203,30 +222,80 @@ export default function CampaignDetail() {
                         <DialogHeader>
                           <DialogTitle>Convidar Jogador</DialogTitle>
                           <DialogDescription>
-                            Convide outro usuário para participar desta campanha
+                            Busque um usuário registrado para convidar
                           </DialogDescription>
                         </DialogHeader>
                         
                         <div className="grid gap-4 py-4">
                           <div className="grid gap-2">
-                            <Label htmlFor="inviteEmail">Email do Jogador</Label>
+                            <Label htmlFor="userSearch">Buscar Usuário</Label>
                             <Input
-                              id="inviteEmail"
-                              type="email"
-                              placeholder="jogador@email.com"
-                              value={inviteEmail}
-                              onChange={(e) => setInviteEmail(e.target.value)}
+                              id="userSearch"
+                              placeholder="Digite nome ou email..."
+                              value={userSearchQuery}
+                              onChange={(e) => setUserSearchQuery(e.target.value)}
                             />
+                            {userSearchQuery.length >= 2 && searchResults && searchResults.length > 0 && (
+                              <div className="border rounded-md max-h-48 overflow-y-auto">
+                                {searchResults.map((user) => {
+                                  // Check if user is already a player in this campaign
+                                  const isAlreadyPlayer = players?.some(p => p.userId === user.id);
+                                  
+                                  return (
+                                    <button
+                                      key={user.id}
+                                      className={`w-full text-left px-3 py-2 hover:bg-accent transition-colors ${
+                                        selectedUser?.id === user.id ? 'bg-accent' : ''
+                                      } ${
+                                        isAlreadyPlayer ? 'opacity-50 cursor-not-allowed' : ''
+                                      }`}
+                                      onClick={() => {
+                                        if (!isAlreadyPlayer) {
+                                          setSelectedUser(user);
+                                        }
+                                      }}
+                                      disabled={isAlreadyPlayer}
+                                    >
+                                      <div className="font-medium">{user.name || 'Sem nome'}</div>
+                                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                                      {isAlreadyPlayer && (
+                                        <div className="text-xs text-muted-foreground">Já está na campanha</div>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {userSearchQuery.length >= 2 && searchResults && searchResults.length === 0 && (
+                              <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
+                            )}
+                            {userSearchQuery.length > 0 && userSearchQuery.length < 2 && (
+                              <p className="text-sm text-muted-foreground">Digite pelo menos 2 caracteres</p>
+                            )}
                           </div>
+                          
+                          {selectedUser && (
+                            <div className="border rounded-md p-3 bg-accent/50">
+                              <p className="text-sm font-medium">Usuário selecionado:</p>
+                              <p className="font-semibold">{selectedUser.name}</p>
+                              <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                            </div>
+                          )}
                         </div>
                         
                         <DialogFooter>
-                          <Button onClick={() => {
-                            // TODO: Implement invite mutation
-                            toast.success('Convite enviado!');
-                            setInviteDialogOpen(false);
-                            setInviteEmail("");
-                          }}>
+                          <Button 
+                            onClick={() => {
+                              if (selectedUser) {
+                                sendInvite.mutate({
+                                  campaignId,
+                                  invitedUserId: selectedUser.id,
+                                });
+                              }
+                            }}
+                            disabled={!selectedUser || sendInvite.isPending}
+                          >
+                            {sendInvite.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Enviar Convite
                           </Button>
                         </DialogFooter>

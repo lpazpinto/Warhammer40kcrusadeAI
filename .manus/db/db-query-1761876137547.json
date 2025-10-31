@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, name, email FROM users WHERE name IS NOT NULL LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, name, email FROM users WHERE name IS NOT NULL LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Lucas Pinto",
+      "email": "were.sl@gmail.com"
+    },
+    {
+      "id": "300005",
+      "name": "Lucas Pinto",
+      "email": "were.sl@gmail.com"
+    },
+    {
+      "id": "300006",
+      "name": "Lucas Pinto",
+      "email": "were.sl@gmail.com"
+    },
+    {
+      "id": "300007",
+      "name": "Lucas Pinto",
+      "email": "were.sl@gmail.com"
+    },
+    {
+      "id": "300008",
+      "name": "Lucas Pinto",
+      "email": "were.sl@gmail.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\n1\tLucas Pinto\twere.sl@gmail.com\n300005\tLucas Pinto\twere.sl@gmail.com\n300006\tLucas Pinto\twere.sl@gmail.com\n300007\tLucas Pinto\twere.sl@gmail.com\n300008\tLucas Pinto\twere.sl@gmail.com\n",
+  "stderr": "",
+  "execution_time_ms": 512
+}
