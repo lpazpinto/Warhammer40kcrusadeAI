@@ -470,3 +470,12 @@
 - [x] Fix case-insensitive search with LOWER() in SQL query
 
 
+
+
+## Fix Supply Limit in Campaign Creation
+- [x] Remove "Limite de Pontos" field from campaign creation dialog
+- [x] Set initial Supply Limit to 1000 points for all players automatically
+- [x] Keep supplyLimit field in database for future Requisition increases
+- [x] Remove pointsLimit display from campaign cards and detail page
+
+

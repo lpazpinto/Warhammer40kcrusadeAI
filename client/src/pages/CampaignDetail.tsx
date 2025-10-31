@@ -489,11 +489,6 @@ export default function CampaignDetail() {
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Limite de Pontos</div>
-                  <div className="font-semibold">{campaign.pointsLimit}</div>
-                </div>
-                
-                <div>
                   <div className="text-sm text-muted-foreground">Pontos Estratégicos</div>
                   <div className="font-semibold">
                     {(() => {

@@ -185,9 +185,11 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         // Link player to current user
+        // Supply Limit starts at 1000 points and can be increased via Requisitions
         return await db.createPlayer({
           ...input,
           userId: ctx.user.id,
+          supplyLimit: 1000,
         });
       }),
 

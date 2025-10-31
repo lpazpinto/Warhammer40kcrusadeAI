@@ -179,23 +179,7 @@ export default function Campaigns() {
                   </p>
                 </div>
                 
-                <div className="grid gap-2">
-                  <Label htmlFor="points">Limite de Pontos</Label>
-                  <Select
-                    value={newCampaign.pointsLimit.toString()}
-                    onValueChange={(value) => 
-                      setNewCampaign({ ...newCampaign, pointsLimit: parseInt(value) })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1000">1000 pontos (2 zonas de spawn)</SelectItem>
-                      <SelectItem value="2000">2000 pontos (4 zonas de spawn)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Supply Limit is always 1000 points initially, can be increased via Requisitions */}
               </div>
               
               <DialogFooter>
@@ -240,10 +224,6 @@ export default function Campaigns() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Sword className="h-4 w-4 text-muted-foreground" />
-                        <span>{campaign.pointsLimit} pontos</span>
-                      </div>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>4 Fases</span>
