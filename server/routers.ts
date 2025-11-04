@@ -50,7 +50,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string(),
         hordeFaction: z.string(),
-        gameMode: z.enum(['5_rounds', 'infinite']).default('5_rounds'),
+        gameMode: z.enum(['5_phases', 'infinite']).default('5_phases'),
         pointsLimit: z.number().default(1000),
       }))
       .mutation(async ({ ctx, input }) => {

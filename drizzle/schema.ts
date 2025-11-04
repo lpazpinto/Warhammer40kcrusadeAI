@@ -28,9 +28,9 @@ export const campaigns = mysqlTable("campaigns", {
   status: mysqlEnum("status", ["ongoing", "completed", "paused"]).default("ongoing").notNull(),
   hordeFaction: varchar("hordeFaction", { length: 100 }).notNull(), // e.g., "Tyranids", "Orks"
   hordePrimaryFactionRule: text("hordePrimaryFactionRule"), // JSON string for faction-specific rules
-  gameMode: mysqlEnum("gameMode", ["5_rounds", "infinite"]).default("5_rounds").notNull(),
+  gameMode: mysqlEnum("gameMode", ["5_phases", "infinite"]).default("5_phases").notNull(),
   pointsLimit: int("pointsLimit").default(1000).notNull(), // 1000 or 2000
-  currentBattleRound: int("currentBattleRound").default(0).notNull(),
+  currentPhase: int("currentPhase").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

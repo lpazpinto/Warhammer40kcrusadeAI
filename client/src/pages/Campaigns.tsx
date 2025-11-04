@@ -20,7 +20,7 @@ export default function Campaigns() {
   const [newCampaign, setNewCampaign] = useState({
     name: "",
     hordeFaction: "",
-    gameMode: "5_rounds" as "5_rounds" | "infinite",
+    gameMode: "5_phases" as "5_phases" | "infinite",
     pointsLimit: 1000,
   });
 
@@ -146,7 +146,7 @@ export default function Campaigns() {
                   <Label htmlFor="gameMode">Modo de Jogo</Label>
                   <Select
                     value={newCampaign.gameMode}
-                    onValueChange={(value: "5_rounds" | "infinite") => 
+                    onValueChange={(value: "5_phases" | "infinite") => 
                       setNewCampaign({ ...newCampaign, gameMode: value })
                     }
                   >
@@ -154,7 +154,7 @@ export default function Campaigns() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="5_rounds">5 Rodadas</SelectItem>
+                      <SelectItem value="5_phases">5 Fases</SelectItem>
                       <SelectItem value="infinite">Infinito</SelectItem>
                     </SelectContent>
                   </Select>
@@ -228,11 +228,11 @@ export default function Campaigns() {
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>
-                          {campaign.gameMode === '5_rounds' ? '5 Rodadas' : 'Modo Infinito'}
+                          {campaign.gameMode === '5_phases' ? '5 Fases' : 'Modo Infinito'}
                         </span>
                       </div>
                       <div className="text-muted-foreground">
-                        Rodada atual: {campaign.currentBattleRound}
+                        Fase atual: {campaign.currentPhase}
                       </div>
                     </div>
                   </CardContent>

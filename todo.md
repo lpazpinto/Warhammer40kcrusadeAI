@@ -123,3 +123,13 @@
 - [x] Fix NaN error on player creation - same issue as campaign creation
 - [x] Fix import army dialog - button not visible when text is too long (needs scroll)
 
+
+
+## Change "Rodadas" to "Fases" (Crusade Armageddon Terminology)
+- [ ] Update database schema (campaigns table: battlesPerPhase, currentPhase)
+- [ ] Update backend code (db.ts, routers.ts)
+- [ ] Update frontend UI (all components showing "Rodadas")
+- [ ] Update campaign creation dialog
+- [ ] Update campaign detail page
+- [ ] Test all changes
+- [ ] Commit to GitHub

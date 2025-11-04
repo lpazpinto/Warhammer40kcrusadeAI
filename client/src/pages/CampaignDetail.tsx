@@ -122,7 +122,7 @@ export default function CampaignDetail() {
             <div>
               <h1 className="text-4xl font-bold mb-2">{campaign.name}</h1>
               <p className="text-muted-foreground">
-                vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Rodada {campaign.currentBattleRound}
+                vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Fase {campaign.currentPhase}
               </p>
             </div>
             
@@ -312,7 +312,7 @@ export default function CampaignDetail() {
                 <div>
                   <div className="text-sm text-muted-foreground">Modo de Jogo</div>
                   <div className="font-semibold">
-                    {campaign.gameMode === '5_rounds' ? '5 Rodadas' : 'Infinito'}
+                    {campaign.gameMode === '5_phases' ? '5 Fases' : 'Infinito'}
                   </div>
                 </div>
                 
@@ -322,8 +322,8 @@ export default function CampaignDetail() {
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Rodada Atual</div>
-                  <div className="font-semibold">{campaign.currentBattleRound}</div>
+                  <div className="text-sm text-muted-foreground">Fase Atual</div>
+                  <div className="font-semibold">{campaign.currentPhase}</div>
                 </div>
               </CardContent>
             </Card>
