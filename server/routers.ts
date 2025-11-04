@@ -201,6 +201,14 @@ export const appRouter = router({
           })
       }))
       .query(async ({ input }) => {
+        console.log('[player.get] Received ID:', input.id, 'Type:', typeof input.id, 'isNaN:', isNaN(input.id));
+        
+        // Extra validation before database call
+        if (!input.id || isNaN(input.id) || !isFinite(input.id) || input.id <= 0) {
+          console.error('[player.get] Invalid ID detected:', input.id);
+          throw new Error(`Invalid player ID: ${input.id}`);
+        }
+        
         return await db.getPlayerById(input.id);
       }),
 

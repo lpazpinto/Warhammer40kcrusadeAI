@@ -198,3 +198,18 @@
 - [x] Fix all TypeScript errors
 - [ ] Add notification badge in header showing pending invite count
 - [ ] Test complete multiplayer flow: invite → accept → join campaign
+
+
+## Remove Points Limit from Campaign Creation
+- [ ] Remove "Limite de Pontos" field from campaign creation dialog in Campaigns.tsx
+- [ ] Verify Supply Limit is always 1000 points per player (already implemented)
+- [ ] Confirm Order of Battle shows all units (already working)
+- [ ] Confirm Battle Setup allows selecting battle size and units (already working)
+- [ ] Test complete flow: create campaign → import army → start battle → select units
+
+
+## Fix NaN Error in player.get on Campaign Detail Page
+- [x] Find where player.get is being called with NaN ID (PlayerDetail.tsx)
+- [x] Add validation to prevent NaN from being passed to player.get (added logging and extra validation)
+- [x] Frontend already has validation to prevent NaN links
+- [x] Verify all player-related queries have proper validation
