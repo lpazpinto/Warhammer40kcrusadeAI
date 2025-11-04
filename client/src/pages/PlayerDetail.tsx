@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, Star, Skull, Award } from "lucide-react";
+import { Loader2, ArrowLeft, Star, Skull, Award, Pencil } from "lucide-react";
 import { Link, useParams } from "wouter";
 
 // Helper to parse models JSON
@@ -31,6 +31,13 @@ export default function PlayerDetail() {
     { playerId },
     { enabled: !isNaN(playerId) && playerId > 0 }
   );
+  
+  const utils = trpc.useUtils();
+  const updateUnit = trpc.crusadeUnit.update.useMutation({
+    onSuccess: () => {
+      utils.crusadeUnit.list.invalidate({ playerId });
+    },
+  });
 
   if (playerLoading || unitsLoading) {
     return (
@@ -157,6 +164,25 @@ export default function PlayerDetail() {
                                 "{unit.crusadeName}"
                               </span>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => {
+                                const newName = prompt(
+                                  'Digite um apelido para esta unidade (deixe vazio para remover):',
+                                  unit.crusadeName || ''
+                                );
+                                if (newName !== null) {
+                                  updateUnit.mutate({
+                                    id: unit.id,
+                                    crusadeName: newName || undefined,
+                                  });
+                                }
+                              }}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
                           </div>
                           
                           <div className="flex items-center gap-2 mb-3">

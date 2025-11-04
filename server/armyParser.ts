@@ -141,13 +141,19 @@ export function parseArmyList(content: string): ParsedArmy {
         const name = match[2].trim();
         const count = parseInt(match[1]);
         
-        // Heuristic: if name starts with capital letter and we don't have a model yet,
-        // OR if name contains common model keywords, it's probably a model
-        const isLikelyModel = !currentModel || 
-                             name.match(/^[A-Z]/) && (name.includes('Squad') || name.includes('Trooper') || name.includes('Guardsman') || name.includes('Watchmaster') || name.includes('Commissar') || name.includes('Marshal') || name.includes('Engineer') || name.includes('Gunner') || name.includes('Coordinator'));
+        // Improved heuristic: Check if this looks like a model name
+        // Models typically have title-case names and don't contain weapon keywords
+        const weaponKeywords = ['weapon', 'pistol', 'gun', 'sword', 'fist', 'claw', 'las', 'bolt', 'plasma', 'melta', 'flamer', 'grenade', 'cannon', 'rifle', 'blade', 'hammer', 'axe', 'staff', 'wand', 'rod', 'mortar', 'launcher', 'missile'];
+        const hasWeaponKeyword = weaponKeywords.some(keyword => name.toLowerCase().includes(keyword));
         
-        if (isLikelyModel && !name.toLowerCase().includes('weapon') && !name.toLowerCase().includes('pistol') && !name.toLowerCase().includes('gun') && !name.toLowerCase().includes('sword') && !name.toLowerCase().includes('fist') && !name.toLowerCase().includes('claw') && !name.toLowerCase().includes('las')) {
-          // This is a model
+        // Model keywords that indicate this is definitely a model
+        const modelKeywords = ['squad', 'trooper', 'guardsman', 'watchmaster', 'commissar', 'marshal', 'engineer', 'gunner', 'coordinator', 'sergeant', 'captain', 'lieutenant', 'veteran', 'sister', 'superior', 'marine', 'terminator', 'warrior', 'lord', 'commander'];
+        const hasModelKeyword = modelKeywords.some(keyword => name.toLowerCase().includes(keyword));
+        
+        const isLikelyModel = hasModelKeyword || (!hasWeaponKeyword && name.match(/^[A-Z]/));
+        
+        if (isLikelyModel) {
+          // This is a model - save previous model first
           if (currentModel) {
             currentUnit.models.push(currentModel);
           }

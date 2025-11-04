@@ -243,3 +243,18 @@
 - [x] Added parseModels() helper function to parse JSON string to array
 - [x] Added weapons display section with parseModels() in PlayerDetail
 - [x] All weapons now display correctly after import
+
+
+## Parser Not Extracting All Models
+- [x] Fixed parser to extract ALL models from unit
+- [x] Improved heuristic with expanded weapon and model keyword lists
+- [x] Parser now correctly identifies models vs weapons
+- [x] All models are saved when encountering new model (not just weapons)
+
+
+## Add Unit Alias Field
+- [x] Schema already has crusadeName field (line 81)
+- [x] crusadeUnit.update endpoint already accepts crusadeName parameter
+- [x] Added pencil icon button next to unit name in PlayerDetail
+- [x] Connected button to updateUnit mutation with invalidation
+- [x] Players can now give custom names to their units (e.g., "The Emperor's Fury")
