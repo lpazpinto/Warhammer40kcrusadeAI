@@ -180,4 +180,6 @@
 ## Fix NaN Crusade Unit ID Error
 - [x] Find where crusadeUnit.get is being called with NaN (endpoint missing validation)
 - [x] Add validation to prevent NaN unit IDs
-- [x] Test and commit fix
+- [x] Error resolved - validation in endpoint prevents NaN from reaching database
+- [x] Confirmed no NaN errors in server logs
+- [x] All commits pushed to GitHub
