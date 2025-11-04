@@ -88,6 +88,97 @@ export const appRouter = router({
         await db.updateCampaign(id, updates);
         return { success: true };
       }),
+
+    // Send invitation to user
+    sendInvite: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        inviteeId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if campaign exists and user is the owner
+        const campaign = await db.getCampaignById(input.campaignId);
+        if (!campaign) {
+          throw new Error('Campaign not found');
+        }
+        if (campaign.userId !== ctx.user.id) {
+          throw new Error('Only campaign owner can send invites');
+        }
+
+        // Check if user is trying to invite themselves
+        if (input.inviteeId === ctx.user.id) {
+          throw new Error('Cannot invite yourself');
+        }
+
+        // Check if invitation already exists
+        const existing = await db.checkExistingInvitation(input.campaignId, input.inviteeId);
+        if (existing) {
+          throw new Error('Invitation already sent to this user');
+        }
+
+        // Check if user is already a player in the campaign
+        const players = await db.getPlayersByCampaignId(input.campaignId);
+        const isAlreadyPlayer = players.some(p => p.userId === input.inviteeId);
+        if (isAlreadyPlayer) {
+          throw new Error('User is already in this campaign');
+        }
+
+        const invitation = await db.createCampaignInvitation({
+          campaignId: input.campaignId,
+          inviterId: ctx.user.id,
+          inviteeId: input.inviteeId,
+        });
+
+        return { success: true, invitationId: invitation.id };
+      }),
+
+    // List invitations for current user
+    listInvites: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getInvitationsByInviteeId(ctx.user.id);
+    }),
+
+    // Respond to invitation (accept or decline)
+    respondToInvite: protectedProcedure
+      .input(z.object({
+        inviteId: z.number(),
+        accept: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const invitation = await db.getInvitationById(input.inviteId);
+        if (!invitation) {
+          throw new Error('Invitation not found');
+        }
+        if (invitation.inviteeId !== ctx.user.id) {
+          throw new Error('This invitation is not for you');
+        }
+        if (invitation.status !== 'pending') {
+          throw new Error('Invitation has already been responded to');
+        }
+
+        const status = input.accept ? 'accepted' : 'declined';
+        await db.updateCampaignInvitation(input.inviteId, {
+          status,
+          respondedAt: new Date(),
+        });
+
+        // If accepted, create a player for the user in the campaign
+        if (input.accept) {
+          const campaign = await db.getCampaignById(invitation.campaignId);
+          if (!campaign) {
+            throw new Error('Campaign not found');
+          }
+
+          await db.createPlayer({
+            campaignId: invitation.campaignId,
+            userId: ctx.user.id,
+            name: ctx.user.name || 'Unknown Commander',
+            faction: 'To be determined',
+            isReady: false,
+          });
+        }
+
+        return { success: true, accepted: input.accept };
+      }),
   }),
 
   // Player management

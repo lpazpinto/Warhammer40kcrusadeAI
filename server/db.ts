@@ -17,7 +17,10 @@ import {
   InsertBattle,
   battleParticipants,
   BattleParticipant,
-  InsertBattleParticipant
+  InsertBattleParticipant,
+  campaignInvitations,
+  CampaignInvitation,
+  InsertCampaignInvitation
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -329,3 +332,92 @@ export async function updateBattleParticipant(id: number, updates: Partial<Battl
   await db.update(battleParticipants).set(updates).where(eq(battleParticipants.id, id));
 }
 
+// Campaign Invitation helpers
+export async function createCampaignInvitation(invitation: InsertCampaignInvitation): Promise<CampaignInvitation> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result: any = await db.insert(campaignInvitations).values(invitation);
+  const insertId = result.insertId || result[0]?.insertId || result.insertedId;
+  
+  if (!insertId || isNaN(Number(insertId))) {
+    throw new Error(`Failed to create invitation: invalid insertId (${insertId})`);
+  }
+
+  const [newInvitation] = await db.select().from(campaignInvitations).where(eq(campaignInvitations.id, Number(insertId)));
+  return newInvitation;
+}
+
+export async function getInvitationsByInviteeId(inviteeId: number): Promise<any[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Join with campaigns and users to get full details
+  const invites = await db
+    .select({
+      id: campaignInvitations.id,
+      campaignId: campaignInvitations.campaignId,
+      inviterId: campaignInvitations.inviterId,
+      inviteeId: campaignInvitations.inviteeId,
+      status: campaignInvitations.status,
+      createdAt: campaignInvitations.createdAt,
+      respondedAt: campaignInvitations.respondedAt,
+      campaignName: campaigns.name,
+      hordeFaction: campaigns.hordeFaction,
+      inviterName: users.name,
+    })
+    .from(campaignInvitations)
+    .leftJoin(campaigns, eq(campaignInvitations.campaignId, campaigns.id))
+    .leftJoin(users, eq(campaignInvitations.inviterId, users.id))
+    .where(eq(campaignInvitations.inviteeId, inviteeId));
+
+  // Get player count for each campaign
+  const invitesWithPlayerCount = await Promise.all(
+    invites.map(async (invite) => {
+      const playerCount = await db
+        .select()
+        .from(players)
+        .where(eq(players.campaignId, invite.campaignId));
+      
+      return {
+        ...invite,
+        playerCount: playerCount.length,
+      };
+    })
+  );
+
+  return invitesWithPlayerCount;
+}
+
+export async function getInvitationById(id: number): Promise<CampaignInvitation | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [invitation] = await db.select().from(campaignInvitations).where(eq(campaignInvitations.id, id));
+  return invitation;
+}
+
+export async function updateCampaignInvitation(id: number, updates: Partial<CampaignInvitation>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(campaignInvitations).set(updates).where(eq(campaignInvitations.id, id));
+}
+
+export async function checkExistingInvitation(campaignId: number, inviteeId: number): Promise<CampaignInvitation | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [invitation] = await db
+    .select()
+    .from(campaignInvitations)
+    .where(
+      and(
+        eq(campaignInvitations.campaignId, campaignId),
+        eq(campaignInvitations.inviteeId, inviteeId),
+        eq(campaignInvitations.status, "pending")
+      )
+    );
+  
+  return invitation;
+}

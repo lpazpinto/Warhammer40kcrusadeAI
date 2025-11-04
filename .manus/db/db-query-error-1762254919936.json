@@ -1,0 +1,8 @@
+{
+  "query": "\nALTER TABLE players \nADD COLUMN userId INT NULL AFTER campaignId,\nADD COLUMN isReady BOOLEAN DEFAULT FALSE NOT NULL AFTER isAlive;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute \nALTER TABLE players \nADD COLUMN userId INT NULL AFTER campaignId,\nADD COLUMN isReady BOOLEAN DEFAULT FALSE NOT NULL AFTER isAlive;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 2: Duplicate column name 'userId'"
+  ]
+}

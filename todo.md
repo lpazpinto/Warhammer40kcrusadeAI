@@ -183,3 +183,18 @@
 - [x] Error resolved - validation in endpoint prevents NaN from reaching database
 - [x] Confirmed no NaN errors in server logs
 - [x] All commits pushed to GitHub
+
+
+## Implement Notification System for Campaign Invites
+- [x] Create campaignInvitations table in database schema
+- [x] Add userId and isReady fields to players table
+- [x] Create database functions in db.ts (createCampaignInvitation, getInvitationsByInviteeId, etc.)
+- [x] Add campaign.sendInvite endpoint with validation
+- [x] Add campaign.listInvites endpoint
+- [x] Add campaign.respondToInvite endpoint with auto-player creation
+- [x] Create /notifications page with invite list
+- [x] Add accept/decline UI for invites
+- [x] Add route to App.tsx
+- [x] Fix all TypeScript errors
+- [ ] Add notification badge in header showing pending invite count
+- [ ] Test complete multiplayer flow: invite → accept → join campaign

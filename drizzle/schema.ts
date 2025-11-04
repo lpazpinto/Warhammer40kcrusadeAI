@@ -49,6 +49,7 @@ export type InsertCampaign = typeof campaigns.$inferInsert;
 export const players = mysqlTable("players", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
+  userId: int("userId"), // Link to users table for multiplayer
   name: varchar("name", { length: 255 }).notNull(), // Lord Commander name
   faction: varchar("faction", { length: 100 }).notNull(), // e.g., "Astra Militarum"
   detachment: varchar("detachment", { length: 100 }), // e.g., "Combined Arms"
@@ -61,6 +62,7 @@ export const players = mysqlTable("players", {
   secretObjective: text("secretObjective"), // JSON string for current secret objective
   secretObjectiveRevealed: boolean("secretObjectiveRevealed").default(false).notNull(),
   isAlive: boolean("isAlive").default(true).notNull(), // For Horde Mode survival tracking
+  isReady: boolean("isReady").default(false).notNull(), // Multiplayer ready status
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -148,3 +150,18 @@ export const battleParticipants = mysqlTable("battleParticipants", {
 export type BattleParticipant = typeof battleParticipants.$inferSelect;
 export type InsertBattleParticipant = typeof battleParticipants.$inferInsert;
 
+/**
+ * Campaign Invitations table - tracks invites sent to users for multiplayer campaigns
+ */
+export const campaignInvitations = mysqlTable("campaignInvitations", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  inviterId: int("inviterId").notNull(), // User who sent the invite
+  inviteeId: int("inviteeId").notNull(), // User being invited
+  status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  respondedAt: timestamp("respondedAt"),
+});
+
+export type CampaignInvitation = typeof campaignInvitations.$inferSelect;
+export type InsertCampaignInvitation = typeof campaignInvitations.$inferInsert;
