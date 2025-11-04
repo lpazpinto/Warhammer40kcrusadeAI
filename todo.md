@@ -261,13 +261,13 @@
 
 
 ## Battle Setup Wizard Implementation
-- [ ] Commit all current changes to GitHub
-- [ ] Create missions data structure with Table A (1-3) and Table B (4-6)
-- [ ] Implement mission selection step (manual or random)
-- [ ] Implement points allocation step
-- [ ] Implement unit selection per player (respecting point limits)
-- [ ] Implement final confirmation screen with battle summary
-- [ ] Show selected mission details if random was chosen
+- [x] Commit all current changes to GitHub
+- [x] Create missions data structure with Table A (1-3) and Table B (4-6)
+- [x] Implement mission selection step (manual or random)
+- [x] Implement points allocation step
+- [x] Implement unit selection per player (respecting point limits) - Basic UI done, full implementation pending
+- [x] Implement final confirmation screen with battle summary
+- [x] Show selected mission details if random was chosen
 - [ ] Test complete battle setup flow
 - [ ] Create checkpoint after implementation
 

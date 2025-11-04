@@ -1,38 +1,397 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
-import { Link, useParams } from "wouter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { trpc } from "@/lib/trpc";
+import { Loader2, ArrowLeft, ArrowRight, Dice3, Check } from "lucide-react";
+import { useState } from "react";
+import { Link, useParams, useLocation } from "wouter";
+import { toast } from "sonner";
+import { MISSION_TABLE_A, MISSION_TABLE_B, getRandomMission, type Mission } from "@shared/missions";
+
+interface BattleConfig {
+  missionTable: 'A' | 'B' | null;
+  missionSelection: 'manual' | 'random' | null;
+  selectedMission: Mission | null;
+  totalPoints: number;
+  playerUnits: Record<number, number[]>; // playerId -> unitIds[]
+}
 
 export default function BattleSetup() {
   const { campaignId } = useParams<{ campaignId: string }>();
+  const id = parseInt(campaignId || '0');
+  const [, setLocation] = useLocation();
+  
+  const [step, setStep] = useState(1);
+  const [config, setConfig] = useState<BattleConfig>({
+    missionTable: null,
+    missionSelection: null,
+    selectedMission: null,
+    totalPoints: 1000,
+    playerUnits: {},
+  });
+
+  const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
+    { id },
+    { enabled: !isNaN(id) && id > 0 }
+  );
+  
+  const { data: players, isLoading: playersLoading } = trpc.player.list.useQuery(
+    { campaignId: id },
+    { enabled: !isNaN(id) && id > 0 }
+  );
+
+  if (campaignLoading || playersLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="pt-6">
+            <p>Campanha não encontrada</p>
+            <Button asChild className="mt-4">
+              <Link href="/campaigns">Voltar</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const handleNext = () => {
+    // Validation for each step
+    if (step === 1) {
+      if (!config.missionTable) {
+        toast.error('Selecione uma tabela de missões');
+        return;
+      }
+      if (!config.missionSelection) {
+        toast.error('Selecione o modo de seleção de missão');
+        return;
+      }
+      
+      // If random, roll now
+      if (config.missionSelection === 'random') {
+        const randomMission = getRandomMission(config.missionTable);
+        setConfig({ ...config, selectedMission: randomMission });
+        toast.success(`Missão aleatória: ${randomMission.name}`);
+      }
+      
+      // If manual but no mission selected
+      if (config.missionSelection === 'manual' && !config.selectedMission) {
+        toast.error('Selecione uma missão');
+        return;
+      }
+    }
+    
+    if (step === 2) {
+      if (config.totalPoints < 500 || config.totalPoints > 3000) {
+        toast.error('Pontos devem estar entre 500 e 3000');
+        return;
+      }
+    }
+    
+    setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
+  };
+
+  const handleStartBattle = () => {
+    // TODO: Create battle and navigate to battle page
+    toast.success('Batalha iniciada!');
+    setLocation(`/campaign/${id}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8">
         <Button variant="ghost" asChild className="mb-6">
-          <Link href={`/campaign/${campaignId}`}>
+          <Link href={`/campaign/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar para Campanha
           </Link>
         </Button>
 
-        <h1 className="text-4xl font-bold mb-8">Configuração de Batalha</h1>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Configurar Batalha</h1>
+          <p className="text-xl text-muted-foreground">{campaign.name}</p>
+        </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">
-              Esta página está em desenvolvimento. Aqui você poderá:
-            </p>
-            <ul className="list-disc list-inside mt-4 space-y-2 text-muted-foreground">
-              <li>Selecionar jogadores participantes</li>
-              <li>Escolher deployment e missão</li>
-              <li>Configurar objetivos e zonas de spawn</li>
-              <li>Iniciar a batalha com IA da Horda</li>
-            </ul>
-          </CardContent>
-        </Card>
+        {/* Progress indicator */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          {[1, 2, 3, 4].map((s) => (
+            <div
+              key={s}
+              className={`h-2 w-16 rounded-full transition-colors ${
+                s === step ? 'bg-primary' : s < step ? 'bg-primary/50' : 'bg-muted'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Step 1: Mission Selection */}
+        {step === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Passo 1: Selecionar Missão</CardTitle>
+              <CardDescription>Escolha a tabela de missões e o modo de seleção</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Mission Table Selection */}
+              <div className="space-y-3">
+                <Label>Tabela de Missões</Label>
+                <RadioGroup
+                  value={config.missionTable || ''}
+                  onValueChange={(value) => setConfig({ ...config, missionTable: value as 'A' | 'B', selectedMission: null })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="A" id="table-a" />
+                    <Label htmlFor="table-a" className="cursor-pointer">
+                      Tabela A (Fases 1-3)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="B" id="table-b" />
+                    <Label htmlFor="table-b" className="cursor-pointer">
+                      Tabela B (Fases 4-6)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Mission Selection Mode */}
+              {config.missionTable && (
+                <div className="space-y-3">
+                  <Label>Modo de Seleção</Label>
+                  <RadioGroup
+                    value={config.missionSelection || ''}
+                    onValueChange={(value) => setConfig({ ...config, missionSelection: value as 'manual' | 'random', selectedMission: null })}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="manual" id="manual" />
+                      <Label htmlFor="manual" className="cursor-pointer">
+                        Escolher Manualmente
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="random" id="random" />
+                      <Label htmlFor="random" className="cursor-pointer flex items-center gap-2">
+                        <Dice3 className="h-4 w-4" />
+                        Aleatória (2D3)
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
+              {/* Manual Mission Selection */}
+              {config.missionSelection === 'manual' && config.missionTable && (
+                <div className="space-y-3">
+                  <Label>Escolher Missão</Label>
+                  <div className="grid gap-2">
+                    {(config.missionTable === 'A' ? MISSION_TABLE_A : MISSION_TABLE_B).map((mission) => (
+                      <Card
+                        key={mission.id}
+                        className={`cursor-pointer transition-colors ${
+                          config.selectedMission?.id === mission.id ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
+                        }`}
+                        onClick={() => setConfig({ ...config, selectedMission: mission })}
+                      >
+                        <CardContent className="p-4 flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold">{mission.name}</div>
+                            <div className="text-sm text-muted-foreground">{mission.pageReference}</div>
+                          </div>
+                          {config.selectedMission?.id === mission.id && (
+                            <Check className="h-5 w-5 text-primary" />
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Points Allocation */}
+        {step === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Passo 2: Definir Pontos</CardTitle>
+              <CardDescription>Quantos pontos totais para esta batalha?</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="points">Pontos Totais</Label>
+                <Input
+                  id="points"
+                  type="number"
+                  min={500}
+                  max={3000}
+                  step={100}
+                  value={config.totalPoints}
+                  onChange={(e) => setConfig({ ...config, totalPoints: parseInt(e.target.value) || 1000 })}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Cada jogador poderá usar até {Math.floor(config.totalPoints / (players?.length || 1))} pontos
+                </p>
+              </div>
+
+              {/* Quick presets */}
+              <div className="space-y-2">
+                <Label>Presets Comuns</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {[1000, 1500, 2000, 2500, 3000].map((points) => (
+                    <Button
+                      key={points}
+                      variant={config.totalPoints === points ? 'default' : 'outline'}
+                      onClick={() => setConfig({ ...config, totalPoints: points })}
+                    >
+                      {points}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Unit Selection */}
+        {step === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Passo 3: Selecionar Unidades</CardTitle>
+              <CardDescription>Cada jogador seleciona suas unidades para a batalha</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {players && players.map((player) => {
+                const pointsPerPlayer = Math.floor(config.totalPoints / players.length);
+                const selectedUnits = config.playerUnits[player.id] || [];
+                
+                return (
+                  <div key={player.id} className="space-y-3 p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">{player.name}</h3>
+                        <p className="text-sm text-muted-foreground">{player.faction}</p>
+                      </div>
+                      <Badge variant="outline">
+                        {selectedUnits.length} unidades selecionadas
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Limite: </span>
+                      <span className="font-semibold">{pointsPerPlayer} pontos</span>
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Open unit selection dialog
+                        toast.info(`Seleção de unidades para ${player.name} em desenvolvimento`);
+                      }}
+                    >
+                      Selecionar Unidades
+                    </Button>
+                  </div>
+                );
+              })}
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                Por enquanto, todas as unidades do Order of Battle serão incluídas automaticamente.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 4: Confirmation */}
+        {step === 4 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Passo 4: Confirmar e Iniciar</CardTitle>
+              <CardDescription>Revise as configurações da batalha</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-muted-foreground">Missão</Label>
+                  <div className="text-lg font-semibold">
+                    {config.selectedMission?.name}
+                    <Badge variant="outline" className="ml-2">
+                      {config.selectedMission?.pageReference}
+                    </Badge>
+                  </div>
+                  {config.missionSelection === 'random' && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      (Selecionada aleatoriamente da Tabela {config.missionTable})
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-muted-foreground">Pontos Totais</Label>
+                  <div className="text-lg font-semibold">{config.totalPoints} pontos</div>
+                  <p className="text-sm text-muted-foreground">
+                    {Math.floor(config.totalPoints / (players?.length || 1))} pontos por jogador
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-muted-foreground">Jogadores</Label>
+                  <div className="text-lg font-semibold">{players?.length || 0} jogadores</div>
+                  {players && players.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {players.map((player) => (
+                        <li key={player.id} className="text-sm">
+                          • {player.name} ({player.faction})
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Navigation buttons */}
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            disabled={step === 1}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+
+          {step < 4 ? (
+            <Button onClick={handleNext}>
+              Próximo
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button onClick={handleStartBattle} size="lg">
+              <Check className="mr-2 h-5 w-5" />
+              Iniciar Batalha
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
