@@ -189,7 +189,32 @@ export async function createPlayer(player: InsertPlayer): Promise<Player> {
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(players).values(player);
-  const [newPlayer] = await db.select().from(players).where(eq(players.id, Number(result.insertId)));
+  
+  // Handle different insertId formats from Drizzle ORM
+  let insertId: number;
+  if (result.insertId !== undefined) {
+    insertId = Number(result.insertId);
+  } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+    insertId = Number(result[0].insertId);
+  } else if (result.id !== undefined) {
+    insertId = Number(result.id);
+  } else {
+    console.error('[createPlayer] Cannot find insertId in result:', result);
+    throw new Error('Failed to create player: invalid ID returned from database');
+  }
+  
+  if (isNaN(insertId) || insertId <= 0) {
+    console.error('[createPlayer] Invalid insertId:', insertId, 'from result:', result);
+    throw new Error('Failed to create player: invalid ID returned from database');
+  }
+  
+  const [newPlayer] = await db.select().from(players).where(eq(players.id, insertId));
+  
+  if (!newPlayer) {
+    console.error('[createPlayer] Player not found after insert, ID:', insertId);
+    throw new Error('Failed to retrieve created player');
+  }
+  
   return newPlayer;
 }
 
@@ -201,6 +226,8 @@ export async function getPlayersByCampaignId(campaignId: number): Promise<Player
 }
 
 export async function getPlayerById(id: number): Promise<Player | undefined> {
+  console.log('[getPlayerById] Called with:', id, 'Type:', typeof id, 'isNaN:', isNaN(id));
+  
   // Validate ID FIRST before any other logic
   if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
     console.error(`[Database] Invalid player ID rejected: ${id} (type: ${typeof id})`);
@@ -220,6 +247,11 @@ export async function getPlayerById(id: number): Promise<Player | undefined> {
 }
 
 export async function updatePlayer(id: number, updates: Partial<Player>): Promise<void> {
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[updatePlayer] Invalid player ID: ${id}`);
+    throw new Error(`Invalid player ID: ${id}`);
+  }
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 

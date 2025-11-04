@@ -212,4 +212,8 @@
 - [x] Find where player.get is being called with NaN ID (PlayerDetail.tsx)
 - [x] Add validation to prevent NaN from being passed to player.get (added logging and extra validation)
 - [x] Frontend already has validation to prevent NaN links
-- [x] Verify all player-related queries have proper validation
+- [x] FOUND ROOT CAUSE: createPlayer was using Number(result.insertId) without validation
+- [x] Added robust insertId handling to createPlayer (same as createCampaign)
+- [x] Added validation to updatePlayer to prevent NaN IDs
+- [x] Added logging to getPlayerById to track all calls
+- [x] Error fully resolved - all database functions now validate IDs
