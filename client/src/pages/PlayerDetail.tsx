@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
 import { Loader2, ArrowLeft, Star, Skull, Award, Pencil } from "lucide-react";
 import { Link, useParams } from "wouter";
@@ -141,6 +142,44 @@ export default function PlayerDetail() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Supply Usage Indicator */}
+        <Card className="mb-8">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Uso de Suprimento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const totalSupplyUsed = units?.reduce((sum, unit) => sum + (unit.pointsCost || 0), 0) || 0;
+              const supplyLimit = player.supplyLimit || 1000;
+              const percentage = Math.min((totalSupplyUsed / supplyLimit) * 100, 100);
+              const isOverLimit = totalSupplyUsed > supplyLimit;
+              const isNearLimit = percentage >= 80 && !isOverLimit;
+              
+              return (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Supply Consumido</span>
+                    <span className={`font-medium ${
+                      isOverLimit ? 'text-red-500' : isNearLimit ? 'text-yellow-500' : 'text-green-500'
+                    }`}>
+                      {totalSupplyUsed} / {supplyLimit}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={percentage} 
+                    className="h-2"
+                  />
+                  {isOverLimit && (
+                    <p className="text-xs text-red-500 mt-1">
+                      ⚠️ Limite de suprimento excedido! Remova unidades ou compre "Aumentar Limite de Suprimento".
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

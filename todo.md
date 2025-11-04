@@ -356,3 +356,13 @@
 - [x] Verify database query returns supplyLimit field (db.select() returns all fields automatically)
 - [ ] Test requisition purchase and verify supplyLimit updates correctly
 - [ ] Commit fixes to GitHub
+
+
+## Add Supply Usage Visual Indicator
+- [x] Calculate total supply consumed (sum of all unit pointsCost in Order of Battle)
+- [x] Add Progress component to show supply usage bar
+- [x] Display "Supply: X / Y" with visual bar
+- [x] Color code bar (green < 80%, yellow 80-100%, red > 100%)
+- [x] Added warning message when over limit
+- [ ] Test with different supply limits and unit counts
+- [ ] Commit changes to GitHub
