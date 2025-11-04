@@ -264,7 +264,32 @@ export async function createCrusadeUnit(unit: InsertCrusadeUnit): Promise<Crusad
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(crusadeUnits).values(unit);
-  const [newUnit] = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, Number(result.insertId)));
+  
+  // Handle different insertId formats from Drizzle ORM
+  let insertId: number;
+  if (result.insertId !== undefined) {
+    insertId = Number(result.insertId);
+  } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+    insertId = Number(result[0].insertId);
+  } else if (result.id !== undefined) {
+    insertId = Number(result.id);
+  } else {
+    console.error('[createCrusadeUnit] Cannot find insertId in result:', result);
+    throw new Error('Failed to create crusade unit: invalid ID returned from database');
+  }
+  
+  if (isNaN(insertId) || insertId <= 0) {
+    console.error('[createCrusadeUnit] Invalid insertId:', insertId, 'from result:', result);
+    throw new Error('Failed to create crusade unit: invalid ID returned from database');
+  }
+  
+  const [newUnit] = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, insertId));
+  
+  if (!newUnit) {
+    console.error('[createCrusadeUnit] Unit not found after insert, ID:', insertId);
+    throw new Error('Failed to retrieve created crusade unit');
+  }
+  
   return newUnit;
 }
 
@@ -287,6 +312,13 @@ export async function getCrusadeUnitsByPlayerId(playerId: number): Promise<Crusa
 }
 
 export async function getCrusadeUnitById(id: number): Promise<CrusadeUnit | undefined> {
+  console.log('[getCrusadeUnitById] Called with:', id, 'Type:', typeof id, 'isNaN:', isNaN(id));
+  
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[getCrusadeUnitById] Invalid unit ID: ${id}`);
+    return undefined;
+  }
+  
   const db = await getDb();
   if (!db) return undefined;
 
@@ -295,6 +327,11 @@ export async function getCrusadeUnitById(id: number): Promise<CrusadeUnit | unde
 }
 
 export async function updateCrusadeUnit(id: number, updates: Partial<CrusadeUnit>): Promise<void> {
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[updateCrusadeUnit] Invalid unit ID: ${id}`);
+    throw new Error(`Invalid crusade unit ID: ${id}`);
+  }
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -302,6 +339,11 @@ export async function updateCrusadeUnit(id: number, updates: Partial<CrusadeUnit
 }
 
 export async function deleteCrusadeUnit(id: number): Promise<void> {
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[deleteCrusadeUnit] Invalid unit ID: ${id}`);
+    throw new Error(`Invalid crusade unit ID: ${id}`);
+  }
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 

@@ -217,3 +217,11 @@
 - [x] Added validation to updatePlayer to prevent NaN IDs
 - [x] Added logging to getPlayerById to track all calls
 - [x] Error fully resolved - all database functions now validate IDs
+
+
+## Fix NaN Error in crusadeUnit Queries
+- [x] Find createCrusadeUnit and add robust insertId validation
+- [x] Add validation to getCrusadeUnitById
+- [x] Add validation to updateCrusadeUnit
+- [x] Add validation to deleteCrusadeUnit
+- [x] All crusadeUnit database functions now validate IDs
