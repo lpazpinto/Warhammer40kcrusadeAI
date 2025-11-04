@@ -258,3 +258,35 @@
 - [x] Added pencil icon button next to unit name in PlayerDetail
 - [x] Connected button to updateUnit mutation with invalidation
 - [x] Players can now give custom names to their units (e.g., "The Emperor's Fury")
+
+
+## Battle Setup Wizard Implementation
+- [ ] Commit all current changes to GitHub
+- [ ] Create missions data structure with Table A (1-3) and Table B (4-6)
+- [ ] Implement mission selection step (manual or random)
+- [ ] Implement points allocation step
+- [ ] Implement unit selection per player (respecting point limits)
+- [ ] Implement final confirmation screen with battle summary
+- [ ] Show selected mission details if random was chosen
+- [ ] Test complete battle setup flow
+- [ ] Create checkpoint after implementation
+
+### Mission Table A (1-3)
+- [ ] Total Domination (pg 114)
+- [ ] Empyric Distortion (pg 116)
+- [ ] Metamorphosis (pg 118)
+- [ ] Lighting the Path (pg 120)
+- [ ] Temporal Flux (pg 122)
+- [ ] Offering of Blood (pg 124)
+- [ ] Fighting Gravity (pg 126)
+- [ ] Seal the Rifts (pg 128)
+
+### Mission Table B (4-6)
+- [ ] Brazen Bridge (pg 115)
+- [ ] Blood and Shadow (pg 117)
+- [ ] Breakout (pg 119)
+- [ ] Trail of Blood (pg 121)
+- [ ] Temporal Raid (pg 123)
+- [ ] Veil Between Worlds (pg 125)
+- [ ] Into the Mouth of Hell (pg 127)
+- [ ] Assault the Warp Gate (pg 129)
