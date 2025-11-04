@@ -175,3 +175,9 @@
 - [x] Fix the source of the invalid player ID (Ver Detalhes link)
 - [x] Test campaign detail page with players
 - [x] Commit fix to GitHub
+
+
+## Fix NaN Crusade Unit ID Error
+- [ ] Find where crusadeUnit.get is being called with NaN
+- [ ] Add validation to prevent NaN unit IDs
+- [ ] Test and commit fix
