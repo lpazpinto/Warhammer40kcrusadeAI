@@ -126,10 +126,10 @@
 
 
 ## Change "Rodadas" to "Fases" (Crusade Armageddon Terminology)
-- [ ] Update database schema (campaigns table: battlesPerPhase, currentPhase)
-- [ ] Update backend code (db.ts, routers.ts)
-- [ ] Update frontend UI (all components showing "Rodadas")
-- [ ] Update campaign creation dialog
-- [ ] Update campaign detail page
-- [ ] Test all changes
-- [ ] Commit to GitHub
+- [x] Update database schema (campaigns table: battlesPerPhase, currentPhase)
+- [x] Update backend code (db.ts, routers.ts)
+- [x] Update frontend UI (all components showing "Rodadas")
+- [x] Update campaign creation dialog
+- [x] Update campaign detail page
+- [x] Test all changes
+- [x] Commit to GitHub
