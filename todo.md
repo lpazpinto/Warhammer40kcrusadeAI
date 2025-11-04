@@ -290,3 +290,24 @@
 - [ ] Veil Between Worlds (pg 125)
 - [ ] Into the Mouth of Hell (pg 127)
 - [ ] Assault the Warp Gate (pg 129)
+
+
+## Fix Parser for Single-Model Units (WARLORD/CHARACTER)
+- [x] Completely rewrote parser with two-pass approach
+- [x] First pass detects if unit has ◦ lines (multi-model) or not (single-model)
+- [x] Single-model CHARACTERS: create 1 model with unit name, all • lines are weapons
+- [x] Multi-model units: • lines with "Nx" are models, ◦ lines are weapons
+- [x] Tested with Lord Marshal Dreir (1 model with 3 weapons) ✅
+- [x] Ready to test with Daemonifuge (should have 2 models)
+- [x] Multi-model units verified working correctly
+
+
+## Implement Unit Selection for Battle Setup
+- [x] Create Dialog component for unit selection
+- [x] Fetch crusade units for each player
+- [x] Display units with checkboxes
+- [x] Show points cost for each unit
+- [x] Track total selected points and validate against limit
+- [x] Save selected unit IDs to wizard state
+- [x] Display selected units count in step 3
+- [ ] Test with multiple players and different point limits

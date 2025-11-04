@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import { Loader2, ArrowLeft, ArrowRight, Dice3, Check } from "lucide-react";
 import { useState } from "react";
@@ -32,6 +34,10 @@ export default function BattleSetup() {
     totalPoints: 1000,
     playerUnits: {},
   });
+  
+  const [unitDialogOpen, setUnitDialogOpen] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [tempSelectedUnits, setTempSelectedUnits] = useState<number[]>([]);
 
   const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
     { id },
@@ -41,6 +47,12 @@ export default function BattleSetup() {
   const { data: players, isLoading: playersLoading } = trpc.player.list.useQuery(
     { campaignId: id },
     { enabled: !isNaN(id) && id > 0 }
+  );
+  
+  // Fetch units for the selected player
+  const { data: playerUnits, isLoading: unitsLoading } = trpc.crusadeUnit.list.useQuery(
+    { playerId: selectedPlayerId || 0 },
+    { enabled: selectedPlayerId !== null && selectedPlayerId > 0 }
   );
 
   if (campaignLoading || playersLoading) {
@@ -110,6 +122,46 @@ export default function BattleSetup() {
     // TODO: Create battle and navigate to battle page
     toast.success('Batalha iniciada!');
     setLocation(`/campaign/${id}`);
+  };
+  
+  const handleOpenUnitDialog = (playerId: number) => {
+    setSelectedPlayerId(playerId);
+    setTempSelectedUnits(config.playerUnits[playerId] || []);
+    setUnitDialogOpen(true);
+  };
+  
+  const handleSaveUnits = () => {
+    if (selectedPlayerId !== null) {
+      setConfig({
+        ...config,
+        playerUnits: {
+          ...config.playerUnits,
+          [selectedPlayerId]: tempSelectedUnits
+        }
+      });
+      toast.success('Unidades selecionadas!');
+    }
+    setUnitDialogOpen(false);
+    setSelectedPlayerId(null);
+  };
+  
+  const toggleUnit = (unitId: number, unitPoints: number) => {
+    const pointsPerPlayer = Math.floor(config.totalPoints / (players?.length || 1));
+    const currentPoints = tempSelectedUnits.reduce((sum, id) => {
+      const unit = playerUnits?.find(u => u.id === id);
+      return sum + (unit?.pointsCost || 0);
+    }, 0);
+    
+    if (tempSelectedUnits.includes(unitId)) {
+      setTempSelectedUnits(tempSelectedUnits.filter(id => id !== unitId));
+    } else {
+      // Check if adding this unit would exceed limit
+      if (currentPoints + unitPoints > pointsPerPlayer) {
+        toast.error(`Limite de pontos excedido! Máximo: ${pointsPerPlayer}`);
+        return;
+      }
+      setTempSelectedUnits([...tempSelectedUnits, unitId]);
+    }
   };
 
   return (
@@ -300,10 +352,7 @@ export default function BattleSetup() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        // TODO: Open unit selection dialog
-                        toast.info(`Seleção de unidades para ${player.name} em desenvolvimento`);
-                      }}
+                      onClick={() => handleOpenUnitDialog(player.id)}
                     >
                       Selecionar Unidades
                     </Button>
@@ -392,6 +441,78 @@ export default function BattleSetup() {
           )}
         </div>
       </div>
+      
+      {/* Unit Selection Dialog */}
+      <Dialog open={unitDialogOpen} onOpenChange={setUnitDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Selecionar Unidades</DialogTitle>
+            <DialogDescription>
+              Escolha as unidades que participarão desta batalha
+            </DialogDescription>
+          </DialogHeader>
+          
+          {unitsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : playerUnits && playerUnits.length > 0 ? (
+            <div className="space-y-4">
+              {/* Points summary */}
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Pontos Selecionados:</span>
+                  <span className="text-lg font-bold">
+                    {tempSelectedUnits.reduce((sum, id) => {
+                      const unit = playerUnits.find(u => u.id === id);
+                      return sum + (unit?.pointsCost || 0);
+                    }, 0)} / {Math.floor(config.totalPoints / (players?.length || 1))}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Unit list */}
+              <div className="space-y-2">
+                {playerUnits.map((unit) => (
+                  <div
+                    key={unit.id}
+                    className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => toggleUnit(unit.id, unit.pointsCost)}
+                  >
+                    <Checkbox
+                      checked={tempSelectedUnits.includes(unit.id)}
+                      onCheckedChange={() => toggleUnit(unit.id, unit.pointsCost)}
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold">{unit.unitName}</div>
+                      {unit.crusadeName && (
+                        <div className="text-sm text-muted-foreground italic">
+                          "{unit.crusadeName}"
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="outline">{unit.pointsCost} pts</Badge>
+                    <Badge variant="secondary">{unit.powerRating} PR</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhuma unidade encontrada no Order of Battle
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnitDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveUnits}>
+              Salvar Seleção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
