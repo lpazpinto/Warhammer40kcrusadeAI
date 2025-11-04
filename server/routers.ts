@@ -50,17 +50,30 @@ export const appRouter = router({
       .input(z.object({
         name: z.string(),
         hordeFaction: z.string(),
-        gameMode: z.enum(['5_phases', 'infinite']).default('5_phases'),
-        pointsLimit: z.number().default(1000),
+        battlesPerPhase: z.number().default(3),
+        strategicPointsForVictory: z.number().default(10),
       }))
       .mutation(async ({ ctx, input }) => {
-        return await db.createCampaign({
-          userId: ctx.user.id,
-          name: input.name,
-          hordeFaction: input.hordeFaction,
-          gameMode: input.gameMode,
-          pointsLimit: input.pointsLimit,
-        });
+        try {
+          console.log('[campaign.create] Input:', input);
+          console.log('[campaign.create] User ID:', ctx.user.id);
+          
+          const campaign = await db.createCampaign({
+            userId: ctx.user.id,
+            name: input.name,
+            hordeFaction: input.hordeFaction,
+            battlesPerPhase: input.battlesPerPhase,
+            strategicPointsForVictory: input.strategicPointsForVictory,
+            currentNarrativeObjective: 'establishing_the_front', // Always start with Phase I
+            currentPhase: 1,
+          });
+          
+          console.log('[campaign.create] Success:', campaign.id);
+          return campaign;
+        } catch (error) {
+          console.error('[campaign.create] Error:', error);
+          throw error;
+        }
       }),
 
     // Update campaign

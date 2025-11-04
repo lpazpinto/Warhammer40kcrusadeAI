@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Sword, Upload, Users } from "lucide-react";
+import { Loader2, Plus, Sword, Upload, Users, CheckCircle2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
+import { NARRATIVE_OBJECTIVES } from "@shared/narrativeObjectives";
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
@@ -122,7 +123,7 @@ export default function CampaignDetail() {
             <div>
               <h1 className="text-4xl font-bold mb-2">{campaign.name}</h1>
               <p className="text-muted-foreground">
-                vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Fase {campaign.currentPhase}
+                vs {campaign.hordeFaction} • Fase {campaign.currentPhase}/{4}
               </p>
             </div>
             
@@ -310,20 +311,60 @@ export default function CampaignDetail() {
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Modo de Jogo</div>
-                  <div className="font-semibold">
-                    {campaign.gameMode === '5_phases' ? '5 Fases' : 'Infinito'}
-                  </div>
+                  <div className="text-sm text-muted-foreground">Batalhas por Fase</div>
+                  <div className="font-semibold">{campaign.battlesPerPhase}</div>
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Limite de Pontos</div>
-                  <div className="font-semibold">{campaign.pointsLimit}</div>
+                  <div className="text-sm text-muted-foreground">Pontos Estratégicos para Vitória</div>
+                  <div className="font-semibold">{campaign.strategicPointsForVictory}</div>
                 </div>
                 
                 <div>
                   <div className="text-sm text-muted-foreground">Fase Atual</div>
                   <div className="font-semibold">{campaign.currentPhase}</div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Narrative Objective Card */}
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span>Objetivo Narrativo - Fase {campaign.currentPhase}</span>
+                </CardTitle>
+                <CardDescription>
+                  {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.titlePt || campaign.currentNarrativeObjective}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="text-sm font-semibold mb-1">Descrição</div>
+                  <p className="text-sm text-muted-foreground">
+                    {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.descriptionPt}
+                  </p>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="border rounded-lg p-3 bg-green-500/10 border-green-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <span className="text-sm font-semibold text-green-500">SUCESSO</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.successBenefitPt}
+                    </p>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3 bg-red-500/10 border-red-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <XCircle className="h-4 w-4 text-red-500" />
+                      <span className="text-sm font-semibold text-red-500">FALHA</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.failureConsequencePt}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

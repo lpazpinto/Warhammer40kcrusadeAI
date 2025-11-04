@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE campaigns \nADD COLUMN phase1Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER currentNarrativeObjective,\nADD COLUMN phase2Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER phase1Result,\nADD COLUMN phase3Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER phase2Result,\nADD COLUMN phase4Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER phase3Result;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute ALTER TABLE campaigns \nADD COLUMN phase1Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER currentNarrativeObjective,\nADD COLUMN phase2Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER phase1Result,\nADD COLUMN phase3Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER phase2Result,\nADD COLUMN phase4Result ENUM('success', 'failure', 'pending') DEFAULT 'pending' AFTER phase3Result;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'phase1result' in 'campaigns'"
+  ]
+}

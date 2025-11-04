@@ -133,3 +133,29 @@
 - [x] Update campaign detail page
 - [x] Test all changes
 - [x] Commit to GitHub
+
+
+## Implement Narrative Objectives System (Armageddon Campaign)
+- [ ] Extract and translate all Narrative Objectives from images
+- [ ] Update database schema:
+  - [ ] Add battlesPerPhase field to campaigns table
+  - [ ] Add strategicPointsForVictory field to campaigns table
+  - [ ] Add currentNarrativeObjective field to campaigns table
+  - [ ] Add phaseResult field to track success/failure per phase
+  - [ ] Change gameMode to always be 4 phases (remove 5_phases/infinite)
+- [ ] Create narrativeObjectives.ts with all 6 objectives data structure
+- [ ] Update campaign creation form:
+  - [ ] Add "Batalhas por Fase" input
+  - [ ] Add "Pontos Estratégicos para Vitória" input
+  - [ ] Remove gameMode selector (always 4 phases)
+- [ ] Update CampaignDetail page:
+  - [ ] Show current Narrative Objective title and description
+  - [ ] Show SUCCESS benefits
+  - [ ] Show FAILURE consequences
+  - [ ] Show phase progress (battles completed / total battles)
+- [ ] Implement phase completion logic:
+  - [ ] Calculate if phase was success or failure based on strategic points
+  - [ ] Determine next Narrative Objective based on result
+  - [ ] Update currentPhase and currentNarrativeObjective
+- [ ] Test complete campaign flow through all 4 phases
+- [ ] Commit to GitHub

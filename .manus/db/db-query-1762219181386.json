@@ -1,0 +1,146 @@
+{
+  "query": "DESCRIBE campaigns;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute DESCRIBE campaigns;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "userId",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "name",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('ongoing','completed','paused')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "ongoing",
+      "Extra": ""
+    },
+    {
+      "Field": "hordeFaction",
+      "Type": "varchar(100)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "hordePrimaryFactionRule",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "currentBattleRound",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "gameMasterId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "battlesPerPhase",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "strategicPointsToWin",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "10",
+      "Extra": ""
+    },
+    {
+      "Field": "currentPhase",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "phase1StrategicPoints",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "phase2StrategicPoints",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "phase3StrategicPoints",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "phase4StrategicPoints",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint(11)\tNO\tPRI\tNULL\tauto_increment\nuserId\tint(11)\tNO\t\tNULL\t\nname\tvarchar(255)\tNO\t\tNULL\t\nstatus\tenum('ongoing','completed','paused')\tNO\t\tongoing\t\nhordeFaction\tvarchar(100)\tNO\t\tNULL\t\nhordePrimaryFactionRule\ttext\tYES\t\tNULL\t\ncurrentBattleRound\tint(11)\tNO\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\ngameMasterId\tint(11)\tYES\t\tNULL\t\nbattlesPerPhase\tint(11)\tNO\t\t3\t\nstrategicPointsToWin\tint(11)\tNO\t\t10\t\ncurrentPhase\tint(11)\tNO\t\t1\t\nphase1StrategicPoints\tint(11)\tNO\t\t0\t\nphase2StrategicPoints\tint(11)\tNO\t\t0\t\nphase3StrategicPoints\tint(11)\tNO\t\t0\t\nphase4StrategicPoints\tint(11)\tNO\t\t0\t\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

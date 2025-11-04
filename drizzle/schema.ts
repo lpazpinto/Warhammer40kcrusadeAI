@@ -28,9 +28,14 @@ export const campaigns = mysqlTable("campaigns", {
   status: mysqlEnum("status", ["ongoing", "completed", "paused"]).default("ongoing").notNull(),
   hordeFaction: varchar("hordeFaction", { length: 100 }).notNull(), // e.g., "Tyranids", "Orks"
   hordePrimaryFactionRule: text("hordePrimaryFactionRule"), // JSON string for faction-specific rules
-  gameMode: mysqlEnum("gameMode", ["5_phases", "infinite"]).default("5_phases").notNull(),
-  pointsLimit: int("pointsLimit").default(1000).notNull(), // 1000 or 2000
-  currentPhase: int("currentPhase").default(0).notNull(),
+  battlesPerPhase: int("battlesPerPhase").default(3).notNull(), // Number of battles in each phase
+  strategicPointsForVictory: int("strategicPointsForVictory").default(10).notNull(), // Points needed to consider phase a success
+  currentPhase: int("currentPhase").default(1).notNull(), // Always 4 phases total
+  currentNarrativeObjective: varchar("currentNarrativeObjective", { length: 100 }).default("establishing_the_front").notNull(),
+  phase1Result: mysqlEnum("phase1Result", ["success", "failure", "pending"]).default("pending"),
+  phase2Result: mysqlEnum("phase2Result", ["success", "failure", "pending"]).default("pending"),
+  phase3Result: mysqlEnum("phase3Result", ["success", "failure", "pending"]).default("pending"),
+  phase4Result: mysqlEnum("phase4Result", ["success", "failure", "pending"]).default("pending"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

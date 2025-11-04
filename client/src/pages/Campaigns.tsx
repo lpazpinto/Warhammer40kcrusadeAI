@@ -20,8 +20,8 @@ export default function Campaigns() {
   const [newCampaign, setNewCampaign] = useState({
     name: "",
     hordeFaction: "",
-    gameMode: "5_phases" as "5_phases" | "infinite",
-    pointsLimit: 1000,
+    battlesPerPhase: 3,
+    strategicPointsForVictory: 10,
   });
 
   const { data: campaigns, isLoading, refetch } = trpc.campaign.list.useQuery(undefined, {
@@ -143,40 +143,30 @@ export default function Campaigns() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="gameMode">Modo de Jogo</Label>
-                  <Select
-                    value={newCampaign.gameMode}
-                    onValueChange={(value: "5_phases" | "infinite") => 
-                      setNewCampaign({ ...newCampaign, gameMode: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5_phases">5 Fases</SelectItem>
-                      <SelectItem value="infinite">Infinito</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="battlesPerPhase">Batalhas por Fase</Label>
+                  <Input
+                    id="battlesPerPhase"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={newCampaign.battlesPerPhase}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, battlesPerPhase: parseInt(e.target.value) || 3 })}
+                  />
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="points">Limite de Pontos</Label>
-                  <Select
-                    value={newCampaign.pointsLimit.toString()}
-                    onValueChange={(value) => 
-                      setNewCampaign({ ...newCampaign, pointsLimit: parseInt(value) })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1000">1000 pontos (2 zonas de spawn)</SelectItem>
-                      <SelectItem value="2000">2000 pontos (4 zonas de spawn)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="strategicPoints">Pontos Estratégicos para Vitória</Label>
+                  <Input
+                    id="strategicPoints"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={newCampaign.strategicPointsForVictory}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, strategicPointsForVictory: parseInt(e.target.value) || 10 })}
+                  />
                 </div>
+                
+
               </div>
               
               <DialogFooter>
@@ -223,13 +213,11 @@ export default function Campaigns() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Sword className="h-4 w-4 text-muted-foreground" />
-                        <span>{campaign.pointsLimit} pontos</span>
+                        <span>{campaign.battlesPerPhase} batalhas/fase</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {campaign.gameMode === '5_phases' ? '5 Fases' : 'Modo Infinito'}
-                        </span>
+                        <span>4 Fases</span>
                       </div>
                       <div className="text-muted-foreground">
                         Fase atual: {campaign.currentPhase}
