@@ -41,6 +41,14 @@ export default function BattleSetup() {
   const [unitDialogOpen, setUnitDialogOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [tempSelectedUnits, setTempSelectedUnits] = useState<number[]>([]);
+  
+  // Requisition modal state
+  const [requisitionDialogOpen, setRequisitionDialogOpen] = useState(false);
+  const [selectedRequisition, setSelectedRequisition] = useState<Requisition | null>(null);
+  const [requisitionPlayerId, setRequisitionPlayerId] = useState<number | null>(null);
+  const [selectedUnitForRequisition, setSelectedUnitForRequisition] = useState<number | null>(null);
+  
+  const increaseSupplyLimitMutation = trpc.player.applyIncreaseSupplyLimit.useMutation();
 
   const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
     { id },
@@ -404,16 +412,37 @@ export default function BattleSetup() {
                                 size="sm"
                                 variant={canAfford ? "default" : "outline"}
                                 disabled={!canAfford || requisition.timing === 'after_battle'}
-                                onClick={() => {
+                                onClick={async () => {
                                   if (canAfford) {
-                                    setConfig({
-                                      ...config,
-                                      playerRequisitions: {
-                                        ...config.playerRequisitions,
-                                        [player.id]: [...purchasedRequisitions, requisition.id]
+                                    // Handle requisition purchase with automatic effects
+                                    if (requisition.id === 'increase_supply_limit') {
+                                      try {
+                                        const result = await increaseSupplyLimitMutation.mutateAsync({
+                                          playerId: player.id,
+                                          rpCost: typeof requisition.cost === 'number' ? requisition.cost : 1,
+                                        });
+                                        toast.success(`${requisition.name} comprada! Novo limite: ${result.newSupplyLimit} pontos`);
+                                        // Invalidate player query to refresh RP balance
+                                        await trpc.useUtils().player.list.invalidate({ campaignId: id });
+                                      } catch (error) {
+                                        toast.error(`Erro ao comprar requisição: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+                                        return;
                                       }
-                                    });
-                                    toast.success(`${requisition.name} comprada!`);
+                                      
+                                      // Track purchase in wizard state
+                                      setConfig({
+                                        ...config,
+                                        playerRequisitions: {
+                                          ...config.playerRequisitions,
+                                          [player.id]: [...purchasedRequisitions, requisition.id]
+                                        }
+                                      });
+                                    } else {
+                                      // Requisitions that need user input - open modal
+                                      setSelectedRequisition(requisition);
+                                      setRequisitionPlayerId(player.id);
+                                      setRequisitionDialogOpen(true);
+                                    }
                                   }
                                 }}
                               >
@@ -624,6 +653,101 @@ export default function BattleSetup() {
             </Button>
             <Button onClick={handleSaveUnits}>
               Salvar Seleção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Requisition Dialog */}
+      <Dialog open={requisitionDialogOpen} onOpenChange={setRequisitionDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedRequisition?.name}</DialogTitle>
+            <DialogDescription>
+              {selectedRequisition?.description}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequisition && requisitionPlayerId && (
+            <div className="space-y-4">
+              {/* Fetch player's units for selection */}
+              {(() => {
+                const { data: playerUnits } = trpc.crusadeUnit.list.useQuery(
+                  { playerId: requisitionPlayerId },
+                  { enabled: requisitionPlayerId !== null }
+                );
+
+                if (!playerUnits) {
+                  return (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    <Label>Selecione a Unidade</Label>
+                    <RadioGroup
+                      value={selectedUnitForRequisition?.toString() || ''}
+                      onValueChange={(value) => setSelectedUnitForRequisition(parseInt(value))}
+                    >
+                      {playerUnits.map((unit) => (
+                        <div key={unit.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50">
+                          <RadioGroupItem value={unit.id.toString()} id={`unit-${unit.id}`} />
+                          <Label htmlFor={`unit-${unit.id}`} className="flex-1 cursor-pointer">
+                            <div className="font-semibold">{unit.crusadeName || unit.unitName}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {unit.category} • {unit.pointsCost} pts • {unit.experiencePoints} XP
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setRequisitionDialogOpen(false);
+              setSelectedRequisition(null);
+              setRequisitionPlayerId(null);
+              setSelectedUnitForRequisition(null);
+            }}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!selectedUnitForRequisition || !selectedRequisition || !requisitionPlayerId) {
+                  toast.error('Selecione uma unidade');
+                  return;
+                }
+                
+                // TODO: Apply requisition effect based on type
+                toast.info('Efeito da requisição será implementado em breve');
+                
+                // Track purchase
+                const purchasedRequisitions = config.playerRequisitions[requisitionPlayerId] || [];
+                setConfig({
+                  ...config,
+                  playerRequisitions: {
+                    ...config.playerRequisitions,
+                    [requisitionPlayerId]: [...purchasedRequisitions, selectedRequisition.id]
+                  }
+                });
+                
+                // Close dialog
+                setRequisitionDialogOpen(false);
+                setSelectedRequisition(null);
+                setRequisitionPlayerId(null);
+                setSelectedUnitForRequisition(null);
+              }}
+              disabled={!selectedUnitForRequisition}
+            >
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -329,3 +329,20 @@
   - [x] Legendary Veterans (3RP) - For CHARACTERs with 30XP
 - [ ] Test requisition purchases with multiple players
 - [ ] Commit changes to GitHub
+
+
+## Translate Requisitions to Portuguese and Implement Automatic Effects
+- [x] Translate all requisition names and descriptions to Portuguese
+- [x] Add supplyLimit field to players schema
+- [ ] Implement automatic effects for each requisition:
+  - [x] Aumentar Limite de Suprimento - Add 200 to player.supplyLimit (DONE & TESTED)
+  - [ ] Rearmar e Reabastecer - Modal created, effect pending
+  - [ ] Reparar e Recuperar - Modal created, effect pending
+  - [ ] Recrutas Frescos - Modal created, effect pending
+  - [ ] Heróis Renomados - Modal created, effect pending
+  - [ ] Veteranos Lendários - Modal created, effect pending
+- [x] Create tRPC mutation for Increase Supply Limit
+- [x] Create generic requisition modal for unit selection
+- [ ] Create tRPC mutations for other requisition effects
+- [ ] Test each requisition effect with database updates
+- [ ] Commit changes to GitHub

@@ -230,6 +230,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         requisitionPoints: z.number().optional(),
+        supplyLimit: z.number().optional(),
         battleTally: z.number().optional(),
         victories: z.number().optional(),
         supplyPoints: z.number().optional(),
@@ -240,6 +241,30 @@ export const appRouter = router({
         const { id, ...updates } = input;
         await db.updatePlayer(id, updates);
         return { success: true };
+      }),
+
+    // Apply requisition effect: Increase Supply Limit
+    applyIncreaseSupplyLimit: protectedProcedure
+      .input(z.object({
+        playerId: z.number(),
+        rpCost: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const player = await db.getPlayerById(input.playerId);
+        if (!player) throw new Error('Player not found');
+        
+        // Check RP balance
+        if (player.requisitionPoints < input.rpCost) {
+          throw new Error('Insufficient Requisition Points');
+        }
+
+        // Apply effect: +200 to supply limit, deduct RP
+        await db.updatePlayer(input.playerId, {
+          supplyLimit: (player.supplyLimit || 1000) + 200,
+          requisitionPoints: player.requisitionPoints - input.rpCost,
+        });
+
+        return { success: true, newSupplyLimit: (player.supplyLimit || 1000) + 200 };
       }),
 
     // Import army list from .txt file
