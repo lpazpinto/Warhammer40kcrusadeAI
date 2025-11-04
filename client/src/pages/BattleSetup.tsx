@@ -12,12 +12,14 @@ import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import { MISSION_TABLE_A, MISSION_TABLE_B, getRandomMission, type Mission } from "@shared/missions";
+import { REQUISITIONS, type Requisition } from "@shared/requisitions";
 
 interface BattleConfig {
   missionTable: 'A' | 'B' | null;
   missionSelection: 'manual' | 'random' | null;
   selectedMission: Mission | null;
   totalPoints: number;
+  playerRequisitions: Record<number, string[]>; // playerId -> requisitionIds[]
   playerUnits: Record<number, number[]>; // playerId -> unitIds[]
 }
 
@@ -32,6 +34,7 @@ export default function BattleSetup() {
     missionSelection: null,
     selectedMission: null,
     totalPoints: 1000,
+    playerRequisitions: {},
     playerUnits: {},
   });
   
@@ -181,7 +184,7 @@ export default function BattleSetup() {
 
         {/* Progress indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div
               key={s}
               className={`h-2 w-16 rounded-full transition-colors ${
@@ -320,11 +323,123 @@ export default function BattleSetup() {
           </Card>
         )}
 
-        {/* Step 3: Unit Selection */}
+        {/* Step 3: Requisitions */}
         {step === 3 && (
           <Card>
             <CardHeader>
-              <CardTitle>Passo 3: Selecionar Unidades</CardTitle>
+              <CardTitle>Passo 3: Gastar Requisições</CardTitle>
+              <CardDescription>Jogadores podem gastar Pontos de Requisição para comprar upgrades</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {players && players.map((player) => {
+                const playerRP = player.requisitionPoints || 0;
+                const purchasedRequisitions = config.playerRequisitions[player.id] || [];
+                const spentRP = purchasedRequisitions.length; // Simplified: each requisition costs 1RP for now
+                const remainingRP = playerRP - spentRP;
+
+                return (
+                  <div key={player.id} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-lg">{player.name}</h3>
+                        <p className="text-sm text-muted-foreground">{player.faction}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">{remainingRP} RP</div>
+                        <div className="text-xs text-muted-foreground">
+                          {spentRP} gastos / {playerRP} total
+                        </div>
+                      </div>
+                    </div>
+
+                    {purchasedRequisitions.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Requisições Compradas:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {purchasedRequisitions.map((reqId, idx) => {
+                            const req = REQUISITIONS.find(r => r.id === reqId);
+                            return (
+                              <Badge key={idx} variant="secondary">
+                                {req?.name}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Requisições Disponíveis:</p>
+                      <div className="grid gap-2">
+                        {REQUISITIONS.map((requisition) => {
+                          const canAfford = typeof requisition.cost === 'number' 
+                            ? remainingRP >= requisition.cost 
+                            : remainingRP >= 1;
+                          
+                          return (
+                            <div
+                              key={requisition.id}
+                              className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold">{requisition.name}</span>
+                                  <Badge variant="outline">{requisition.cost} RP</Badge>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {requisition.timing === 'before_battle' ? 'Antes da Batalha' : 
+                                     requisition.timing === 'after_battle' ? 'Depois da Batalha' : 
+                                     'A Qualquer Momento'}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {requisition.description}
+                                </p>
+                                {requisition.restrictions && (
+                                  <p className="text-xs text-amber-600 mt-1">
+                                    Restrição: {requisition.restrictions}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant={canAfford ? "default" : "outline"}
+                                disabled={!canAfford || requisition.timing === 'after_battle'}
+                                onClick={() => {
+                                  if (canAfford) {
+                                    setConfig({
+                                      ...config,
+                                      playerRequisitions: {
+                                        ...config.playerRequisitions,
+                                        [player.id]: [...purchasedRequisitions, requisition.id]
+                                      }
+                                    });
+                                    toast.success(`${requisition.name} comprada!`);
+                                  }
+                                }}
+                              >
+                                Comprar
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground italic">
+                      Requisições "Depois da Batalha" não podem ser compradas durante o setup.
+                    </p>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 4: Unit Selection */}
+        {step === 4 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Passo 4: Selecionar Unidades</CardTitle>
               <CardDescription>Cada jogador seleciona suas unidades para a batalha</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -367,11 +482,11 @@ export default function BattleSetup() {
           </Card>
         )}
 
-        {/* Step 4: Confirmation */}
-        {step === 4 && (
+        {/* Step 5: Confirmation */}
+        {step === 5 && (
           <Card>
             <CardHeader>
-              <CardTitle>Passo 4: Confirmar e Iniciar</CardTitle>
+                      <CardTitle>Passo 5: Confirmação</CardTitle>
               <CardDescription>Revise as configurações da batalha</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -428,7 +543,7 @@ export default function BattleSetup() {
             Voltar
           </Button>
 
-          {step < 4 ? (
+          {step < 5 ? (
             <Button onClick={handleNext}>
               Próximo
               <ArrowRight className="ml-2 h-4 w-4" />

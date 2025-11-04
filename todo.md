@@ -311,3 +311,21 @@
 - [x] Save selected unit IDs to wizard state
 - [x] Display selected units count in step 3
 - [ ] Test with multiple players and different point limits
+
+
+## Implement Requisitions System
+- [x] requisitionPoints field already exists in players table schema
+- [x] Created requisitions.ts with all 6 requisition types and costs
+- [x] Added step 3 "Gastar Requisições" to battle setup wizard (5 steps total now)
+- [x] Implemented requisition purchase UI with RP balance display
+- [x] Track purchased requisitions per player in wizard state
+- [x] Validate RP balance before purchase
+- [x] Requisition types implemented:
+  - [x] Increase Supply Limit (1RP) - +200 points to supply limit
+  - [x] Rearm and Resupply (1RP) - Change unit weapons (before battle)
+  - [x] Repair and Recuperate (1-5RP) - Remove Battle Scars (after battle - disabled in setup)
+  - [x] Fresh Recruits (1-4RP) - Add models to unit
+  - [x] Renowned Heroes (1-3RP) - For units with 30XP
+  - [x] Legendary Veterans (3RP) - For CHARACTERs with 30XP
+- [ ] Test requisition purchases with multiple players
+- [ ] Commit changes to GitHub
