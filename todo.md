@@ -235,3 +235,11 @@
 - [x] Distinguish between models and weapons using heuristics
 - [x] Test with official template format - ALL WORKING!
 - [x] Verified: Krieg Command Squad (3 models, 9 weapons), Lord Marshal Dreir (1 model, 3 weapons), Death Korps (2 models, 5 weapons)
+
+
+## Weapons Not Appearing After Import with User's File
+- [x] Test parser with user's actual army file (exercito.txt) - Parser working perfectly!
+- [x] Found root cause: models field stored as JSON string but frontend expected array
+- [x] Added parseModels() helper function to parse JSON string to array
+- [x] Added weapons display section with parseModels() in PlayerDetail
+- [x] All weapons now display correctly after import

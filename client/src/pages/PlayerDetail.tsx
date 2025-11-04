@@ -5,6 +5,20 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, ArrowLeft, Star, Skull, Award } from "lucide-react";
 import { Link, useParams } from "wouter";
 
+// Helper to parse models JSON
+const parseModels = (modelsJson: any): any[] => {
+  if (Array.isArray(modelsJson)) return modelsJson;
+  if (typeof modelsJson === 'string') {
+    try {
+      return JSON.parse(modelsJson);
+    } catch (e) {
+      console.error('Failed to parse models JSON:', e);
+      return [];
+    }
+  }
+  return [];
+};
+
 export default function PlayerDetail() {
   const { id } = useParams<{ id: string }>();
   const playerId = parseInt(id || '0');
@@ -185,10 +199,38 @@ export default function PlayerDetail() {
                         <div>
                           <div className="text-muted-foreground">Modelos</div>
                           <div className="font-semibold">
-                            {unit.models.reduce((sum: number, m: any) => sum + m.count, 0)}
+                            {parseModels(unit.models).reduce((sum: number, m: any) => sum + m.count, 0)}
                           </div>
                         </div>
                       </div>
+
+                      {/* Modelos & Armas Section */}
+                      {parseModels(unit.models).length > 0 && (
+                        <div className="space-y-3 pt-4 border-t">
+                          <div className="flex items-center gap-2 text-sm font-semibold">
+                            <Award className="h-4 w-4" />
+                            Modelos & Armas
+                          </div>
+                          <div className="space-y-2">
+                            {parseModels(unit.models).map((model: any, idx: number) => (
+                              <div key={idx} className="text-sm">
+                                <div className="font-medium">
+                                  {model.count}x {model.name}
+                                </div>
+                                {model.weapons && model.weapons.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1 pl-4">
+                                    {model.weapons.map((weapon: string, wIdx: number) => (
+                                      <Badge key={wIdx} variant="outline" className="text-xs">
+                                        {weapon}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {(unit.battleHonours.length > 0 || unit.battleTraits.length > 0 || unit.battleScars.length > 0) && (
                         <div className="space-y-2 pt-4 border-t">
