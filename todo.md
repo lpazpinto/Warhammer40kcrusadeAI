@@ -170,8 +170,8 @@
 
 
 ## Fix NaN Player ID Error in Campaign Detail
-- [ ] Identify where player.get query is being called with NaN ID
-- [ ] Add validation to prevent NaN IDs from being passed to queries
-- [ ] Fix the source of the invalid player ID
-- [ ] Test campaign detail page with players
-- [ ] Commit fix to GitHub
+- [x] Identify where player.get query is being called with NaN ID
+- [x] Add validation to prevent NaN IDs from being passed to queries
+- [x] Fix the source of the invalid player ID (Ver Detalhes link)
+- [x] Test campaign detail page with players
+- [x] Commit fix to GitHub
