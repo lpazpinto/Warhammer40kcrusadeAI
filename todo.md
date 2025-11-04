@@ -159,3 +159,11 @@
   - [ ] Update currentPhase and currentNarrativeObjective
 - [ ] Test complete campaign flow through all 4 phases
 - [ ] Commit to GitHub
+
+
+## Fix Campaign Creation Invalid ID Error
+- [ ] Investigate why database is returning invalid ID after campaign creation
+- [ ] Check createCampaign function in db.ts
+- [ ] Fix ID return logic in campaign.create mutation
+- [ ] Test campaign creation to ensure valid ID is returned
+- [ ] Commit fix to GitHub

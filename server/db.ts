@@ -114,9 +114,18 @@ export async function createCampaign(campaign: InsertCampaign): Promise<Campaign
 
   const result: any = await db.insert(campaigns).values(campaign);
   
-  // Validate insertId before using it
-  const insertId = Number(result.insertId);
-  console.log('[createCampaign] Insert result:', result, 'insertId:', insertId);
+  // Try different ways to get the insert ID (Drizzle ORM compatibility)
+  let insertId: number;
+  if (result.insertId !== undefined) {
+    insertId = Number(result.insertId);
+  } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+    insertId = Number(result[0].insertId);
+  } else if (result.id !== undefined) {
+    insertId = Number(result.id);
+  } else {
+    console.error('[createCampaign] Cannot find insertId in result:', result);
+    throw new Error('Failed to create campaign: invalid ID returned from database');
+  }
   
   if (isNaN(insertId) || insertId <= 0) {
     console.error('[createCampaign] Invalid insertId:', result.insertId);
