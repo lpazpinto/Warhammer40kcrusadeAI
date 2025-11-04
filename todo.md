@@ -167,3 +167,11 @@
 - [ ] Fix ID return logic in campaign.create mutation
 - [ ] Test campaign creation to ensure valid ID is returned
 - [ ] Commit fix to GitHub
+
+
+## Fix NaN Player ID Error in Campaign Detail
+- [ ] Identify where player.get query is being called with NaN ID
+- [ ] Add validation to prevent NaN IDs from being passed to queries
+- [ ] Fix the source of the invalid player ID
+- [ ] Test campaign detail page with players
+- [ ] Commit fix to GitHub

@@ -272,8 +272,16 @@ export default function CampaignDetail() {
                                 Importar Exército
                               </Button>
                               
-                              <Button size="sm" asChild>
-                                <Link href={`/player/${player.id}`}>Ver Detalhes</Link>
+                              <Button 
+                                size="sm" 
+                                asChild={!!(player.id && !isNaN(player.id) && player.id > 0)}
+                                disabled={!player.id || isNaN(player.id) || player.id <= 0}
+                              >
+                                {player.id && !isNaN(player.id) && player.id > 0 ? (
+                                  <Link href={`/player/${player.id}`}>Ver Detalhes</Link>
+                                ) : (
+                                  <span>Ver Detalhes</span>
+                                )}
                               </Button>
                             </div>
                           </div>
