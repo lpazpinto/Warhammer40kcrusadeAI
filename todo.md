@@ -225,3 +225,13 @@
 - [x] Add validation to updateCrusadeUnit
 - [x] Add validation to deleteCrusadeUnit
 - [x] All crusadeUnit database functions now validate IDs
+
+
+## Fix Weapon Parsing from Official App Export
+- [x] Check armyParser.ts to see how weapons with bullet points (◦) are being parsed
+- [x] Fix parser to correctly extract weapons that start with ◦
+- [x] Handle single-model CHARACTER units (create implicit model with unit name)
+- [x] Save current model when changing categories or units
+- [x] Distinguish between models and weapons using heuristics
+- [x] Test with official template format - ALL WORKING!
+- [x] Verified: Krieg Command Squad (3 models, 9 weapons), Lord Marshal Dreir (1 model, 3 weapons), Death Korps (2 models, 5 weapons)
