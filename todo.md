@@ -225,3 +225,124 @@
 - [x] Add validation to updateCrusadeUnit
 - [x] Add validation to deleteCrusadeUnit
 - [x] All crusadeUnit database functions now validate IDs
+
+
+## Fix Weapon Parsing from Official App Export
+- [x] Check armyParser.ts to see how weapons with bullet points (◦) are being parsed
+- [x] Fix parser to correctly extract weapons that start with ◦
+- [x] Handle single-model CHARACTER units (create implicit model with unit name)
+- [x] Save current model when changing categories or units
+- [x] Distinguish between models and weapons using heuristics
+- [x] Test with official template format - ALL WORKING!
+- [x] Verified: Krieg Command Squad (3 models, 9 weapons), Lord Marshal Dreir (1 model, 3 weapons), Death Korps (2 models, 5 weapons)
+
+
+## Weapons Not Appearing After Import with User's File
+- [x] Test parser with user's actual army file (exercito.txt) - Parser working perfectly!
+- [x] Found root cause: models field stored as JSON string but frontend expected array
+- [x] Added parseModels() helper function to parse JSON string to array
+- [x] Added weapons display section with parseModels() in PlayerDetail
+- [x] All weapons now display correctly after import
+
+
+## Parser Not Extracting All Models
+- [x] Fixed parser to extract ALL models from unit
+- [x] Improved heuristic with expanded weapon and model keyword lists
+- [x] Parser now correctly identifies models vs weapons
+- [x] All models are saved when encountering new model (not just weapons)
+
+
+## Add Unit Alias Field
+- [x] Schema already has crusadeName field (line 81)
+- [x] crusadeUnit.update endpoint already accepts crusadeName parameter
+- [x] Added pencil icon button next to unit name in PlayerDetail
+- [x] Connected button to updateUnit mutation with invalidation
+- [x] Players can now give custom names to their units (e.g., "The Emperor's Fury")
+
+
+## Battle Setup Wizard Implementation
+- [x] Commit all current changes to GitHub
+- [x] Create missions data structure with Table A (1-3) and Table B (4-6)
+- [x] Implement mission selection step (manual or random)
+- [x] Implement points allocation step
+- [x] Implement unit selection per player (respecting point limits) - Basic UI done, full implementation pending
+- [x] Implement final confirmation screen with battle summary
+- [x] Show selected mission details if random was chosen
+- [ ] Test complete battle setup flow
+- [ ] Create checkpoint after implementation
+
+### Mission Table A (1-3)
+- [ ] Total Domination (pg 114)
+- [ ] Empyric Distortion (pg 116)
+- [ ] Metamorphosis (pg 118)
+- [ ] Lighting the Path (pg 120)
+- [ ] Temporal Flux (pg 122)
+- [ ] Offering of Blood (pg 124)
+- [ ] Fighting Gravity (pg 126)
+- [ ] Seal the Rifts (pg 128)
+
+### Mission Table B (4-6)
+- [ ] Brazen Bridge (pg 115)
+- [ ] Blood and Shadow (pg 117)
+- [ ] Breakout (pg 119)
+- [ ] Trail of Blood (pg 121)
+- [ ] Temporal Raid (pg 123)
+- [ ] Veil Between Worlds (pg 125)
+- [ ] Into the Mouth of Hell (pg 127)
+- [ ] Assault the Warp Gate (pg 129)
+
+
+## Fix Parser for Single-Model Units (WARLORD/CHARACTER)
+- [x] Completely rewrote parser with two-pass approach
+- [x] First pass detects if unit has ◦ lines (multi-model) or not (single-model)
+- [x] Single-model CHARACTERS: create 1 model with unit name, all • lines are weapons
+- [x] Multi-model units: • lines with "Nx" are models, ◦ lines are weapons
+- [x] Tested with Lord Marshal Dreir (1 model with 3 weapons) ✅
+- [x] Ready to test with Daemonifuge (should have 2 models)
+- [x] Multi-model units verified working correctly
+
+
+## Implement Unit Selection for Battle Setup
+- [x] Create Dialog component for unit selection
+- [x] Fetch crusade units for each player
+- [x] Display units with checkboxes
+- [x] Show points cost for each unit
+- [x] Track total selected points and validate against limit
+- [x] Save selected unit IDs to wizard state
+- [x] Display selected units count in step 3
+- [ ] Test with multiple players and different point limits
+
+
+## Implement Requisitions System
+- [x] requisitionPoints field already exists in players table schema
+- [x] Created requisitions.ts with all 6 requisition types and costs
+- [x] Added step 3 "Gastar Requisições" to battle setup wizard (5 steps total now)
+- [x] Implemented requisition purchase UI with RP balance display
+- [x] Track purchased requisitions per player in wizard state
+- [x] Validate RP balance before purchase
+- [x] Requisition types implemented:
+  - [x] Increase Supply Limit (1RP) - +200 points to supply limit
+  - [x] Rearm and Resupply (1RP) - Change unit weapons (before battle)
+  - [x] Repair and Recuperate (1-5RP) - Remove Battle Scars (after battle - disabled in setup)
+  - [x] Fresh Recruits (1-4RP) - Add models to unit
+  - [x] Renowned Heroes (1-3RP) - For units with 30XP
+  - [x] Legendary Veterans (3RP) - For CHARACTERs with 30XP
+- [ ] Test requisition purchases with multiple players
+- [ ] Commit changes to GitHub
+
+
+## Translate Requisitions to Portuguese and Implement Automatic Effects
+- [x] Translate all requisition names and descriptions to Portuguese
+- [x] Add supplyLimit field to players schema
+- [ ] Implement automatic effects for each requisition:
+  - [x] Aumentar Limite de Suprimento - Add 200 to player.supplyLimit (DONE & TESTED)
+  - [ ] Rearmar e Reabastecer - Modal created, effect pending
+  - [ ] Reparar e Recuperar - Modal created, effect pending
+  - [ ] Recrutas Frescos - Modal created, effect pending
+  - [ ] Heróis Renomados - Modal created, effect pending
+  - [ ] Veteranos Lendários - Modal created, effect pending
+- [x] Create tRPC mutation for Increase Supply Limit
+- [x] Create generic requisition modal for unit selection
+- [ ] Create tRPC mutations for other requisition effects
+- [ ] Test each requisition effect with database updates
+- [ ] Commit changes to GitHub

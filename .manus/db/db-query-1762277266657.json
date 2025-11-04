@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, unitName, models FROM crusadeUnits WHERE id IN (SELECT id FROM crusadeUnits ORDER BY id DESC LIMIT 3)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, unitName, models FROM crusadeUnits WHERE id IN (SELECT id FROM crusadeUnits ORDER BY id DESC LIMIT 3)",
+  "rows": [
+    {
+      "id": "690025",
+      "unitName": "Krieg Combat Engineers",
+      "models": "[{\"name\":\"Krieg Engineer Watchmaster\",\"count\":1,\"weapons\":[\"Autopistol\",\"Trench club\"]},{\"name\":\"Krieg Combat Engineer\",\"count\":4,\"weapons\":[\"Autopistol\",\"Trench club\"]}]"
+    },
+    {
+      "id": "690026",
+      "unitName": "Krieg Heavy Weapons Squad",
+      "models": "[{\"name\":\"Krieg Heavy Weapons Squad\",\"count\":1,\"weapons\":[\"Heavy Weapons Gunner\",\"Close combat weapon\",\"Lascannon\",\"Laspistol\"]},{\"name\":\"Fire Coordinator\",\"count\":1,\"weapons\":[\"Close combat weapon\",\"Laspistol\"]}]"
+    },
+    {
+      "id": "690027",
+      "unitName": "Leman Russ Executioner",
+      "models": "[{\"name\":\"Armoured tracks\",\"count\":1,\"weapons\":[\"Executioner plasma cannon\",\"Lascannon\"]}]"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tunitName\tmodels\n690025\tKrieg Combat Engineers\t[{\"name\":\"Krieg Engineer Watchmaster\",\"count\":1,\"weapons\":[\"Autopistol\",\"Trench club\"]},{\"name\":\"Krieg Combat Engineer\",\"count\":4,\"weapons\":[\"Autopistol\",\"Trench club\"]}]\n690026\tKrieg Heavy Weapons Squad\t[{\"name\":\"Krieg Heavy Weapons Squad\",\"count\":1,\"weapons\":[\"Heavy Weapons Gunner\",\"Close combat weapon\",\"Lascannon\",\"Laspistol\"]},{\"name\":\"Fire Coordinator\",\"count\":1,\"weapons\":[\"Close combat weapon\",\"Laspistol\"]}]\n690027\tLeman Russ Executioner\t[{\"name\":\"Armoured tracks\",\"count\":1,\"weapons\":[\"Executioner plasma cannon\",\"Lascannon\"]}]\n",
+  "stderr": "",
+  "execution_time_ms": 10169
+}

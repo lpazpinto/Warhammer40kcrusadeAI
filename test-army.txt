@@ -1,0 +1,40 @@
+13th (950 Points)
+
+Astra Militarum
+Combined Arms
+Incursion (1 000 Points)
+
+CHARACTERS
+
+Krieg Command Squad (65 Points)
+  • 1x Lord Commissar
+     ◦ 1x Laspistol
+     ◦ 1x Plasma pistol
+     ◦ 1x Power fist
+  • 1x Veteran Guardsman
+     ◦ 1x Chainsword
+     ◦ 1x Plasma pistol
+  • 1x Veteran Guardsman
+     ◦ 1x Alchemyk Counteragents
+     ◦ 1x Close combat weapon
+     ◦ 1x Laspistol
+     ◦ 1x Servo-scribes
+
+Lord Marshal Dreir (100 Points)
+  • Warlord
+  • 1x Laspistol
+  • 1x Sabre of Sacrifice
+  • 1x Savage claws
+
+BATTLELINE
+
+Death Korps of Krieg (145 Points)
+  • 2x Death Korps Watchmaster
+     ◦ 2x Chainsword
+     ◦ 2x Laspistol
+  • 18x Death Korps Trooper
+     ◦ 18x Close combat weapon
+     ◦ 17x Lasgun
+     ◦ 1x Long-las
+
+Exported with App Version: v1.43.0 (1), Data Version: v705
