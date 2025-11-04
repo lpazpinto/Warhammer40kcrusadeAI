@@ -49,6 +49,7 @@ export default function BattleSetup() {
   const [selectedUnitForRequisition, setSelectedUnitForRequisition] = useState<number | null>(null);
   
   const increaseSupplyLimitMutation = trpc.player.applyIncreaseSupplyLimit.useMutation();
+  const utils = trpc.useUtils();
 
   const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
     { id },
@@ -423,7 +424,7 @@ export default function BattleSetup() {
                                         });
                                         toast.success(`${requisition.name} comprada! Novo limite: ${result.newSupplyLimit} pontos`);
                                         // Invalidate player query to refresh RP balance
-                                        await trpc.useUtils().player.list.invalidate({ campaignId: id });
+                                        await utils.player.list.invalidate({ campaignId: id });
                                       } catch (error) {
                                         toast.error(`Erro ao comprar requisição: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
                                         return;

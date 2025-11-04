@@ -134,10 +134,10 @@ export default function PlayerDetail() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Pontos de Suprimento</CardTitle>
+              <CardTitle className="text-sm font-medium">Limite de Suprimento</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{player.supplyPoints}</div>
+              <div className="text-3xl font-bold">{player.supplyLimit || 1000}</div>
             </CardContent>
           </Card>
         </div>

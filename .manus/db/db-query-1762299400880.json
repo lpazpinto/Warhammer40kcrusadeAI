@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE players SET supplyLimit = 1000 WHERE supplyLimit IS NULL OR supplyLimit = 0;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute UPDATE players SET supplyLimit = 1000 WHERE supplyLimit IS NULL OR supplyLimit = 0;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 65
+}
