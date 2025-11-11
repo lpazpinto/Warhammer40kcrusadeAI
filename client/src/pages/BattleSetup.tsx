@@ -22,18 +22,18 @@ type BattleConfig = {
 
 
 const DEPLOYMENTS = [
-  "Dawn of War",
-  "Hammer and Anvil",
-  "Search and Destroy",
-  "Sweeping Engagement"
+  "Alvorecer da Guerra",
+  "Martelo e Bigorna",
+  "Buscar e Destruir",
+  "Engajamento Amplo"
 ];
 
 const MISSIONS = [
-  "Take and Hold",
-  "Priority Targets",
-  "Scorched Earth",
-  "Purge the Enemy",
-  "Supply Drop"
+  "Tomar e Segurar",
+  "Alvos Prioritários",
+  "Terra Arrasada",
+  "Purgar o Inimigo",
+  "Suprimentos"
 ];
 
 export default function BattleSetup() {
