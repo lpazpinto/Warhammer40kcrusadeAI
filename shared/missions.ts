@@ -20,56 +20,56 @@ export const MISSION_TABLE_A: Mission[] = [
     id: 'total_domination',
     table: 'A',
     d33Roll: 11,
-    name: 'Total Domination',
+    name: 'Dominação Total',
     pageReference: 'pg 114'
   },
   {
     id: 'empyric_distortion',
     table: 'A',
     d33Roll: 12,
-    name: 'Empyric Distortion',
+    name: 'Distorção Empírica',
     pageReference: 'pg 116'
   },
   {
     id: 'metamorphosis',
     table: 'A',
     d33Roll: 13,
-    name: 'Metamorphosis',
+    name: 'Metamorfose',
     pageReference: 'pg 118'
   },
   {
     id: 'lighting_the_path',
     table: 'A',
     d33Roll: 21,
-    name: 'Lighting the Path',
+    name: 'Iluminando o Caminho',
     pageReference: 'pg 120'
   },
   {
     id: 'temporal_flux',
     table: 'A',
     d33Roll: 22,
-    name: 'Temporal Flux',
+    name: 'Fluxo Temporal',
     pageReference: 'pg 122'
   },
   {
     id: 'offering_of_blood',
     table: 'A',
     d33Roll: 23,
-    name: 'Offering of Blood',
+    name: 'Oferenda de Sangue',
     pageReference: 'pg 124'
   },
   {
     id: 'fighting_gravity',
     table: 'A',
     d33Roll: 31,
-    name: 'Fighting Gravity',
+    name: 'Lutando Contra a Gravidade',
     pageReference: 'pg 126'
   },
   {
     id: 'seal_the_rifts',
     table: 'A',
     d33Roll: 32,
-    name: 'Seal the Rifts',
+    name: 'Selar as Fendas',
     pageReference: 'pg 128'
   }
 ];
@@ -83,56 +83,56 @@ export const MISSION_TABLE_B: Mission[] = [
     id: 'brazen_bridge',
     table: 'B',
     d33Roll: 11,
-    name: 'Brazen Bridge',
+    name: 'Ponte Descarada',
     pageReference: 'pg 115'
   },
   {
     id: 'blood_and_shadow',
     table: 'B',
     d33Roll: 12,
-    name: 'Blood and Shadow',
+    name: 'Sangue e Sombra',
     pageReference: 'pg 117'
   },
   {
     id: 'breakout',
     table: 'B',
     d33Roll: 13,
-    name: 'Breakout',
+    name: 'Fuga',
     pageReference: 'pg 119'
   },
   {
     id: 'trail_of_blood',
     table: 'B',
     d33Roll: 21,
-    name: 'Trail of Blood',
+    name: 'Trilha de Sangue',
     pageReference: 'pg 121'
   },
   {
     id: 'temporal_raid',
     table: 'B',
     d33Roll: 22,
-    name: 'Temporal Raid',
+    name: 'Ataque Temporal',
     pageReference: 'pg 123'
   },
   {
     id: 'veil_between_worlds',
     table: 'B',
     d33Roll: 23,
-    name: 'Veil Between Worlds',
+    name: 'Véu Entre Mundos',
     pageReference: 'pg 125'
   },
   {
     id: 'into_the_mouth_of_hell',
     table: 'B',
     d33Roll: 31,
-    name: 'Into the Mouth of Hell',
+    name: 'Na Boca do Inferno',
     pageReference: 'pg 127'
   },
   {
     id: 'assault_the_warp_gate',
     table: 'B',
     d33Roll: 32,
-    name: 'Assault the Warp Gate',
+    name: 'Assalto ao Portal Warp',
     pageReference: 'pg 129'
   }
 ];
