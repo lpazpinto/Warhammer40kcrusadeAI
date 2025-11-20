@@ -45,61 +45,17 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
-// Recursively check for NaN values in an object
-function hasNaNValue(obj: any, path: string = 'root'): string | null {
-  if (typeof obj === 'number') {
-    if (isNaN(obj) || !isFinite(obj)) {
-      return path;
-    }
-    return null;
-  }
-  
-  if (Array.isArray(obj)) {
-    for (let i = 0; i < obj.length; i++) {
-      const result = hasNaNValue(obj[i], `${path}[${i}]`);
-      if (result) return result;
-    }
-    return null;
-  }
-  
-  if (obj !== null && typeof obj === 'object') {
-    for (const key in obj) {
-      const result = hasNaNValue(obj[key], `${path}.${key}`);
-      if (result) return result;
-    }
-    return null;
-  }
-  
-  return null;
-}
-
 // Custom transformer that validates data before sending
 const validatingTransformer = {
   input: {
     serialize: (object: any) => {
-      // Check for NaN BEFORE serialization
-      const nanPath = hasNaNValue(object);
-      if (nanPath) {
-        console.error('[TRPC Client] ============ NaN DETECTED ============');
-        console.error('[TRPC Client] NaN detected at path:', nanPath);
-        console.error('[TRPC Client] Full object:', object);
-        console.error('[TRPC Client] Object type:', typeof object);
-        console.error('[TRPC Client] Current URL:', window.location.href);
-        console.error('[TRPC Client] Stack trace:', new Error().stack);
-        console.error('[TRPC Client] ========================================');
-        // Don't throw, just log and let Zod validation handle it
-        // throw new Error(`Invalid data: NaN value found at ${nanPath}`);
-      }
-      
       const serialized = superjson.serialize(object);
-      
-      // Double-check after serialization
+      // Check for NaN in the serialized data
       const jsonString = JSON.stringify(serialized);
-      if (jsonString.includes('NaN') || jsonString.includes('Infinity')) {
-        console.error('[TRPC Client] NaN/Infinity detected in serialized data:', object);
-        throw new Error('Invalid data: NaN or Infinity values are not allowed');
+      if (jsonString.includes('NaN')) {
+        console.error('[TRPC Client] NaN detected in request:', object);
+        throw new Error('Invalid data: NaN values are not allowed');
       }
-      
       return serialized;
     },
     deserialize: (object: any) => superjson.deserialize(object),

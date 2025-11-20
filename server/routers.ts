@@ -2,7 +2,6 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { parseArmyList, estimatePowerRating } from "./armyParser";
@@ -22,16 +21,6 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
-  }),
-
-  // User management
-  user: router({
-    // Search users by name or email
-    search: protectedProcedure
-      .input(z.object({ query: z.string().min(1) }))
-      .query(async ({ input }) => {
-        return await db.searchUsers(input.query);
-      }),
   }),
 
   // Campaign management
@@ -61,22 +50,30 @@ export const appRouter = router({
       .input(z.object({
         name: z.string(),
         hordeFaction: z.string(),
-        pointsLimit: z.number().default(1000),
-        battlesPerPhase: z.number().min(1).max(4).default(3),
-        strategicPointsToWin: z.number().min(1).default(10),
+        battlesPerPhase: z.number().default(3),
+        strategicPointsForVictory: z.number().default(10),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Creator is automatically the Game Master
-        return await db.createCampaign({
-          userId: ctx.user.id,
-          name: input.name,
-          hordeFaction: input.hordeFaction,
-          pointsLimit: input.pointsLimit,
-          battlesPerPhase: input.battlesPerPhase,
-          strategicPointsToWin: input.strategicPointsToWin,
-          gameMasterId: ctx.user.id, // Creator is Game Master
-          gameMode: '5_rounds', // Keep for backward compatibility but not used
-        });
+        try {
+          console.log('[campaign.create] Input:', input);
+          console.log('[campaign.create] User ID:', ctx.user.id);
+          
+          const campaign = await db.createCampaign({
+            userId: ctx.user.id,
+            name: input.name,
+            hordeFaction: input.hordeFaction,
+            battlesPerPhase: input.battlesPerPhase,
+            strategicPointsForVictory: input.strategicPointsForVictory,
+            currentNarrativeObjective: 'establishing_the_front', // Always start with Phase I
+            currentPhase: 1,
+          });
+          
+          console.log('[campaign.create] Success:', campaign.id);
+          return campaign;
+        } catch (error) {
+          console.error('[campaign.create] Error:', error);
+          throw error;
+        }
       }),
 
     // Update campaign
@@ -92,62 +89,95 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // Send campaign invitation
+    // Send invitation to user
     sendInvite: protectedProcedure
       .input(z.object({
         campaignId: z.number(),
-        invitedUserId: z.number(),
+        inviteeId: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Verify user is the Game Master
+        // Check if campaign exists and user is the owner
         const campaign = await db.getCampaignById(input.campaignId);
-        if (!campaign || campaign.gameMasterId !== ctx.user.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the Game Master can send invites' });
+        if (!campaign) {
+          throw new Error('Campaign not found');
         }
-        
-        return await db.createInvitation({
+        if (campaign.userId !== ctx.user.id) {
+          throw new Error('Only campaign owner can send invites');
+        }
+
+        // Check if user is trying to invite themselves
+        if (input.inviteeId === ctx.user.id) {
+          throw new Error('Cannot invite yourself');
+        }
+
+        // Check if invitation already exists
+        const existing = await db.checkExistingInvitation(input.campaignId, input.inviteeId);
+        if (existing) {
+          throw new Error('Invitation already sent to this user');
+        }
+
+        // Check if user is already a player in the campaign
+        const players = await db.getPlayersByCampaignId(input.campaignId);
+        const isAlreadyPlayer = players.some(p => p.userId === input.inviteeId);
+        if (isAlreadyPlayer) {
+          throw new Error('User is already in this campaign');
+        }
+
+        const invitation = await db.createCampaignInvitation({
           campaignId: input.campaignId,
-          invitedUserId: input.invitedUserId,
-          invitedByUserId: ctx.user.id,
+          inviterId: ctx.user.id,
+          inviteeId: input.inviteeId,
         });
+
+        return { success: true, invitationId: invitation.id };
       }),
 
     // List invitations for current user
     listInvites: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getInvitationsByUserId(ctx.user.id);
+      return await db.getInvitationsByInviteeId(ctx.user.id);
     }),
 
-    // Respond to invitation
+    // Respond to invitation (accept or decline)
     respondToInvite: protectedProcedure
       .input(z.object({
-        invitationId: z.number(),
+        inviteId: z.number(),
         accept: z.boolean(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const invitation = await db.getInvitationById(input.inviteId);
+        if (!invitation) {
+          throw new Error('Invitation not found');
+        }
+        if (invitation.inviteeId !== ctx.user.id) {
+          throw new Error('This invitation is not for you');
+        }
+        if (invitation.status !== 'pending') {
+          throw new Error('Invitation has already been responded to');
+        }
+
         const status = input.accept ? 'accepted' : 'declined';
-        return await db.updateInvitationStatus(input.invitationId, status);
-      }),
-  }),
+        await db.updateCampaignInvitation(input.inviteId, {
+          status,
+          respondedAt: new Date(),
+        });
 
-  // Campaign Phase Templates
-  phase: router({
-    // Get all phase templates for a campaign type
-    list: publicProcedure
-      .input(z.object({ 
-        campaignType: z.string().default('armageddon') 
-      }))
-      .query(async ({ input }) => {
-        return await db.getCampaignPhaseTemplates(input.campaignType);
-      }),
+        // If accepted, create a player for the user in the campaign
+        if (input.accept) {
+          const campaign = await db.getCampaignById(invitation.campaignId);
+          if (!campaign) {
+            throw new Error('Campaign not found');
+          }
 
-    // Get a specific phase template
-    get: publicProcedure
-      .input(z.object({ 
-        campaignType: z.string().default('armageddon'),
-        phaseNumber: z.number().min(1).max(6)
-      }))
-      .query(async ({ input }) => {
-        return await db.getCampaignPhaseTemplate(input.campaignType, input.phaseNumber);
+          await db.createPlayer({
+            campaignId: invitation.campaignId,
+            userId: ctx.user.id,
+            name: ctx.user.name || 'Unknown Commander',
+            faction: 'To be determined',
+            isReady: false,
+          });
+        }
+
+        return { success: true, accepted: input.accept };
       }),
   }),
 
@@ -171,6 +201,14 @@ export const appRouter = router({
           })
       }))
       .query(async ({ input }) => {
+        console.log('[player.get] Received ID:', input.id, 'Type:', typeof input.id, 'isNaN:', isNaN(input.id));
+        
+        // Extra validation before database call
+        if (!input.id || isNaN(input.id) || !isFinite(input.id) || input.id <= 0) {
+          console.error('[player.get] Invalid ID detected:', input.id);
+          throw new Error(`Invalid player ID: ${input.id}`);
+        }
+        
         return await db.getPlayerById(input.id);
       }),
 
@@ -183,14 +221,8 @@ export const appRouter = router({
         detachment: z.string().optional(),
         crusadeForceName: z.string().optional(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        // Link player to current user
-        // Supply Limit starts at 1000 points and can be increased via Requisitions
-        return await db.createPlayer({
-          ...input,
-          userId: ctx.user.id,
-          supplyLimit: 1000,
-        });
+      .mutation(async ({ input }) => {
+        return await db.createPlayer(input);
       }),
 
     // Update player stats
@@ -198,6 +230,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         requisitionPoints: z.number().optional(),
+        supplyLimit: z.number().optional(),
         battleTally: z.number().optional(),
         victories: z.number().optional(),
         supplyPoints: z.number().optional(),
@@ -210,30 +243,28 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // Get Order of Battle summary (supply limit, total PL, total points)
-    getOrderOfBattle: protectedProcedure
-      .input(z.object({ playerId: z.number() }))
-      .query(async ({ input }) => {
+    // Apply requisition effect: Increase Supply Limit
+    applyIncreaseSupplyLimit: protectedProcedure
+      .input(z.object({
+        playerId: z.number(),
+        rpCost: z.number(),
+      }))
+      .mutation(async ({ input }) => {
         const player = await db.getPlayerById(input.playerId);
         if (!player) throw new Error('Player not found');
-
-        const units = await db.getCrusadeUnitsByPlayerId(input.playerId);
         
-        // Calculate totals
-        const totalPowerLevel = units.reduce((sum, unit) => sum + (unit.powerRating || 0), 0);
-        const totalPoints = units.reduce((sum, unit) => sum + (unit.pointsCost || 0), 0);
-        const activeUnits = units.filter(u => !u.isDestroyed).length;
-        const totalUnits = units.length;
+        // Check RP balance
+        if (player.requisitionPoints < input.rpCost) {
+          throw new Error('Insufficient Requisition Points');
+        }
 
-        return {
-          supplyLimit: player.supplyLimit || 1000,
-          supplyUsed: totalPoints,
-          supplyRemaining: (player.supplyLimit || 1000) - totalPoints,
-          totalPowerLevel,
-          totalPoints,
-          activeUnits,
-          totalUnits,
-        };
+        // Apply effect: +200 to supply limit, deduct RP
+        await db.updatePlayer(input.playerId, {
+          supplyLimit: (player.supplyLimit || 1000) + 200,
+          requisitionPoints: player.requisitionPoints - input.rpCost,
+        });
+
+        return { success: true, newSupplyLimit: (player.supplyLimit || 1000) + 200 };
       }),
 
     // Import army list from .txt file
@@ -280,20 +311,6 @@ export const appRouter = router({
             points: parsed.points,
           }
         };
-      }),
-    
-    // Toggle player ready status
-    toggleReady: protectedProcedure
-      .input(z.object({ playerId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        // Verify player belongs to current user
-        const player = await db.getPlayerById(input.playerId);
-        if (!player || player.userId !== ctx.user.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only toggle ready status for your own player' });
-        }
-        
-        const newStatus = await db.togglePlayerReady(input.playerId);
-        return { isReady: newStatus };
       }),
   }),
 
@@ -381,611 +398,6 @@ export const appRouter = router({
         await db.deleteCrusadeUnit(input.id);
         return { success: true };
       }),
-
-    // Record battle result and update unit stats automatically
-    recordBattleResult: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        survived: z.boolean(),
-        enemyUnitsDestroyed: z.number().min(0).default(0),
-        outOfActionStatus: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { unitId, survived, enemyUnitsDestroyed, outOfActionStatus } = input;
-        
-        // Get current unit stats
-        const unit = await db.getCrusadeUnitById(unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Import crusade rules
-        const { calculateBattleXP, getRankFromXP, checkRankPromotion } = await import('./crusadeRules');
-        
-        // Calculate XP earned from this battle
-        const xpEarned = calculateBattleXP({
-          played: true,
-          survived,
-          enemyUnitsDestroyed,
-        });
-        
-        // Update stats
-        const newBattlesPlayed = unit.battlesPlayed + 1;
-        const newBattlesSurvived = survived ? unit.battlesSurvived + 1 : unit.battlesSurvived;
-        const newEnemyUnitsDestroyed = unit.enemyUnitsDestroyed + enemyUnitsDestroyed;
-        const newExperiencePoints = unit.experiencePoints + xpEarned;
-        
-        // Check for rank promotion
-        const newRank = getRankFromXP(newExperiencePoints);
-        const wasPromoted = newRank !== unit.rank;
-        
-        // Prepare result data
-        const result: any = {
-          success: true,
-          xpEarned,
-          newExperiencePoints,
-          newRank,
-          wasPromoted,
-          honoursGained: [],
-          scarsGained: [],
-        };
-        
-        // Update unit
-        const updates: any = {
-          battlesPlayed: newBattlesPlayed,
-          battlesSurvived: newBattlesSurvived,
-          enemyUnitsDestroyed: newEnemyUnitsDestroyed,
-          experiencePoints: newExperiencePoints,
-          rank: newRank,
-        };
-        
-        // If promoted, automatically roll and assign Battle Honour
-        if (wasPromoted) {
-          const { rollRandomBattleHonour } = await import('./battleHonours');
-          const player = await db.getPlayerById(unit.playerId);
-          if (player) {
-            const honour = rollRandomBattleHonour(player.faction, unit.category || 'Infantry');
-            const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
-            currentHonours.push(honour.id);
-            updates.battleHonours = JSON.stringify(currentHonours);
-            result.honoursGained.push(honour);
-          }
-        }
-        
-        // If destroyed, automatically roll and assign Battle Scar
-        if (!survived) {
-          const { rollRandomBattleScar } = await import('./battleScars');
-          const player = await db.getPlayerById(unit.playerId);
-          if (player) {
-            const scar = rollRandomBattleScar(player.faction, unit.category || 'Infantry');
-            const currentScars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
-            currentScars.push(scar.id);
-            updates.battleScars = JSON.stringify(currentScars);
-            updates.isDestroyed = true;
-            result.scarsGained.push(scar);
-          }
-        }
-        
-        if (outOfActionStatus) {
-          updates.outOfActionStatus = outOfActionStatus;
-        }
-        
-        await db.updateCrusadeUnit(unitId, updates);
-        
-        return result;
-      }),
-
-    // Get available Battle Honours for a unit
-    getAvailableBattleHonours: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-      }))
-      .query(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Get player to know faction
-        const player = await db.getPlayerById(unit.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        const { getBattleHonoursForUnit } = await import('./battleHonours');
-        const { getMaxBattleHonours } = await import('./crusadeRules');
-        
-        const availableHonours = getBattleHonoursForUnit(player.faction, unit.unitType || undefined);
-        const maxHonours = getMaxBattleHonours(unit.rank as any);
-        const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
-        
-        return {
-          availableHonours,
-          maxHonours,
-          currentHonours,
-          canAddMore: currentHonours.length < maxHonours,
-        };
-      }),
-
-    // Add a Battle Honour to a unit
-    addBattleHonour: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        honourId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const { getMaxBattleHonours } = await import('./crusadeRules');
-        const { getBattleHonourById } = await import('./battleHonours');
-        
-        const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
-        const maxHonours = getMaxBattleHonours(unit.rank as any);
-        
-        if (currentHonours.length >= maxHonours) {
-          throw new Error('Unit already has maximum Battle Honours for its rank');
-        }
-        
-        const honour = getBattleHonourById(input.honourId);
-        if (!honour) {
-          throw new Error('Battle Honour not found');
-        }
-        
-        // Check if already has this honour
-        if (currentHonours.includes(input.honourId)) {
-          throw new Error('Unit already has this Battle Honour');
-        }
-        
-        const newHonours = [...currentHonours, input.honourId];
-        await db.updateCrusadeUnit(input.unitId, {
-          battleHonours: JSON.stringify(newHonours),
-        });
-        
-        return { success: true, honour };
-      }),
-
-    // Remove a Battle Honour from a unit
-    removeBattleHonour: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        honourId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const currentHonours = unit.battleHonours ? JSON.parse(unit.battleHonours) : [];
-        const newHonours = currentHonours.filter((h: string) => h !== input.honourId);
-        
-        await db.updateCrusadeUnit(input.unitId, {
-          battleHonours: JSON.stringify(newHonours),
-        });
-        
-        return { success: true };
-      }),
-
-    // Get available Battle Scars for a unit
-    getAvailableBattleScars: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-      }))
-      .query(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Get player to know faction
-        const player = await db.getPlayerById(unit.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        const { getBattleScarsForUnit } = await import('./battleScars');
-        const availableScars = getBattleScarsForUnit(player.faction, unit.unitType || undefined);
-        const currentScars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
-        
-        return {
-          availableScars,
-          currentScars,
-        };
-      }),
-
-    // Add a Battle Scar to a unit
-    addBattleScar: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        scarId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const { getBattleScarById } = await import('./battleScars');
-        const scar = getBattleScarById(input.scarId);
-        if (!scar) {
-          throw new Error('Battle Scar not found');
-        }
-        
-        const currentScars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
-        
-        // Check if already has this scar
-        if (currentScars.includes(input.scarId)) {
-          throw new Error('Unit already has this Battle Scar');
-        }
-        
-        const newScars = [...currentScars, input.scarId];
-        await db.updateCrusadeUnit(input.unitId, {
-          battleScars: JSON.stringify(newScars),
-        });
-        
-        return { success: true, scar };
-      }),
-
-    // Remove a Battle Scar from a unit
-    removeBattleScar: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        scarId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const currentScars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
-        const newScars = currentScars.filter((s: string) => s !== input.scarId);
-        
-        await db.updateCrusadeUnit(input.unitId, {
-          battleScars: JSON.stringify(newScars),
-        });
-        
-        return { success: true };
-      }),
-
-    // Roll for a random Battle Scar
-    rollRandomBattleScar: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Get player to know faction
-        const player = await db.getPlayerById(unit.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        const { rollRandomBattleScar } = await import('./battleScars');
-        const scar = rollRandomBattleScar(player.faction, unit.unitType || undefined);
-        
-        const currentScars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
-        const newScars = [...currentScars, scar.id];
-        
-        await db.updateCrusadeUnit(input.unitId, {
-          battleScars: JSON.stringify(newScars),
-        });
-        
-        return { success: true, scar };
-      }),
-
-    // Get available Battle Traits for a unit
-    getAvailableBattleTraits: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-      }))
-      .query(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Get player to know faction
-        const player = await db.getPlayerById(unit.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        const { getBattleTraitsForUnit } = await import('./battleTraits');
-        const availableTraits = getBattleTraitsForUnit(player.faction, unit.unitType || undefined);
-        const currentTraits = unit.battleTraits ? JSON.parse(unit.battleTraits) : [];
-        
-        return {
-          availableTraits,
-          currentTraits,
-        };
-      }),
-
-    // Add a Battle Trait to a unit
-    addBattleTrait: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        traitId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const { getBattleTraitById } = await import('./battleTraits');
-        const trait = getBattleTraitById(input.traitId);
-        if (!trait) {
-          throw new Error('Battle Trait not found');
-        }
-        
-        const currentTraits = unit.battleTraits ? JSON.parse(unit.battleTraits) : [];
-        
-        // Check if already has this trait
-        if (currentTraits.includes(input.traitId)) {
-          throw new Error('Unit already has this Battle Trait');
-        }
-        
-        const newTraits = [...currentTraits, input.traitId];
-        await db.updateCrusadeUnit(input.unitId, {
-          battleTraits: JSON.stringify(newTraits),
-        });
-        
-        return { success: true, trait };
-      }),
-
-    // Remove a Battle Trait from a unit
-    removeBattleTrait: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        traitId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const currentTraits = unit.battleTraits ? JSON.parse(unit.battleTraits) : [];
-        const newTraits = currentTraits.filter((t: string) => t !== input.traitId);
-        
-        await db.updateCrusadeUnit(input.unitId, {
-          battleTraits: JSON.stringify(newTraits),
-        });
-        
-        return { success: true };
-      }),
-
-    // Get all available requisitions
-    getAvailableRequisitions: protectedProcedure
-      .query(async () => {
-        const { getAllRequisitions } = await import('./requisitions');
-        return getAllRequisitions();
-      }),
-
-    // Purchase a requisition
-    purchaseRequisition: protectedProcedure
-      .input(z.object({
-        playerId: z.number(),
-        requisitionId: z.string(),
-        targetUnitId: z.number().optional(), // For unit-specific requisitions
-      }))
-      .mutation(async ({ input }) => {
-        const player = await db.getPlayerById(input.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        const { getRequisitionById } = await import('./requisitions');
-        const requisition = getRequisitionById(input.requisitionId);
-        if (!requisition) {
-          throw new Error('Requisition not found');
-        }
-        
-        // Check if player has enough RP
-        if (player.requisitionPoints < requisition.cost) {
-          throw new Error(`Not enough Requisition Points. Need ${requisition.cost} RP, have ${player.requisitionPoints} RP`);
-        }
-        
-        // Deduct RP
-        await db.updatePlayer(input.playerId, {
-          requisitionPoints: player.requisitionPoints - requisition.cost,
-        });
-        
-        // Apply requisition effects
-        let effectResult = '';
-        
-        switch (input.requisitionId) {
-          case 'increase_supply_limit':
-            // Increase supply limit (tracked in player notes or separate field)
-            effectResult = 'Supply Limit increased by 5 PL';
-            break;
-            
-          case 'repair_and_recuperate':
-            if (!input.targetUnitId) {
-              throw new Error('Target unit required for this requisition');
-            }
-            const unit = await db.getCrusadeUnitById(input.targetUnitId);
-            if (!unit) {
-              throw new Error('Unit not found');
-            }
-            const scars = unit.battleScars ? JSON.parse(unit.battleScars) : [];
-            if (scars.length === 0) {
-              throw new Error('Unit has no Battle Scars to remove');
-            }
-            // Remove first scar
-            const newScars = scars.slice(1);
-            await db.updateCrusadeUnit(input.targetUnitId, {
-              battleScars: JSON.stringify(newScars),
-            });
-            effectResult = 'Removed one Battle Scar from unit';
-            break;
-            
-          case 'field_promotion':
-            if (!input.targetUnitId) {
-              throw new Error('Target unit required for this requisition');
-            }
-            const unitToPromote = await db.getCrusadeUnitById(input.targetUnitId);
-            if (!unitToPromote) {
-              throw new Error('Unit not found');
-            }
-            const { getNextRank } = await import('./crusadeRules');
-            const nextRank = getNextRank(unitToPromote.rank);
-            if (!nextRank) {
-              throw new Error('Unit is already at maximum rank');
-            }
-            await db.updateCrusadeUnit(input.targetUnitId, {
-              rank: nextRank,
-            });
-            effectResult = `Unit promoted to ${nextRank}`;
-            break;
-            
-          default:
-            effectResult = 'Requisition purchased successfully';
-        }
-        
-        return { success: true, requisition, effectResult };
-      }),
-
-    // Award RP to a player (after battle)
-    awardRP: protectedProcedure
-      .input(z.object({
-        playerId: z.number(),
-        amount: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        const player = await db.getPlayerById(input.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        await db.updatePlayer(input.playerId, {
-          requisitionPoints: player.requisitionPoints + input.amount,
-        });
-        
-        return { success: true, newTotal: player.requisitionPoints + input.amount };
-      }),
-
-    // Get available Crusade Relics for a unit
-    getAvailableCrusadeRelics: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-      }))
-      .query(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Check if unit is a CHARACTER
-        if (!unit.category || !unit.category.includes('CHARACTER')) {
-          throw new Error('Only CHARACTER units can have Crusade Relics');
-        }
-        
-        // Get player to know faction
-        const player = await db.getPlayerById(unit.playerId);
-        if (!player) {
-          throw new Error('Player not found');
-        }
-        
-        // Get all units for this player to count total relics
-        const allUnits = await db.getCrusadeUnitsByPlayerId(unit.playerId);
-        let totalRelics = 0;
-        allUnits.forEach(u => {
-          const relics = u.crusadeRelics ? JSON.parse(u.crusadeRelics) : [];
-          totalRelics += relics.length;
-        });
-        
-        const { getCrusadeRelicsForFaction } = await import('./crusadeRelics');
-        const availableRelics = getCrusadeRelicsForFaction(player.faction);
-        const currentRelics = unit.crusadeRelics ? JSON.parse(unit.crusadeRelics) : [];
-        
-        return {
-          availableRelics,
-          currentRelics,
-          totalRelicsInArmy: totalRelics,
-          maxRelicsAllowed: 3,
-        };
-      }),
-
-    // Add a Crusade Relic to a unit
-    addCrusadeRelic: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        relicId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        // Check if unit is a CHARACTER
-        if (!unit.category || !unit.category.includes('CHARACTER')) {
-          throw new Error('Only CHARACTER units can have Crusade Relics');
-        }
-        
-        // Check army-wide relic limit (max 3)
-        const allUnits = await db.getCrusadeUnitsByPlayerId(unit.playerId);
-        let totalRelics = 0;
-        allUnits.forEach(u => {
-          const relics = u.crusadeRelics ? JSON.parse(u.crusadeRelics) : [];
-          totalRelics += relics.length;
-        });
-        
-        if (totalRelics >= 3) {
-          throw new Error('Army already has maximum of 3 Crusade Relics');
-        }
-        
-        const { getCrusadeRelicById } = await import('./crusadeRelics');
-        const relic = getCrusadeRelicById(input.relicId);
-        if (!relic) {
-          throw new Error('Crusade Relic not found');
-        }
-        
-        const currentRelics = unit.crusadeRelics ? JSON.parse(unit.crusadeRelics) : [];
-        
-        // Check if already has this relic
-        if (currentRelics.includes(input.relicId)) {
-          throw new Error('Unit already has this Crusade Relic');
-        }
-        
-        const newRelics = [...currentRelics, input.relicId];
-        await db.updateCrusadeUnit(input.unitId, {
-          crusadeRelics: JSON.stringify(newRelics),
-        });
-        
-        return { success: true, relic };
-      }),
-
-    // Remove a Crusade Relic from a unit
-    removeCrusadeRelic: protectedProcedure
-      .input(z.object({
-        unitId: z.number(),
-        relicId: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const unit = await db.getCrusadeUnitById(input.unitId);
-        if (!unit) {
-          throw new Error('Unit not found');
-        }
-        
-        const currentRelics = unit.crusadeRelics ? JSON.parse(unit.crusadeRelics) : [];
-        const newRelics = currentRelics.filter((r: string) => r !== input.relicId);
-        
-        await db.updateCrusadeUnit(input.unitId, {
-          crusadeRelics: JSON.stringify(newRelics),
-        });
-        
-        return { success: true };
-      }),
   }),
 
   // Battle management
@@ -1014,15 +426,8 @@ export const appRouter = router({
 
     // Get battle by ID
     get: protectedProcedure
-      .input(z.object({ id: z.number().refine((val) => !isNaN(val) && isFinite(val), {
-        message: "Battle ID must be a valid finite number"
-      }) }))
-      .query(async ({ input, ctx }) => {
-        console.log('[battle.get] ===== CALLED =====');
-        console.log('[battle.get] Input:', JSON.stringify(input));
-        console.log('[battle.get] User:', ctx.user?.name);
-        console.log('[battle.get] ========================');
-        
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
         const battle = await db.getBattleById(input.id);
         if (!battle) return null;
         
@@ -1051,6 +456,39 @@ export const appRouter = router({
         
         await db.updateBattle(id, finalUpdates);
         return { success: true };
+      }),
+
+    // List battles by campaign
+    list: protectedProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .query(async ({ input }) => {
+        const battles = await db.getBattlesByCampaignId(input.campaignId);
+        return battles.map(battle => ({
+          ...battle,
+          victors: battle.victors ? JSON.parse(battle.victors) : [],
+          miseryCards: battle.miseryCards ? JSON.parse(battle.miseryCards) : [],
+          secondaryMissions: battle.secondaryMissions ? JSON.parse(battle.secondaryMissions) : [],
+          hordeUnits: battle.hordeUnits ? JSON.parse(battle.hordeUnits) : [],
+        }));
+      }),
+
+    // Record battle event (for future battle tracking system)
+    recordEvent: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        battleRound: z.number(),
+        phase: z.string().optional(),
+        eventType: z.string(),
+        playerId: z.number().optional(),
+        unitId: z.number().optional(),
+        description: z.string(),
+        data: z.any().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // For now, just return success
+        // In the future, this will insert into battleEvents table
+        console.log('[Battle Event]', input);
+        return { success: true, message: 'Event recorded (logging only for now)' };
       }),
   }),
 
@@ -1111,80 +549,6 @@ export const appRouter = router({
       }),
   }),
 
-  // Crusade Battle Recording (PvP battles between players)
-  crusadeBattle: router({
-    // Create a new crusade battle record
-    create: protectedProcedure
-      .input(z.object({
-        campaignId: z.number(),
-        mission: z.string(),
-        deployment: z.string().optional(),
-        participants: z.array(z.object({
-          playerId: z.number(),
-          won: z.boolean(), // Track winner
-          completedObjective: z.boolean(),
-          survived: z.boolean().default(true),
-          enemyUnitsKilled: z.number().default(0),
-          unitIds: z.array(z.number()), // Units that participated
-        })),
-      }))
-      .mutation(async ({ input }) => {
-        const campaign = await db.getCampaignById(input.campaignId);
-        if (!campaign) throw new Error('Campaign not found');
-
-        // Create battle record
-        const battleId = await db.createCrusadeBattle({
-          campaignId: input.campaignId,
-          mission: input.mission,
-          deployment: input.deployment,
-        });
-
-        // Process each participant
-        for (const participant of input.participants) {
-          // Award RP: 1 base + 1 if won + 1 if completed objective
-          let rpEarned = 1;
-          if (participant.won) rpEarned += 1;
-          if (participant.completedObjective) rpEarned += 1;
-
-          // Update player stats
-          const player = await db.getPlayerById(participant.playerId);
-          if (player) {
-            await db.updatePlayer(participant.playerId, {
-              battleTally: player.battleTally + 1,
-              victories: participant.won ? player.victories + 1 : player.victories,
-              requisitionPoints: player.requisitionPoints + rpEarned,
-            });
-          }
-
-          // Record participant
-          await db.createBattleParticipant({
-            battleId,
-            playerId: participant.playerId,
-            unitsDeployed: JSON.stringify(participant.unitIds),
-            survived: participant.survived,
-            completedObjective: participant.completedObjective,
-            enemyUnitsKilled: participant.enemyUnitsKilled,
-          });
-        }
-
-        return { battleId, success: true };
-      }),
-
-    // Get battle history for a campaign
-    listByCampaign: protectedProcedure
-      .input(z.object({ campaignId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getCrusadeBattlesByCampaignId(input.campaignId);
-      }),
-
-    // Get battle history for a player
-    listByPlayer: protectedProcedure
-      .input(z.object({ playerId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getCrusadeBattlesByPlayerId(input.playerId);
-      }),
-  }),
-
   // Post-battle processing
   postBattle: router({
     // Process a single unit
@@ -1221,60 +585,6 @@ export const appRouter = router({
           input.completedObjective,
           input.isVictorious
         );
-      }),
-  }),
-
-  // Campaign Invitations
-  invitation: router({
-    // Send invitation (Game Master only)
-    send: protectedProcedure
-      .input(z.object({
-        campaignId: z.number(),
-        email: z.string().email(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        // Check if user is Game Master
-        const campaign = await db.getCampaignById(input.campaignId);
-        if (!campaign || campaign.gameMasterId !== ctx.user.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only Game Master can invite players' });
-        }
-        
-        // Find user by email
-        const invitedUser = await db.getUserByEmail(input.email);
-        if (!invitedUser) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found with this email' });
-        }
-        
-        // Create invitation
-        await db.createInvitation({
-          campaignId: input.campaignId,
-          invitedUserId: invitedUser.id,
-          invitedByUserId: ctx.user.id,
-        });
-        
-        return { success: true };
-      }),
-    
-    // List invitations for current user
-    list: protectedProcedure
-      .query(async ({ ctx }) => {
-        return await db.getInvitationsByUserId(ctx.user.id);
-      }),
-    
-    // Accept invitation
-    accept: protectedProcedure
-      .input(z.object({ invitationId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateInvitationStatus(input.invitationId, 'accepted');
-        return { success: true };
-      }),
-    
-    // Decline invitation
-    decline: protectedProcedure
-      .input(z.object({ invitationId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateInvitationStatus(input.invitationId, 'declined');
-        return { success: true };
       }),
   }),
 });

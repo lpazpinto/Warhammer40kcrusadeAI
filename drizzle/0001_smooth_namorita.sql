@@ -1,1 +1,0 @@
-ALTER TABLE `crusadeUnits` ADD `crusadeRelics` text;

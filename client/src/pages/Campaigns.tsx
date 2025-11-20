@@ -20,10 +20,8 @@ export default function Campaigns() {
   const [newCampaign, setNewCampaign] = useState({
     name: "",
     hordeFaction: "",
-    pointsLimit: 1000,
     battlesPerPhase: 3,
-    strategicPointsToWin: 10,
-    gameMasterId: undefined as number | undefined,
+    strategicPointsForVictory: 10,
   });
 
   const { data: campaigns, isLoading, refetch } = trpc.campaign.list.useQuery(undefined, {
@@ -145,23 +143,15 @@ export default function Campaigns() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="campaignSpeed">Velocidade da Campanha</Label>
-                  <Select
-                    value={newCampaign.battlesPerPhase.toString()}
-                    onValueChange={(value) => 
-                      setNewCampaign({ ...newCampaign, battlesPerPhase: parseInt(value) })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Muito Rápida (1 batalha por fase)</SelectItem>
-                      <SelectItem value="2">Rápida (2 batalhas por fase)</SelectItem>
-                      <SelectItem value="3">Normal (3 batalhas por fase)</SelectItem>
-                      <SelectItem value="4">Lenta (4 batalhas por fase)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="battlesPerPhase">Batalhas por Fase</Label>
+                  <Input
+                    id="battlesPerPhase"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={newCampaign.battlesPerPhase}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, battlesPerPhase: parseInt(e.target.value) || 3 })}
+                  />
                 </div>
                 
                 <div className="grid gap-2">
@@ -171,15 +161,12 @@ export default function Campaigns() {
                     type="number"
                     min="1"
                     max="50"
-                    value={newCampaign.strategicPointsToWin}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, strategicPointsToWin: parseInt(e.target.value) || 10 })}
+                    value={newCampaign.strategicPointsForVictory}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, strategicPointsForVictory: parseInt(e.target.value) || 10 })}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Pontos necessários para a aliança vencer cada fase
-                  </p>
                 </div>
                 
-                {/* Supply Limit is always 1000 points initially, can be increased via Requisitions */}
+
               </div>
               
               <DialogFooter>
@@ -225,11 +212,15 @@ export default function Campaigns() {
                   <CardContent>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
+                        <Sword className="h-4 w-4 text-muted-foreground" />
+                        <span>{campaign.battlesPerPhase} batalhas/fase</span>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>4 Fases</span>
                       </div>
                       <div className="text-muted-foreground">
-                        Fase atual: {campaign.currentPhase || 1}
+                        Fase atual: {campaign.currentPhase}
                       </div>
                     </div>
                   </CardContent>

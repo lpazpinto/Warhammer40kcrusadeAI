@@ -1,921 +1,28 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, Star, Skull, Award, Pencil, Swords, Trophy } from "lucide-react";
+import { Loader2, ArrowLeft, Star, Skull, Award, Pencil } from "lucide-react";
 import { Link, useParams } from "wouter";
-import { useState } from "react";
 
-// XP Progress Bar Component
-interface XPProgressBarProps {
-  xp: number;
-  rank: string;
-}
-
-function XPProgressBar({ xp, rank }: XPProgressBarProps) {
-  const rankThresholds: Record<string, { current: number; next: number; nextRank: string | null }> = {
-    battle_ready: { current: 0, next: 6, nextRank: 'Experiente' },
-    blooded: { current: 6, next: 16, nextRank: 'Veterano' },
-    battle_hardened: { current: 16, next: 31, nextRank: 'Heroico' },
-    heroic: { current: 31, next: 51, nextRank: 'Lendário' },
-    legendary: { current: 51, next: 51, nextRank: null },
-  };
-
-  const threshold = rankThresholds[rank] || rankThresholds.battle_ready;
-  const xpInCurrentRank = xp - threshold.current;
-  const xpNeededForNextRank = threshold.next - threshold.current;
-  const percentage = threshold.nextRank 
-    ? Math.min(100, Math.round((xpInCurrentRank / xpNeededForNextRank) * 100))
-    : 100;
-
-  return (
-    <div className="w-48">
-      <Progress value={percentage} className="h-2" />
-      {threshold.nextRank && (
-        <div className="text-xs text-muted-foreground mt-1 text-right">
-          {xpInCurrentRank}/{xpNeededForNextRank} XP para {threshold.nextRank}
-        </div>
-      )}
-      {!threshold.nextRank && (
-        <div className="text-xs text-muted-foreground mt-1 text-right">
-          Rank Máximo
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Manage Battle Honours Dialog Component
-interface ManageBattleHonoursDialogProps {
-  unitId: number;
-  unitName: string;
-  onSuccess: () => void;
-}
-
-function ManageBattleHonoursDialog({ unitId, unitName, onSuccess }: ManageBattleHonoursDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedHonour, setSelectedHonour] = useState<string>('');
-
-  const { data: honoursData, isLoading } = trpc.crusadeUnit.getAvailableBattleHonours.useQuery(
-    { unitId },
-    { enabled: isOpen }
-  );
-
-  const addHonour = trpc.crusadeUnit.addBattleHonour.useMutation({
-    onSuccess: (data) => {
-      onSuccess();
-      setSelectedHonour('');
-      alert(`✨ Battle Honour "${data.honour.name}" adicionado!\n\n${data.honour.effect}`);
-    },
-  });
-
-  const removeHonour = trpc.crusadeUnit.removeBattleHonour.useMutation({
-    onSuccess: () => {
-      onSuccess();
-    },
-  });
-
-  const handleAdd = () => {
-    if (!selectedHonour) return;
-    addHonour.mutate({ unitId, honourId: selectedHonour });
-  };
-
-  const handleRemove = (honourId: string) => {
-    if (confirm('Remover esta Battle Honour?')) {
-      removeHonour.mutate({ unitId, honourId });
+// Helper to parse models JSON
+const parseModels = (modelsJson: any): any[] => {
+  if (Array.isArray(modelsJson)) return modelsJson;
+  if (typeof modelsJson === 'string') {
+    try {
+      return JSON.parse(modelsJson);
+    } catch (e) {
+      console.error('Failed to parse models JSON:', e);
+      return [];
     }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Pencil className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Battle Honours</DialogTitle>
-          <DialogDescription>
-            {unitName} - Máximo: {honoursData?.maxHonours || 0} honours
-          </DialogDescription>
-        </DialogHeader>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Current Honours */}
-            {honoursData && honoursData.currentHonours.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-2">Battle Honours Atuais:</h4>
-                <div className="space-y-2">
-                  {honoursData.currentHonours.map((honourId: string) => {
-                    const honour = honoursData.availableHonours.find((h: any) => h.id === honourId);
-                    return (
-                      <div key={honourId} className="flex items-start justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-semibold">{honour?.name || honourId}</div>
-                          {honour && (
-                            <>
-                              <div className="text-sm text-muted-foreground mt-1">{honour.description}</div>
-                              <div className="text-sm font-medium text-primary mt-1">
-                                ⚔️ {honour.effect}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(honourId)}
-                          disabled={removeHonour.isPending}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            {/* Add New Honour */}
-            {honoursData?.canAddMore && (
-              <div>
-                <h4 className="font-semibold mb-2">Adicionar Battle Honour:</h4>
-                <div className="space-y-2">
-                  {honoursData.availableHonours
-                    .filter((h: any) => !honoursData.currentHonours.includes(h.id))
-                    .map((honour: any) => (
-                      <div
-                        key={honour.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedHonour === honour.id
-                            ? 'border-primary bg-primary/10'
-                            : 'hover:border-primary/50'
-                        }`}
-                        onClick={() => setSelectedHonour(honour.id)}
-                      >
-                        <div className="font-semibold">{honour.name}</div>
-                        <div className="text-sm text-muted-foreground mt-1">{honour.description}</div>
-                        <div className="text-sm font-medium text-primary mt-1">
-                          ⚔️ {honour.effect}
-                        </div>
-                        {honour.faction && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Facção: {honour.faction}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-            
-            {!honoursData?.canAddMore && (
-              <div className="text-center text-muted-foreground py-4">
-                Esta unidade já tem o máximo de Battle Honours para seu rank.
-              </div>
-            )}
-          </div>
-        )}
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Fechar
-          </Button>
-          {honoursData?.canAddMore && selectedHonour && (
-            <Button onClick={handleAdd} disabled={addHonour.isPending}>
-              {addHonour.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adicionando...
-                </>
-              ) : (
-                'Adicionar Honour'
-              )}
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Manage Battle Scars Dialog Component
-interface ManageBattleScarsDialogProps {
-  unitId: number;
-  unitName: string;
-  onSuccess: () => void;
-}
-
-function ManageBattleScarsDialog({ unitId, unitName, onSuccess }: ManageBattleScarsDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedScar, setSelectedScar] = useState<string>('');
-
-  const { data: scarsData, isLoading } = trpc.crusadeUnit.getAvailableBattleScars.useQuery(
-    { unitId },
-    { enabled: isOpen }
-  );
-
-  const addScar = trpc.crusadeUnit.addBattleScar.useMutation({
-    onSuccess: (data) => {
-      onSuccess();
-      setSelectedScar('');
-      alert(`☠️ Battle Scar "${data.scar.name}" adicionado!\n\n${data.scar.effect}`);
-    },
-  });
-
-  const removeScar = trpc.crusadeUnit.removeBattleScar.useMutation({
-    onSuccess: () => {
-      onSuccess();
-    },
-  });
-
-  const rollRandom = trpc.crusadeUnit.rollRandomBattleScar.useMutation({
-    onSuccess: (data) => {
-      onSuccess();
-      alert(`🎲 Rolou: "${data.scar.name}"!\n\n${data.scar.description}\n\nEfeito: ${data.scar.effect}`);
-    },
-  });
-
-  const handleAdd = () => {
-    if (!selectedScar) return;
-    addScar.mutate({ unitId, scarId: selectedScar });
-  };
-
-  const handleRemove = (scarId: string) => {
-    if (confirm('Remover esta Battle Scar?')) {
-      removeScar.mutate({ unitId, scarId });
-    }
-  };
-
-  const handleRollRandom = () => {
-    if (confirm('Rolar uma Battle Scar aleatória?')) {
-      rollRandom.mutate({ unitId });
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Pencil className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Battle Scars</DialogTitle>
-          <DialogDescription>
-            {unitName} - Cicatrizes de batalha
-          </DialogDescription>
-        </DialogHeader>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Current Scars */}
-            {scarsData && scarsData.currentScars.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-2">Battle Scars Atuais:</h4>
-                <div className="space-y-2">
-                  {scarsData.currentScars.map((scarId: string) => {
-                    const scar = scarsData.availableScars.find((s: any) => s.id === scarId);
-                    return (
-                      <div key={scarId} className="flex items-start justify-between p-3 bg-red-950/20 border border-red-900/30 rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-semibold text-red-400">{scar?.name || scarId}</div>
-                          {scar && (
-                            <>
-                              <div className="text-sm text-muted-foreground mt-1">{scar.description}</div>
-                              <div className="text-sm font-medium text-red-500 mt-1">
-                                ☠️ {scar.effect}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(scarId)}
-                          disabled={removeScar.isPending}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            {/* Roll Random Scar Button */}
-            <div className="flex justify-center">
-              <Button
-                onClick={handleRollRandom}
-                disabled={rollRandom.isPending}
-                variant="destructive"
-              >
-                {rollRandom.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Rolando...
-                  </>
-                ) : (
-                  <>🎲 Rolar Battle Scar Aleatória</>
-                )}
-              </Button>
-            </div>
-            
-            {/* Add Specific Scar */}
-            <div>
-              <h4 className="font-semibold mb-2">Ou escolha uma Battle Scar específica:</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {scarsData?.availableScars
-                  .filter((s: any) => !scarsData.currentScars.includes(s.id))
-                  .map((scar: any) => (
-                    <div
-                      key={scar.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedScar === scar.id
-                          ? 'border-red-500 bg-red-950/20'
-                          : 'hover:border-red-500/50'
-                      }`}
-                      onClick={() => setSelectedScar(scar.id)}
-                    >
-                      <div className="font-semibold text-red-400">{scar.name}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{scar.description}</div>
-                      <div className="text-sm font-medium text-red-500 mt-1">
-                        ☠️ {scar.effect}
-                      </div>
-                      {scar.faction && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Facção: {scar.faction}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Fechar
-          </Button>
-          {selectedScar && (
-            <Button onClick={handleAdd} disabled={addScar.isPending} variant="destructive">
-              {addScar.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adicionando...
-                </>
-              ) : (
-                'Adicionar Scar'
-              )}
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Manage Battle Traits Dialog Component
-interface ManageBattleTraitsDialogProps {
-  unitId: number;
-  unitName: string;
-  onSuccess: () => void;
-}
-
-function ManageBattleTraitsDialog({ unitId, unitName, onSuccess }: ManageBattleTraitsDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedTrait, setSelectedTrait] = useState<string>('');
-
-  const { data: traitsData, isLoading } = trpc.crusadeUnit.getAvailableBattleTraits.useQuery(
-    { unitId },
-    { enabled: isOpen }
-  );
-
-  const addTrait = trpc.crusadeUnit.addBattleTrait.useMutation({
-    onSuccess: (data) => {
-      onSuccess();
-      setSelectedTrait('');
-      alert(`⭐ Battle Trait "${data.trait.name}" adicionado!\n\n${data.trait.effect}`);
-    },
-  });
-
-  const removeTrait = trpc.crusadeUnit.removeBattleTrait.useMutation({
-    onSuccess: () => {
-      onSuccess();
-    },
-  });
-
-  const handleAdd = () => {
-    if (!selectedTrait) return;
-    addTrait.mutate({ unitId, traitId: selectedTrait });
-  };
-
-  const handleRemove = (traitId: string) => {
-    if (confirm('Remover este Battle Trait?')) {
-      removeTrait.mutate({ unitId, traitId });
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Pencil className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Battle Traits</DialogTitle>
-          <DialogDescription>
-            {unitName} - Traços de batalha específicos da facção
-          </DialogDescription>
-        </DialogHeader>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Current Traits */}
-            {traitsData && traitsData.currentTraits.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-2">Battle Traits Atuais:</h4>
-                <div className="space-y-2">
-                  {traitsData.currentTraits.map((traitId: string) => {
-                    const trait = traitsData.availableTraits.find((t: any) => t.id === traitId);
-                    return (
-                      <div key={traitId} className="flex items-start justify-between p-3 bg-blue-950/20 border border-blue-900/30 rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-semibold text-blue-400">{trait?.name || traitId}</div>
-                          {trait && (
-                            <>
-                              <div className="text-sm text-muted-foreground mt-1">{trait.description}</div>
-                              <div className="text-sm font-medium text-blue-500 mt-1">
-                                ⭐ {trait.effect}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(traitId)}
-                          disabled={removeTrait.isPending}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            {/* Add New Trait */}
-            <div>
-              <h4 className="font-semibold mb-2">Adicionar Battle Trait:</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {traitsData?.availableTraits
-                  .filter((t: any) => !traitsData.currentTraits.includes(t.id))
-                  .map((trait: any) => (
-                    <div
-                      key={trait.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedTrait === trait.id
-                          ? 'border-blue-500 bg-blue-950/20'
-                          : 'hover:border-blue-500/50'
-                      }`}
-                      onClick={() => setSelectedTrait(trait.id)}
-                    >
-                      <div className="font-semibold text-blue-400">{trait.name}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{trait.description}</div>
-                      <div className="text-sm font-medium text-blue-500 mt-1">
-                        ⭐ {trait.effect}
-                      </div>
-                    </div>
-                  ))}
-                {traitsData && traitsData.availableTraits.length === 0 && (
-                  <div className="text-center text-muted-foreground py-4">
-                    Nenhum Battle Trait disponível para esta facção.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Fechar
-          </Button>
-          {selectedTrait && (
-            <Button onClick={handleAdd} disabled={addTrait.isPending}>
-              {addTrait.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adicionando...
-                </>
-              ) : (
-                'Adicionar Trait'
-              )}
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Record Battle Dialog Component
-interface RecordBattleDialogProps {
-  unitId: number;
-  unitName: string;
-  onSuccess: () => void;
-}
-
-function RecordBattleDialog({ unitId, unitName, onSuccess }: RecordBattleDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [survived, setSurvived] = useState(true);
-  const [kills, setKills] = useState(0);
-  const [outOfAction, setOutOfAction] = useState('');
-
-  const recordBattle = trpc.crusadeUnit.recordBattleResult.useMutation({
-    onSuccess: (data) => {
-      onSuccess();
-      setIsOpen(false);
-      // Reset form
-      setSurvived(true);
-      setKills(0);
-      setOutOfAction('');
-      
-      // Build result message
-      let message = `✅ Batalha registrada!\n\n`;
-      message += `🎯 ${unitName} ganhou ${data.xpEarned} XP\n`;
-      message += `📊 Total: ${data.newExperiencePoints} XP\n\n`;
-      
-      if (data.wasPromoted) {
-        message += `🎉 PROMOVIDO para ${data.newRank}!\n\n`;
-      }
-      
-      if (data.honoursGained && data.honoursGained.length > 0) {
-        message += `✨ Battle Honours Ganhos:\n`;
-        data.honoursGained.forEach((honour: any) => {
-          message += `• ${honour.name}\n  ${honour.effect}\n\n`;
-        });
-      }
-      
-      if (data.scarsGained && data.scarsGained.length > 0) {
-        message += `💀 Battle Scars Recebidos:\n`;
-        data.scarsGained.forEach((scar: any) => {
-          message += `• ${scar.name}\n  ${scar.effect}\n\n`;
-        });
-      }
-      
-      alert(message);
-    },
-  });
-
-  const handleSubmit = () => {
-    recordBattle.mutate({
-      unitId,
-      survived,
-      enemyUnitsDestroyed: kills,
-      outOfActionStatus: outOfAction || undefined,
-    });
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
-          <Swords className="mr-2 h-4 w-4" />
-          Registrar Batalha
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Registrar Resultado de Batalha</DialogTitle>
-          <DialogDescription>
-            Atualize as estatísticas de {unitName} após a batalha
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label>A unidade sobreviveu?</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={survived ? "default" : "outline"}
-                onClick={() => setSurvived(true)}
-                className="flex-1"
-              >
-                Sim
-              </Button>
-              <Button
-                type="button"
-                variant={!survived ? "destructive" : "outline"}
-                onClick={() => setSurvived(false)}
-                className="flex-1"
-              >
-                Não
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="kills">Unidades inimigas destruídas</Label>
-            <Input
-              id="kills"
-              type="number"
-              min="0"
-              value={kills}
-              onChange={(e) => setKills(parseInt(e.target.value) || 0)}
-            />
-          </div>
-          
-          {!survived && (
-            <div className="grid gap-2">
-              <Label htmlFor="outOfAction">Status Out of Action (opcional)</Label>
-              <Input
-                id="outOfAction"
-                value={outOfAction}
-                onChange={(e) => setOutOfAction(e.target.value)}
-                placeholder="Ex: Ferimento grave"
-              />
-            </div>
-          )}
-          
-          <div className="bg-muted p-3 rounded-md text-sm">
-            <div className="font-semibold mb-1">XP que será ganho:</div>
-            <div className="space-y-1 text-muted-foreground">
-              <div>• Jogou batalha: +1 XP</div>
-              {survived && <div>• Sobreviveu: +1 XP</div>}
-              {kills > 0 && <div>• {kills} kills: +{kills} XP</div>}
-              <div className="font-semibold text-foreground mt-2">
-                Total: +{1 + (survived ? 1 : 0) + kills} XP
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={recordBattle.isPending}>
-            {recordBattle.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              'Registrar'
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Manage Crusade Relics Dialog Component
-interface ManageCrusadeRelicsDialogProps {
-  unitId: number;
-  unitName: string;
-  onSuccess: () => void;
-}
-
-function ManageCrusadeRelicsDialog({ unitId, unitName, onSuccess }: ManageCrusadeRelicsDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedRelic, setSelectedRelic] = useState<string>('');
-
-  const { data: relicsData, isLoading } = trpc.crusadeUnit.getAvailableCrusadeRelics.useQuery(
-    { unitId },
-    { enabled: isOpen }
-  );
-
-  const addRelic = trpc.crusadeUnit.addCrusadeRelic.useMutation({
-    onSuccess: (data) => {
-      onSuccess();
-      setSelectedRelic('');
-      alert(`🏆 Crusade Relic "${data.relic.name}" adicionado!\n\n${data.relic.effect}`);
-    },
-    onError: (error) => {
-      alert(`Erro: ${error.message}`);
-    },
-  });
-
-  const removeRelic = trpc.crusadeUnit.removeCrusadeRelic.useMutation({
-    onSuccess: () => {
-      onSuccess();
-    },
-  });
-
-  const handleAdd = () => {
-    if (!selectedRelic) return;
-    addRelic.mutate({ unitId, relicId: selectedRelic });
-  };
-
-  const handleRemove = (relicId: string) => {
-    if (confirm('Remover esta Crusade Relic?')) {
-      removeRelic.mutate({ unitId, relicId });
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Pencil className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Crusade Relics - {unitName}</DialogTitle>
-          <DialogDescription>
-            Relíquias podem ser dadas apenas a unidades CHARACTER. Máximo de 3 relíquias por exército.
-            {relicsData && (
-              <span className="block mt-2 font-semibold">
-                Total de relíquias no exército: {relicsData.totalRelicsInArmy}/{relicsData.maxRelicsAllowed}
-              </span>
-            )}
-          </DialogDescription>
-        </DialogHeader>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {relicsData && relicsData.currentRelics.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-2">Relíquias Atuais:</h4>
-                <div className="space-y-2">
-                  {relicsData.currentRelics.map((relicId: string) => {
-                    const relic = relicsData.availableRelics.find((r: any) => r.id === relicId);
-                    if (!relic) return null;
-                    return (
-                      <div key={relicId} className="flex items-start justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-semibold text-amber-400">🏆 {relic.name}</div>
-                          <div className="text-sm text-muted-foreground mt-1">{relic.description}</div>
-                          <div className="text-sm text-green-400 mt-1">✓ {relic.effect}</div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(relicId)}
-                          disabled={removeRelic.isPending}
-                        >
-                          Remover
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {relicsData && relicsData.totalRelicsInArmy < relicsData.maxRelicsAllowed && (
-              <div>
-                <h4 className="font-semibold mb-2">Adicionar Nova Relíquia:</h4>
-                <div className="space-y-2">
-                  {relicsData.availableRelics
-                    .filter((r: any) => !relicsData.currentRelics.includes(r.id))
-                    .map((relic: any) => (
-                      <div
-                        key={relic.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedRelic === relic.id ? 'border-amber-500 bg-amber-500/10' : 'hover:border-amber-500/50'
-                        }`}
-                        onClick={() => setSelectedRelic(relic.id)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-semibold">{relic.name}</div>
-                            {relic.faction && (
-                              <Badge variant="outline" className="text-xs mt-1">{relic.faction}</Badge>
-                            )}
-                            <div className="text-sm text-muted-foreground mt-1">{relic.description}</div>
-                            <div className="text-sm text-green-400 mt-1">✓ {relic.effect}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Fechar
-          </Button>
-          {relicsData && relicsData.totalRelicsInArmy < relicsData.maxRelicsAllowed && (
-            <Button onClick={handleAdd} disabled={!selectedRelic || addRelic.isPending}>
-              {addRelic.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adicionando...
-                </>
-              ) : (
-                'Adicionar Relic'
-              )}
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-interface EditCrusadeNameDialogProps {
-  unitId: number;
-  unitName: string;
-  currentName: string;
-  onNameChange: (name: string) => void;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-function EditCrusadeNameDialog({ unitId, unitName, currentName, onNameChange, onClose, onSuccess }: EditCrusadeNameDialogProps) {
-  const updateUnit = trpc.crusadeUnit.update.useMutation({
-    onSuccess: () => {
-      onSuccess();
-      onClose();
-    },
-  });
-
-  const handleSave = () => {
-    updateUnit.mutate({
-      id: unitId,
-      crusadeName: currentName || undefined,
-    });
-  };
-
-  return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Editar Nome de Cruzada</DialogTitle>
-        <DialogDescription>
-          Dê um nome único para {unitName}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid gap-4 py-4">
-        <div className="grid gap-2">
-          <Label htmlFor="crusadeName">Nome de Cruzada</Label>
-          <Input
-            id="crusadeName"
-            value={currentName}
-            onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Ex: Os Vingadores de Terra"
-          />
-        </div>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button onClick={handleSave} disabled={updateUnit.isPending}>
-          {updateUnit.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            'Salvar'
-          )}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-}
+  }
+  return [];
+};
 
 export default function PlayerDetail() {
   const { id } = useParams<{ id: string }>();
   const playerId = parseInt(id || '0');
-  const [editingUnitId, setEditingUnitId] = useState<number | null>(null);
-  const [crusadeName, setCrusadeName] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
-  const utils = trpc.useUtils();
 
   const { data: player, isLoading: playerLoading } = trpc.player.get.useQuery(
     { id: playerId },
@@ -925,10 +32,13 @@ export default function PlayerDetail() {
     { playerId },
     { enabled: !isNaN(playerId) && playerId > 0 }
   );
-  const { data: orderOfBattle } = trpc.player.getOrderOfBattle.useQuery(
-    { playerId },
-    { enabled: !isNaN(playerId) && playerId > 0 }
-  );
+  
+  const utils = trpc.useUtils();
+  const updateUnit = trpc.crusadeUnit.update.useMutation({
+    onSuccess: () => {
+      utils.crusadeUnit.list.invalidate({ playerId });
+    },
+  });
 
   if (playerLoading || unitsLoading) {
     return (
@@ -1025,77 +135,51 @@ export default function PlayerDetail() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Supply Limit</CardTitle>
+              <CardTitle className="text-sm font-medium">Limite de Suprimento</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
-                {orderOfBattle?.supplyUsed || 0} / {orderOfBattle?.supplyLimit || 50}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {orderOfBattle?.supplyRemaining || 0} PL restante
-              </p>
+              <div className="text-3xl font-bold">{player.supplyLimit || 1000}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Order of Battle Summary */}
-        {orderOfBattle && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Order of Battle</CardTitle>
-              <CardDescription>Resumo da sua força de cruzada</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Power Level</div>
-                  <div className="text-2xl font-bold">{orderOfBattle.totalPowerLevel} PL</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Total de Pontos</div>
-                  <div className="text-2xl font-bold">{orderOfBattle.totalPoints} pts</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Unidades</div>
-                  <div className="text-2xl font-bold">
-                    {orderOfBattle.activeUnits} ativas / {orderOfBattle.totalUnits} total
-                  </div>
-                </div>
-              </div>
+        {/* Supply Usage Indicator */}
+        <Card className="mb-8">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Uso de Suprimento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const totalSupplyUsed = units?.reduce((sum, unit) => sum + (unit.pointsCost || 0), 0) || 0;
+              const supplyLimit = player.supplyLimit || 1000;
+              const percentage = Math.min((totalSupplyUsed / supplyLimit) * 100, 100);
+              const isOverLimit = totalSupplyUsed > supplyLimit;
+              const isNearLimit = percentage >= 80 && !isOverLimit;
               
-              {/* Supply Limit Progress Bar */}
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Supply Used</span>
-                  <span className={orderOfBattle.supplyRemaining < 0 ? 'text-red-500 font-bold' : ''}>
-                    {orderOfBattle.supplyUsed} / {orderOfBattle.supplyLimit} pts
-                  </span>
+              return (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Supply Consumido</span>
+                    <span className={`font-medium ${
+                      isOverLimit ? 'text-red-500' : isNearLimit ? 'text-yellow-500' : 'text-green-500'
+                    }`}>
+                      {totalSupplyUsed} / {supplyLimit}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={percentage} 
+                    className="h-2"
+                  />
+                  {isOverLimit && (
+                    <p className="text-xs text-red-500 mt-1">
+                      ⚠️ Limite de suprimento excedido! Remova unidades ou compre "Aumentar Limite de Suprimento".
+                    </p>
+                  )}
                 </div>
-                <Progress 
-                  value={Math.min(100, (orderOfBattle.supplyUsed / orderOfBattle.supplyLimit) * 100)} 
-                  className={orderOfBattle.supplyRemaining < 0 ? 'bg-red-500/20' : ''}
-                />
-                {orderOfBattle.supplyRemaining < 0 && (
-                  <p className="text-sm text-red-500 mt-2">
-                    ⚠️ Você excedeu o Supply Limit em {Math.abs(orderOfBattle.supplyRemaining)} pts!
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid gap-6 lg:grid-cols-4 mb-8">
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Pontos de Suprimento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{player.supplyPoints}</div>
-            </CardContent>
-          </Card>
-        </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -1119,38 +203,25 @@ export default function PlayerDetail() {
                                 "{unit.crusadeName}"
                               </span>
                             )}
-                            <Dialog open={isDialogOpen && editingUnitId === unit.id} onOpenChange={(open) => {
-                              setIsDialogOpen(open);
-                              if (!open) setEditingUnitId(null);
-                            }}>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => {
-                                    setEditingUnitId(unit.id);
-                                    setCrusadeName(unit.crusadeName || '');
-                                    setIsDialogOpen(true);
-                                  }}
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                              </DialogTrigger>
-                              <EditCrusadeNameDialog
-                                unitId={unit.id}
-                                unitName={unit.unitName}
-                                currentName={crusadeName}
-                                onNameChange={setCrusadeName}
-                                onClose={() => {
-                                  setIsDialogOpen(false);
-                                  setEditingUnitId(null);
-                                }}
-                                onSuccess={() => {
-                                  utils.crusadeUnit.list.invalidate({ playerId });
-                                }}
-                              />
-                            </Dialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => {
+                                const newName = prompt(
+                                  'Digite um apelido para esta unidade (deixe vazio para remover):',
+                                  unit.crusadeName || ''
+                                );
+                                if (newName !== null) {
+                                  updateUnit.mutate({
+                                    id: unit.id,
+                                    crusadeName: newName || undefined,
+                                  });
+                                }
+                              }}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
                           </div>
                           
                           <div className="flex items-center gap-2 mb-3">
@@ -1169,14 +240,11 @@ export default function PlayerDetail() {
                           </div>
                         </div>
                         
-                        <div className="text-right space-y-2">
-                          <div>
-                            <div className="text-2xl font-bold">{unit.experiencePoints} XP</div>
-                            <div className="text-sm text-muted-foreground">
-                              {unit.powerRating} PR • {unit.pointsCost} pts
-                            </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{unit.experiencePoints} XP</div>
+                          <div className="text-sm text-muted-foreground">
+                            {unit.powerRating} PR • {unit.pointsCost} pts
                           </div>
-                          <XPProgressBar xp={unit.experiencePoints} rank={unit.rank} />
                         </div>
                       </div>
 
@@ -1196,181 +264,76 @@ export default function PlayerDetail() {
                         <div>
                           <div className="text-muted-foreground">Modelos</div>
                           <div className="font-semibold">
-                            {unit.models.reduce((sum: number, m: any) => sum + m.count, 0)}
+                            {parseModels(unit.models).reduce((sum: number, m: any) => sum + m.count, 0)}
                           </div>
                         </div>
                       </div>
 
-                      {/* Models & Wargear Section */}
-                      <div className="mt-4 pt-4 border-t">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold">Modelos & Equipamento</h4>
-                          {!unit.isDestroyed && (
-                            <Button variant="ghost" size="sm">
-                              <Pencil className="h-3 w-3 mr-1" />
-                              Editar
-                            </Button>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          {unit.models.map((model: any, idx: number) => (
-                            <div key={idx} className="text-sm p-2 bg-muted/50 rounded">
-                              <div className="font-semibold">
-                                {model.count}x {model.name}
-                              </div>
-                              {model.weapons && model.weapons.length > 0 && (
-                                <div className="text-muted-foreground text-xs mt-1 pl-4">
-                                  {model.weapons.map((weapon: string, widx: number) => (
-                                    <div key={widx}>• {weapon}</div>
-                                  ))}
+                      {/* Modelos & Armas Section */}
+                      {parseModels(unit.models).length > 0 && (
+                        <div className="space-y-3 pt-4 border-t">
+                          <div className="flex items-center gap-2 text-sm font-semibold">
+                            <Award className="h-4 w-4" />
+                            Modelos & Armas
+                          </div>
+                          <div className="space-y-2">
+                            {parseModels(unit.models).map((model: any, idx: number) => (
+                              <div key={idx} className="text-sm">
+                                <div className="font-medium">
+                                  {model.count}x {model.name}
                                 </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Record Battle Button */}
-                      {!unit.isDestroyed && (
-                        <div className="mt-4 pt-4 border-t">
-                          <RecordBattleDialog
-                            unitId={unit.id}
-                            unitName={unit.unitName}
-                            onSuccess={() => {
-                              utils.crusadeUnit.list.invalidate({ playerId });
-                            }}
-                          />
+                                {model.weapons && model.weapons.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1 pl-4">
+                                    {model.weapons.map((weapon: string, wIdx: number) => (
+                                      <Badge key={wIdx} variant="outline" className="text-xs">
+                                        {weapon}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
                       {(unit.battleHonours.length > 0 || unit.battleTraits.length > 0 || unit.battleScars.length > 0) && (
                         <div className="space-y-2 pt-4 border-t">
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2 text-sm font-semibold">
-                                <Award className="h-4 w-4 text-yellow-500" />
-                                Battle Honours ({unit.battleHonours.length})
-                              </div>
-                              {!unit.isDestroyed && (
-                                <ManageBattleHonoursDialog
-                                  unitId={unit.id}
-                                  unitName={unit.unitName}
-                                  onSuccess={() => {
-                                    utils.crusadeUnit.list.invalidate({ playerId });
-                                  }}
-                                />
-                              )}
-                            </div>
-                            {unit.battleHonours.length > 0 ? (
-                              <div className="text-sm space-y-1 pl-6">
-                                {unit.battleHonours.map((honourId: string) => (
-                                  <div key={honourId} className="text-muted-foreground">
-                                    • {honourId}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-muted-foreground pl-6 italic">
-                                Nenhuma Battle Honour ainda
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2 text-sm font-semibold">
-                                <Star className="h-4 w-4 text-blue-500" />
-                                Battle Traits ({unit.battleTraits.length})
-                              </div>
-                              {!unit.isDestroyed && (
-                                <ManageBattleTraitsDialog
-                                  unitId={unit.id}
-                                  unitName={unit.unitName}
-                                  onSuccess={() => {
-                                    utils.crusadeUnit.list.invalidate({ playerId });
-                                  }}
-                                />
-                              )}
-                            </div>
-                            {unit.battleTraits.length > 0 ? (
-                              <div className="text-sm space-y-1 pl-6">
-                                {unit.battleTraits.map((traitId: string) => (
-                                  <div key={traitId} className="text-blue-400">
-                                    ⭐ {traitId}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-muted-foreground pl-6 italic">
-                                Nenhum Battle Trait
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Crusade Relics - Only for CHARACTER units */}
-                          {unit.category && unit.category.includes('CHARACTER') && (
+                          {unit.battleHonours.length > 0 && (
                             <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2 text-sm font-semibold">
-                                  <Trophy className="h-4 w-4 text-amber-500" />
-                                  Crusade Relics ({unit.crusadeRelics ? JSON.parse(unit.crusadeRelics).length : 0}/3)
-                                </div>
-                                {!unit.isDestroyed && (
-                                  <ManageCrusadeRelicsDialog
-                                    unitId={unit.id}
-                                    unitName={unit.unitName}
-                                    onSuccess={() => {
-                                      utils.crusadeUnit.list.invalidate({ playerId });
-                                    }}
-                                  />
-                                )}
+                              <div className="flex items-center gap-2 text-sm font-semibold mb-1">
+                                <Award className="h-4 w-4 text-yellow-500" />
+                                Battle Honours
                               </div>
-                              {unit.crusadeRelics && JSON.parse(unit.crusadeRelics || '[]').length > 0 ? (
-                                <div className="text-sm space-y-1 pl-6">
-                                  {JSON.parse(unit.crusadeRelics || '[]').map((relicId: string) => (
-                                    <div key={relicId} className="text-amber-400">
-                                      🏆 {relicId}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground pl-6 italic">
-                                  Nenhuma Crusade Relic
-                                </div>
-                              )}
+                              <div className="text-sm text-muted-foreground pl-6">
+                                {unit.battleHonours.join(', ')}
+                              </div>
                             </div>
                           )}
                           
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2 text-sm font-semibold">
-                                <Skull className="h-4 w-4 text-red-500" />
-                                Battle Scars ({unit.battleScars.length})
+                          {unit.battleTraits.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 text-sm font-semibold mb-1">
+                                <Star className="h-4 w-4 text-blue-500" />
+                                Battle Traits
                               </div>
-                              {!unit.isDestroyed && (
-                                <ManageBattleScarsDialog
-                                  unitId={unit.id}
-                                  unitName={unit.unitName}
-                                  onSuccess={() => {
-                                    utils.crusadeUnit.list.invalidate({ playerId });
-                                  }}
-                                />
-                              )}
+                              <div className="text-sm text-muted-foreground pl-6">
+                                {unit.battleTraits.join(', ')}
+                              </div>
                             </div>
-                            {unit.battleScars.length > 0 ? (
-                              <div className="text-sm space-y-1 pl-6">
-                                {unit.battleScars.map((scarId: string) => (
-                                  <div key={scarId} className="text-red-400">
-                                    ☠️ {scarId}
-                                  </div>
-                                ))}
+                          )}
+                          
+                          {unit.battleScars.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 text-sm font-semibold mb-1">
+                                <Skull className="h-4 w-4 text-red-500" />
+                                Battle Scars
                               </div>
-                            ) : (
-                              <div className="text-sm text-muted-foreground pl-6 italic">
-                                Nenhuma Battle Scar
+                              <div className="text-sm text-muted-foreground pl-6">
+                                {unit.battleScars.join(', ')}
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       )}
 

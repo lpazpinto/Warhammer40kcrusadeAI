@@ -5,24 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Loader2, Plus, Sword, Upload, Users } from "lucide-react";
+import { Loader2, Plus, Sword, Upload, Users, CheckCircle2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { NARRATIVE_OBJECTIVES } from "@shared/narrativeObjectives";
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
   const campaignId = parseInt(id || '0');
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<{ id: number; name: string | null; email: string | null } | null>(null);
   
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -78,33 +74,7 @@ export default function CampaignDetail() {
     },
   });
 
-  const toggleReady = trpc.player.toggleReady.useMutation({
-    onSuccess: (data) => {
-      toast.success(data.isReady ? "Você está pronto para batalha!" : "Status de prontidão removido");
-      refetchPlayers();
-    },
-    onError: (error) => {
-      toast.error(`Erro ao alterar status: ${error.message}`);
-    },
-  });
 
-  // Search users for invites
-  const { data: searchResults } = trpc.user.search.useQuery(
-    { query: userSearchQuery },
-    { enabled: userSearchQuery.length >= 2 }
-  );
-
-  const sendInvite = trpc.campaign.sendInvite.useMutation({
-    onSuccess: () => {
-      toast.success('Convite enviado com sucesso!');
-      setInviteDialogOpen(false);
-      setUserSearchQuery("");
-      setSelectedUser(null);
-    },
-    onError: (error) => {
-      toast.error(`Erro ao enviar convite: ${error.message}`);
-    },
-  });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -155,39 +125,16 @@ export default function CampaignDetail() {
             <div>
               <h1 className="text-4xl font-bold mb-2">{campaign.name}</h1>
               <p className="text-muted-foreground">
-                vs {campaign.hordeFaction} • {campaign.pointsLimit} pontos • Fase {campaign.currentPhase || 1} de 4
+                vs {campaign.hordeFaction} • Fase {campaign.currentPhase}/{4}
               </p>
-              {players && players.length > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {players.filter(p => p.isReady).length}/{players.length} jogadores prontos
-                </p>
-              )}
             </div>
             
-            <div className="flex flex-col items-end gap-2">
-              <Button 
-                size="lg" 
-                asChild={players && players.length > 0 && players.every(p => p.isReady)}
-                disabled={!players || players.length === 0 || !players.every(p => p.isReady)}
-              >
-                {players && players.length > 0 && players.every(p => p.isReady) ? (
-                  <Link href={`/battle/setup/${campaign.id}`}>
-                    <Sword className="mr-2 h-5 w-5" />
-                    Iniciar Batalha
-                  </Link>
-                ) : (
-                  <>
-                    <Sword className="mr-2 h-5 w-5" />
-                    Iniciar Batalha
-                  </>
-                )}
-              </Button>
-              {players && players.length > 0 && !players.every(p => p.isReady) && (
-                <p className="text-xs text-muted-foreground">
-                  Aguardando todos os jogadores ficarem prontos
-                </p>
-              )}
-            </div>
+            <Button size="lg" asChild>
+              <Link href={`/battle/setup/${campaign.id}`}>
+                <Sword className="mr-2 h-5 w-5" />
+                Iniciar Batalha
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -201,110 +148,14 @@ export default function CampaignDetail() {
                     <CardDescription>Jogadores participando desta campanha</CardDescription>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
+                  <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
                       <DialogTrigger asChild>
                         <Button>
                           <Plus className="mr-2 h-4 w-4" />
                           Adicionar Jogador
                         </Button>
                       </DialogTrigger>
-                    </Dialog>
-                    
-                    <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          <Users className="mr-2 h-4 w-4" />
-                          Convidar Jogador
-                        </Button>
-                      </DialogTrigger>
                       <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Convidar Jogador</DialogTitle>
-                          <DialogDescription>
-                            Busque um usuário registrado para convidar
-                          </DialogDescription>
-                        </DialogHeader>
-                        
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="userSearch">Buscar Usuário</Label>
-                            <Input
-                              id="userSearch"
-                              placeholder="Digite nome ou email..."
-                              value={userSearchQuery}
-                              onChange={(e) => setUserSearchQuery(e.target.value)}
-                            />
-                            {userSearchQuery.length >= 2 && searchResults && searchResults.length > 0 && (
-                              <div className="border rounded-md max-h-48 overflow-y-auto">
-                                {searchResults.map((user) => {
-                                  // Check if user is already a player in this campaign
-                                  const isAlreadyPlayer = players?.some(p => p.userId === user.id);
-                                  
-                                  return (
-                                    <button
-                                      key={user.id}
-                                      className={`w-full text-left px-3 py-2 hover:bg-accent transition-colors ${
-                                        selectedUser?.id === user.id ? 'bg-accent' : ''
-                                      } ${
-                                        isAlreadyPlayer ? 'opacity-50 cursor-not-allowed' : ''
-                                      }`}
-                                      onClick={() => {
-                                        if (!isAlreadyPlayer) {
-                                          setSelectedUser(user);
-                                        }
-                                      }}
-                                      disabled={isAlreadyPlayer}
-                                    >
-                                      <div className="font-medium">{user.name || 'Sem nome'}</div>
-                                      <div className="text-sm text-muted-foreground">{user.email}</div>
-                                      {isAlreadyPlayer && (
-                                        <div className="text-xs text-muted-foreground">Já está na campanha</div>
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {userSearchQuery.length >= 2 && searchResults && searchResults.length === 0 && (
-                              <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
-                            )}
-                            {userSearchQuery.length > 0 && userSearchQuery.length < 2 && (
-                              <p className="text-sm text-muted-foreground">Digite pelo menos 2 caracteres</p>
-                            )}
-                          </div>
-                          
-                          {selectedUser && (
-                            <div className="border rounded-md p-3 bg-accent/50">
-                              <p className="text-sm font-medium">Usuário selecionado:</p>
-                              <p className="font-semibold">{selectedUser.name}</p>
-                              <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <DialogFooter>
-                          <Button 
-                            onClick={() => {
-                              if (selectedUser) {
-                                sendInvite.mutate({
-                                  campaignId,
-                                  invitedUserId: selectedUser.id,
-                                });
-                              }
-                            }}
-                            disabled={!selectedUser || sendInvite.isPending}
-                          >
-                            {sendInvite.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Enviar Convite
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  
-                  <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
-                    <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Adicionar Lord Commander</DialogTitle>
                         <DialogDescription>
@@ -379,12 +230,7 @@ export default function CampaignDetail() {
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-lg font-semibold">{player.name}</h3>
-                                {player.isReady && (
-                                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                )}
-                              </div>
+                              <h3 className="text-lg font-semibold mb-1">{player.name}</h3>
                               <p className="text-sm text-muted-foreground mb-3">
                                 {player.faction} {player.detachment && `• ${player.detachment}`}
                               </p>
@@ -410,23 +256,6 @@ export default function CampaignDetail() {
                             </div>
                             
                             <div className="flex gap-2">
-                              {/* Show Ready button only for own player */}
-                              {player.userId === user?.id && (
-                                <Button
-                                  size="sm"
-                                  variant={player.isReady ? "default" : "outline"}
-                                  onClick={() => toggleReady.mutate({ playerId: player.id })}
-                                  disabled={toggleReady.isPending}
-                                >
-                                  {toggleReady.isPending ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : player.isReady ? (
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                  ) : null}
-                                  {player.isReady ? "Pronto" : "Marcar Pronto"}
-                                </Button>
-                              )}
-                              
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -445,8 +274,16 @@ export default function CampaignDetail() {
                                 Importar Exército
                               </Button>
                               
-                              <Button size="sm" asChild>
-                                <Link href={`/player/${player.id}`}>Ver Detalhes</Link>
+                              <Button 
+                                size="sm" 
+                                asChild={!!(player.id && !isNaN(player.id) && player.id > 0)}
+                                disabled={!player.id || isNaN(player.id) || player.id <= 0}
+                              >
+                                {player.id && !isNaN(player.id) && player.id > 0 ? (
+                                  <Link href={`/player/${player.id}`}>Ver Detalhes</Link>
+                                ) : (
+                                  <span>Ver Detalhes</span>
+                                )}
                               </Button>
                             </div>
                           </div>
@@ -484,29 +321,60 @@ export default function CampaignDetail() {
                 </div>
                 
                 <div>
-                  <div className="text-sm text-muted-foreground">Fase Atual</div>
-                  <div className="font-semibold">Fase {campaign.currentPhase || 1} de 4</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-muted-foreground">Pontos Estratégicos</div>
-                  <div className="font-semibold">
-                    {(() => {
-                      const phase = campaign.currentPhase || 1;
-                      const points = [
-                        campaign.phase1StrategicPoints || 0,
-                        campaign.phase2StrategicPoints || 0,
-                        campaign.phase3StrategicPoints || 0,
-                        campaign.phase4StrategicPoints || 0
-                      ][phase - 1];
-                      return `${points} / ${campaign.strategicPointsToWin || 10}`;
-                    })()}
-                  </div>
-                </div>
-                
-                <div>
                   <div className="text-sm text-muted-foreground">Batalhas por Fase</div>
-                  <div className="font-semibold">{campaign.battlesPerPhase || 3}</div>
+                  <div className="font-semibold">{campaign.battlesPerPhase}</div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-muted-foreground">Pontos Estratégicos para Vitória</div>
+                  <div className="font-semibold">{campaign.strategicPointsForVictory}</div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-muted-foreground">Fase Atual</div>
+                  <div className="font-semibold">{campaign.currentPhase}</div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Narrative Objective Card */}
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span>Objetivo Narrativo - Fase {campaign.currentPhase}</span>
+                </CardTitle>
+                <CardDescription>
+                  {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.titlePt || campaign.currentNarrativeObjective}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="text-sm font-semibold mb-1">Descrição</div>
+                  <p className="text-sm text-muted-foreground">
+                    {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.descriptionPt}
+                  </p>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="border rounded-lg p-3 bg-green-500/10 border-green-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <span className="text-sm font-semibold text-green-500">SUCESSO</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.successBenefitPt}
+                    </p>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3 bg-red-500/10 border-red-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <XCircle className="h-4 w-4 text-red-500" />
+                      <span className="text-sm font-semibold text-red-500">FALHA</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.failureConsequencePt}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

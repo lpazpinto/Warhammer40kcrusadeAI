@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, name, gameMasterId FROM campaigns WHERE name LIKE '%Teste%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, name, gameMasterId FROM campaigns WHERE name LIKE '%Teste%';",
+  "rows": [
+    {
+      "id": "780001",
+      "name": "Teste Armageddon",
+      "gameMasterId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tgameMasterId\n780001\tTeste Armageddon\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

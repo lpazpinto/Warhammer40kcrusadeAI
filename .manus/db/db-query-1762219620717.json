@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, name, hordeFaction, battlesPerPhase, strategicPointsForVictory, currentPhase, currentNarrativeObjective FROM campaigns WHERE name LIKE '%Teste%' ORDER BY createdAt DESC LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, name, hordeFaction, battlesPerPhase, strategicPointsForVictory, currentPhase, currentNarrativeObjective FROM campaigns WHERE name LIKE '%Teste%' ORDER BY createdAt DESC LIMIT 1;",
+  "rows": [
+    {
+      "id": "780001",
+      "name": "Teste Armageddon",
+      "hordeFaction": "World Eaters",
+      "battlesPerPhase": "3",
+      "strategicPointsForVictory": "10",
+      "currentPhase": "1",
+      "currentNarrativeObjective": "establishing_the_front"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\thordeFaction\tbattlesPerPhase\tstrategicPointsForVictory\tcurrentPhase\tcurrentNarrativeObjective\n780001\tTeste Armageddon\tWorld Eaters\t3\t10\t1\testablishing_the_front\n",
+  "stderr": "",
+  "execution_time_ms": 181
+}

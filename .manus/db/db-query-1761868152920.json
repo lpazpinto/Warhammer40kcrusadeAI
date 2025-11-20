@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `campaignInvitations` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignId` int NOT NULL,\n  `invitedUserId` int NOT NULL,\n  `invitedByUserId` int NOT NULL,\n  `status` enum('pending', 'accepted', 'declined') NOT NULL DEFAULT 'pending',\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `respondedAt` timestamp,\n  CONSTRAINT `campaignInvitations_id` PRIMARY KEY(`id`)\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute CREATE TABLE IF NOT EXISTS `campaignInvitations` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignId` int NOT NULL,\n  `invitedUserId` int NOT NULL,\n  `invitedByUserId` int NOT NULL,\n  `status` enum('pending', 'accepted', 'declined') NOT NULL DEFAULT 'pending',\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `respondedAt` timestamp,\n  CONSTRAINT `campaignInvitations_id` PRIMARY KEY(`id`)\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 642
-}

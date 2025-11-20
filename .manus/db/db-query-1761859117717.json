@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `campaignPhaseTemplates` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignType` varchar(100) NOT NULL DEFAULT 'armageddon',\n  `phaseNumber` int NOT NULL,\n  `phaseName` varchar(255) NOT NULL,\n  `narrative` text NOT NULL,\n  `successBonus` text NOT NULL,\n  `failureConsequence` text NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `campaignPhaseTemplates_id` PRIMARY KEY(`id`)\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute CREATE TABLE IF NOT EXISTS `campaignPhaseTemplates` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignType` varchar(100) NOT NULL DEFAULT 'armageddon',\n  `phaseNumber` int NOT NULL,\n  `phaseName` varchar(255) NOT NULL,\n  `narrative` text NOT NULL,\n  `successBonus` text NOT NULL,\n  `failureConsequence` text NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `campaignPhaseTemplates_id` PRIMARY KEY(`id`)\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 580
-}

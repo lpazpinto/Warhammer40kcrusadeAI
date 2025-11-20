@@ -28,20 +28,14 @@ export const campaigns = mysqlTable("campaigns", {
   status: mysqlEnum("status", ["ongoing", "completed", "paused"]).default("ongoing").notNull(),
   hordeFaction: varchar("hordeFaction", { length: 100 }).notNull(), // e.g., "Tyranids", "Orks"
   hordePrimaryFactionRule: text("hordePrimaryFactionRule"), // JSON string for faction-specific rules
-  gameMode: mysqlEnum("gameMode", ["5_rounds", "infinite"]).default("5_rounds").notNull(),
-  pointsLimit: int("pointsLimit").default(1000).notNull(), // 1000 or 2000
-  currentBattleRound: int("currentBattleRound").default(0).notNull(),
-  
-  // Campaign Phase Management
-  gameMasterId: int("gameMasterId"), // Player ID of the game master
-  battlesPerPhase: int("battlesPerPhase").default(3).notNull(), // 1-4 battles per phase (campaign speed)
-  strategicPointsToWin: int("strategicPointsToWin").default(10).notNull(), // Points needed to win a phase
-  currentPhase: int("currentPhase").default(1).notNull(), // 1-4
-  phase1StrategicPoints: int("phase1StrategicPoints").default(0).notNull(),
-  phase2StrategicPoints: int("phase2StrategicPoints").default(0).notNull(),
-  phase3StrategicPoints: int("phase3StrategicPoints").default(0).notNull(),
-  phase4StrategicPoints: int("phase4StrategicPoints").default(0).notNull(),
-  
+  battlesPerPhase: int("battlesPerPhase").default(3).notNull(), // Number of battles in each phase
+  strategicPointsForVictory: int("strategicPointsForVictory").default(10).notNull(), // Points needed to consider phase a success
+  currentPhase: int("currentPhase").default(1).notNull(), // Always 4 phases total
+  currentNarrativeObjective: varchar("currentNarrativeObjective", { length: 100 }).default("establishing_the_front").notNull(),
+  phase1Result: mysqlEnum("phase1Result", ["success", "failure", "pending"]).default("pending"),
+  phase2Result: mysqlEnum("phase2Result", ["success", "failure", "pending"]).default("pending"),
+  phase3Result: mysqlEnum("phase3Result", ["success", "failure", "pending"]).default("pending"),
+  phase4Result: mysqlEnum("phase4Result", ["success", "failure", "pending"]).default("pending"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -55,13 +49,13 @@ export type InsertCampaign = typeof campaigns.$inferInsert;
 export const players = mysqlTable("players", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
-  userId: int("userId"), // User account that owns this player/army
+  userId: int("userId"), // Link to users table for multiplayer
   name: varchar("name", { length: 255 }).notNull(), // Lord Commander name
   faction: varchar("faction", { length: 100 }).notNull(), // e.g., "Astra Militarum"
   detachment: varchar("detachment", { length: 100 }), // e.g., "Combined Arms"
   crusadeForceName: varchar("crusadeForceName", { length: 255 }), // Name of the crusade force
   requisitionPoints: int("requisitionPoints").default(0).notNull(),
-  supplyLimit: int('supplyLimit').default(1000), // Crusade Supply Limit (starts at 1000 pts)
+  supplyLimit: int("supplyLimit").default(1000).notNull(), // Crusade supply limit in points
   battleTally: int("battleTally").default(0).notNull(),
   victories: int("victories").default(0).notNull(),
   supplyPoints: int("supplyPoints").default(0).notNull(), // Horde Mode SP
@@ -69,7 +63,7 @@ export const players = mysqlTable("players", {
   secretObjective: text("secretObjective"), // JSON string for current secret objective
   secretObjectiveRevealed: boolean("secretObjectiveRevealed").default(false).notNull(),
   isAlive: boolean("isAlive").default(true).notNull(), // For Horde Mode survival tracking
-  isReady: boolean("isReady").default(false).notNull(), // Ready for next battle
+  isReady: boolean("isReady").default(false).notNull(), // Multiplayer ready status
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -105,7 +99,6 @@ export const crusadeUnits = mysqlTable("crusadeUnits", {
   battleHonours: text("battleHonours"), // JSON string of honour names
   battleTraits: text("battleTraits"), // JSON string of trait names
   battleScars: text("battleScars"), // JSON string of scar names
-  crusadeRelics: text("crusadeRelics"), // JSON string of relic IDs (CHARACTER units only, max 3 per army)
   outOfActionStatus: varchar("outOfActionStatus", { length: 100 }), // Last O.o.A. result
   isDestroyed: boolean("isDestroyed").default(false).notNull(), // Permanently destroyed
   notes: text("notes"), // Additional notes
@@ -123,8 +116,6 @@ export const battles = mysqlTable("battles", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
   battleNumber: int("battleNumber").notNull(), // Sequential battle number in campaign
-  phaseNumber: int("phaseNumber").default(1).notNull(), // Which phase (1-4) this battle belongs to
-  strategicPointsEarned: int("strategicPointsEarned").default(0).notNull(), // Strategic points earned by alliance
   deployment: varchar("deployment", { length: 100 }), // e.g., "Dawn of War"
   missionPack: varchar("missionPack", { length: 100 }), // e.g., "Leviathan"
   battleRound: int("battleRound").default(1).notNull(), // Current round (1-5 or more)
@@ -161,30 +152,13 @@ export type BattleParticipant = typeof battleParticipants.$inferSelect;
 export type InsertBattleParticipant = typeof battleParticipants.$inferInsert;
 
 /**
- * Campaign Phase Templates - predefined phases with narratives and bonuses
- */
-export const campaignPhaseTemplates = mysqlTable("campaignPhaseTemplates", {
-  id: int("id").autoincrement().primaryKey(),
-  campaignType: varchar("campaignType", { length: 100 }).default("armageddon").notNull(), // For future: different campaign types
-  phaseNumber: int("phaseNumber").notNull(), // 1-6 (Armageddon has 6 possible phases)
-  phaseName: varchar("phaseName", { length: 255 }).notNull(), // e.g., "Stabilising the Front"
-  narrative: text("narrative").notNull(), // Story/description of the phase
-  successBonus: text("successBonus").notNull(), // What happens if alliance succeeds
-  failureConsequence: text("failureConsequence").notNull(), // What happens if alliance fails
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type CampaignPhaseTemplate = typeof campaignPhaseTemplates.$inferSelect;
-export type InsertCampaignPhaseTemplate = typeof campaignPhaseTemplates.$inferInsert;
-
-/**
- * Campaign Invitations - track invitations to join campaigns
+ * Campaign Invitations table - tracks invites sent to users for multiplayer campaigns
  */
 export const campaignInvitations = mysqlTable("campaignInvitations", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
-  invitedUserId: int("invitedUserId").notNull(), // User being invited
-  invitedByUserId: int("invitedByUserId").notNull(), // Game Master who sent invite
+  inviterId: int("inviterId").notNull(), // User who sent the invite
+  inviteeId: int("inviteeId").notNull(), // User being invited
   status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   respondedAt: timestamp("respondedAt"),
@@ -193,3 +167,22 @@ export const campaignInvitations = mysqlTable("campaignInvitations", {
 export type CampaignInvitation = typeof campaignInvitations.$inferSelect;
 export type InsertCampaignInvitation = typeof campaignInvitations.$inferInsert;
 
+/**
+ * Battle Events table - tracks events that occur during battles
+ * (unit deaths, objectives captured, phase changes, etc.)
+ */
+export const battleEvents = mysqlTable("battleEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  battleId: int("battleId").notNull(),
+  battleRound: int("battleRound").notNull(), // Which round this event occurred
+  phase: varchar("phase", { length: 50 }), // e.g., "Command", "Movement", "Shooting", "Charge", "Fight"
+  eventType: varchar("eventType", { length: 100 }).notNull(), // e.g., "unit_destroyed", "objective_captured", "ability_used"
+  playerId: int("playerId"), // Player involved (null for horde events)
+  unitId: int("unitId"), // Crusade unit involved (if applicable)
+  description: text("description").notNull(), // Human-readable event description
+  data: text("data"), // JSON string for additional event data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BattleEvent = typeof battleEvents.$inferSelect;
+export type InsertBattleEvent = typeof battleEvents.$inferInsert;

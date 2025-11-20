@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE battles\nADD COLUMN IF NOT EXISTS phaseNumber INT NOT NULL DEFAULT 1,\nADD COLUMN IF NOT EXISTS strategicPointsEarned INT NOT NULL DEFAULT 0",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute ALTER TABLE battles\nADD COLUMN IF NOT EXISTS phaseNumber INT NOT NULL DEFAULT 1,\nADD COLUMN IF NOT EXISTS strategicPointsEarned INT NOT NULL DEFAULT 0",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 995
-}

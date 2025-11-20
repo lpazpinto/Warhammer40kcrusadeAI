@@ -1,0 +1,61 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'campaigns' AND TABLE_SCHEMA = DATABASE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'campaigns' AND TABLE_SCHEMA = DATABASE();",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "COLUMN_NAME": "name"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "hordeFaction"
+    },
+    {
+      "COLUMN_NAME": "hordePrimaryFactionRule"
+    },
+    {
+      "COLUMN_NAME": "currentBattleRound"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "gameMasterId"
+    },
+    {
+      "COLUMN_NAME": "battlesPerPhase"
+    },
+    {
+      "COLUMN_NAME": "strategicPointsToWin"
+    },
+    {
+      "COLUMN_NAME": "currentPhase"
+    },
+    {
+      "COLUMN_NAME": "phase1StrategicPoints"
+    },
+    {
+      "COLUMN_NAME": "phase2StrategicPoints"
+    },
+    {
+      "COLUMN_NAME": "phase3StrategicPoints"
+    },
+    {
+      "COLUMN_NAME": "phase4StrategicPoints"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nuserId\nname\nstatus\nhordeFaction\nhordePrimaryFactionRule\ncurrentBattleRound\ncreatedAt\nupdatedAt\ngameMasterId\nbattlesPerPhase\nstrategicPointsToWin\ncurrentPhase\nphase1StrategicPoints\nphase2StrategicPoints\nphase3StrategicPoints\nphase4StrategicPoints\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

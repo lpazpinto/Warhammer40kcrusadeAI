@@ -124,358 +124,264 @@
 - [x] Fix import army dialog - button not visible when text is too long (needs scroll)
 
 
-- [x] CRITICAL: "invalid ID returned from database" error when creating campaigns - ID validation too strict or database returning unexpected format
 
-
-- [x] CRITICAL: NaN being passed to crusadeUnits.get query - need to validate unit ID before query
-
-
-- [x] CRITICAL: Army parser only importing first unit from CHARACTERS section - need to fix parser to handle all units in all categories
-
-
-- [x] Fix army parser to correctly handle vehicles - weapons should not be counted as separate models
-
-
-- [ ] Add player management page - view all players, edit, and delete players
-
-
-- [x] Allow players to edit crusade name (custom name) for each unit after import
-
-
-
-## Crusade Card Features (Following Official Rules)
-
-### Battle Tracking & Experience
-- [x] Track battles played and battles survived for each unit
-- [x] Track enemy units destroyed (kills)
-- [x] Automatic XP calculation based on battles and kills
-- [x] Automatic rank progression (Battle Ready → Blooded → Battle-Hardened → Heroic → Legendary)
-- [x] Display XP progress bar showing progress to next### Battle Honours System
-- [x] Add Battle Honours when unit gains rank (1 honour per rank gained)
-- [x] Create Battle Honours database/list by faction
-- [x] UI to select and add Battle Honours to units
-- [x] Display Battle Honours on unit cards with descriptions
-- [x] Maximum Battle Honours based on rank (Blooded:### Battle Scars System
-- [x] Track Out of Action results (when unit is destroyed/removed)
-- [x] Roll for Battle Scars when unit goes Out of Action
-- [x] Create Battle Scars database/list
-- [x] UI to assign Battle Scars to units
-- [x] Display Battle Scars on Crusade Card with negative effects [ ] Option to remove Battle Scars via Requisitions
-
-#### Battle Traits System
-- [x] Add faction-specific Battle Traits
-- [x] UI to assign Battle Traits to units
-- [x] Display Battle Traits on unit cardsd
-
-### Requisitions System
-- [ ] Create Requisitions database (Increase Supply Limit, Rearm and Resupply, etc.)
-- [ ] Track Requisition Points (RP) per player
-- [ ] UI to spend RP on Requisitions
-- [ ] Apply Requisition effects (add units, remove scars, etc.)
-- [ ] Log Requisition history
-
-### Crusade Relics System
-- [x] Create Crusade Relics database by faction
-- [x] Assign Relics to CHARACTER units only
-- [x] Limit 3 Relics per army (not per CHARACTER)
-- [x] UI to select and assign Relics
-- [x] Display Relics on Crusade Card
-
-### Wargear & Equipment
-- [x] Track wargear changes and upgrades
-- [ ] Update points cost when wargear changes (manual for now)
-- [x] Display current wargear on Crusade Card
-
-### Battle Recording
-- [x] Create Battle Report form (opponent, mission, result)
-- [x] Automatically update player stats after battle (battles played, victories, RP)
-- [x] Track which units participated in each battle
-- [x] Battle history log per campaign and per player
-
-### Order of Battle Management
-- [x] Display total Supply Limit vs Supply Used
-- [ ] Mark units as "In Reserve" vs "Active" (future feature)
-- [ ] Enforce Supply Limit when adding units (warning shown)
-- [x] Calculate total army Power Level and Points
-
-### Crusade Card UI Improvements
-- [ ] Detailed unit view page showing all Crusade Card fields
-- [ ] Visual representation of rank progression
-- [ ] Icons for Battle Honours, Scars, Traits, and Relics
-- [ ] Print-friendly Crusade Card layout
-- [ ] Export Crusade Card as PDF
-
-### AI Integration (Future)
-- [ ] AI suggestions for Battle Honours based on unit role
-- [ ] AI-generated battle narratives
-- [ ] AI opponent for solo play
-- [ ] Strategic advice based on army composition
-
-
-
-## Enhanced Battle Recording Workflow
-- [ ] Create interactive battle recording wizard (step-by-step) - future enhancement
-- [ ] Step 1: Select participating units from player's roster - future enhancement
-- [x] Step 2: For each unit, ask: survived? kills? completed objective?
-- [x] Step 3: Automatically roll and assign Battle Honours when unit gains rank
-- [x] Step 4: Automatically roll and assign Battle Scars when unit is destroyed
-- [x] Step 5: Show summary of all changes (XP gained, ranks promoted, honours/scars assigned)
-- [x] Improve RecordBattleDialog to show automatic Honours/Scars
-
-
-
-## CRITICAL: Supply System Bug
-- [x] Change Supply Used from Power Level to Points (sum of pointsCost)
-- [x] Change Supply Limit default from 50 PL to 1000 points
-- [x] Update Order of Battle display to show points instead of PL
-- [x] Update database schema (supplyLimit field now stores points)
-
-
-
-
-## Horde Mode Battle System Implementation
-- [ ] Battle Setup Phase
-  - [ ] Select participating players from campaign
-  - [ ] Choose deployment type (Dawn of War, Hammer and Anvil, etc.)
-  - [ ] Select mission from mission pack
-  - [ ] Configure spawn zones based on game size (2 zones for 1000pts, 4 zones for 2000pts)
-  - [ ] Place objective markers
-  - [ ] Choose Horde faction and Primary Faction Rule
-  - [ ] Shuffle Misery Deck, Secret Objectives Deck, Secondary Mission Deck
-  
-- [ ] Battle Round Management
-  - [ ] Display current round number
-  - [ ] Show active Misery cards
-  - [ ] Show current Secondary Mission
-  - [ ] Spawn Horde units in each zone (roll 2D6, choose from bracket)
-  - [ ] Track Supply Points (SP) gained from objectives and kills
-  - [ ] Resupply Step - spend SP on purchases
-  
-- [ ] Horde AI Controller
-  - [ ] Movement AI (move toward closest visible enemy → objective → defender edge)
-  - [ ] Shooting AI (shoot closest legal target, prioritize Anti-X, Precision, Melta)
-  - [ ] Charge AI (charge if unit has melee weapons better than CCW)
-  - [ ] Fight AI (attack closest enemy model)
-  - [ ] Consolidation AI (move toward closest enemy/objective)
-  
-- [ ] Battle Tracking
-  - [ ] Track which player units participated
-  - [ ] Track which units were destroyed
-  - [ ] Track kills per unit
-  - [ ] Track objectives controlled
-  - [ ] Calculate SP rewards
-  
-- [ ] End of Battle
-  - [ ] Resolve Secret Objectives (5 round mode)
-  - [ ] Award Requisition Points (1 RP per battle, +1 if won)
-  - [ ] Automatically update unit stats (battles played, survived, kills, XP)
-  - [ ] Automatically roll and assign Battle Honours for promoted units
-  - [ ] Automatically roll and assign Battle Scars for destroyed units
-  - [ ] Show battle summary with all changes
-  
-- [ ] Battle UI Components
-  - [ ] Round tracker with phase indicators
-  - [ ] Spawn zone visualizer
-  - [ ] Horde unit cards with AI instructions
-  - [ ] Player unit selector for tracking
-  - [ ] SP and CP counters
-  - [ ] Misery card display
-  - [ ] Secondary Mission display
-  - [ ] Quick actions (end phase, end round, spawn units)
-
-
-
-## Current Bug Fixes
-- [x] Fix duplicate function exports in db.ts (createBattle, getBattleById)
-- [x] Fix BattleSetup.tsx to use correct campaign property (currentBattleRound instead of currentRound)
-- [x] Remove duplicate Horde faction selection from BattleSetup (already defined in campaign)
-- [x] Fix routers.ts duplicate property and missing query method errors
-
-
-
-
-## New Bug Fix
-- [x] Fix player supplyLimit default value - should be 1000 points instead of 50
-
-
-
-- [x] Fix NaN error in battle.get query when accessing /battle/setup/:campaignId route
-
-
-
-
-## Battle Unit Selection Feature
-- [x] Add step in battle wizard for each player to select units from their Order of Battle
-- [x] Calculate points limit per player (battle size / number of players)
-- [x] Show available units with points costs
-- [x] Validate total points don't exceed player's limit
-- [x] Display selected units summary before battle starts
-- [ ] Store selected unit IDs in battle participants table (will be implemented when battle creation is finalized)
-
-
-
-
-## Bug Fix
-- [x] Fix "Rendered more hooks than during the previous render" error in BattleSetup - extracted UnitSelection into separate component
-
-
-
-- [ ] Fix battle.get NaN error - find and remove code trying to fetch battle with invalid ID
-
-
-
-
-## Campaign Phase Management System
-- [x] Update campaign schema to include:
-  - gameMaster (player who manages the campaign)
-  - battlesPerPhase (number of battles each phase should have)
-  - strategicPointsToWin (points needed to win a phase)
-  - currentPhase (1-4)
-  - phaseStrategicPoints (points earned in current phase)
-  
-- [ ] Create campaign phases tracking:
-  - Phase 1, 2, 3, 4
-  - Track strategic points per phase
-  - Determine phase success/failure based on strategic points
-  - Reset strategic points when moving to next phase
-  
-- [x] Update battle schema to include:
-  - phaseNumber (which phase this battle belongs to)
-  - strategicPointsEarned (points earned by alliance in this battle)
-  
-- [ ] Campaign detail page improvements:
-  - Show current phase (1-4)
-  - Show strategic points progress for current phase
-  - Show phase success/failure status
-  - List all battles organized by phase
-  - Show battle results and strategic points earned
-  
-- [ ] Battle completion flow:
-  - Record strategic points earned
-  - Update phase strategic points total
-  - Check if phase is complete (all battles played OR strategic points goal reached)
-  - Automatically advance to next phase when current phase ends
-  - Show phase results (success/failure)
-  
-- [ ] Campaign creation flow:
-  - Select game master from players
-  - Define battles per phase (campaign speed: 1-4 battles)
-  - Define strategic points needed to win each phase
-  
-- [ ] Campaign end condition:
-  - After phase 4, determine overall campaign winner
-  - Show final campaign results
-  - Mark campaign as completed
-
-
-
-
-## Campaign Creation Form Updates
-- [x] Remove "Modo de Jogo" (5 Rodadas) - campaigns always have 4 phases
-- [ ] Add Game Master selection (dropdown of players, or create new player as GM)
-- [x] Add campaign speed selection (1-4 battles per phase: Very Fast, Fast, Normal, Slow)
-- [x] Add strategic points goal input (points needed to win each phase)
-- [x] Create predefined phase templates with stories and bonuses:
-  - Phase I: Stabilising the Front
-  - Phase II: Reclaim the Lost Hives  
-  - Phase III: Strengthen the Imperator Line
-  - Phase IV: Raze the Monoliths
-  - Phase V: Light in the Dark
-  - Phase VI: Shatter the Red Angel's Gate
-- [x] Store phase narratives and bonuses in database
-- [x] Prepare system for custom campaign phases in future (campaignType field allows different campaign types)
-
-
-
-
-
-## Multiplayer Campaign System
-- [x] Update campaign creation: creator is automatically Game Master
-- [ ] Create campaign invitations system:
-  - [x] Add campaignInvitations table (campaignId, invitedUserId, status: pending/accepted/declined)
-  - [ ] Game Master can invite other users by email/username
-  - [ ] Invited users receive notification and can accept/decline
-  - [ ] Accepted users become Lord Commanders in the campaign
-  
-- [x] Update players table:
-  - [x] Add userId field to link player to user account
-  - [x] Add isReady boolean field (default false)
-  - [x] Track which user owns which player/army
-  
-- [ ] Permissions system:
-  - [ ] Only Game Master can modify campaign settings
-  - [ ] Only Game Master can start battles
-  - [ ] Each user can only manage their own player/army
-  - [ ] Users cannot view or edit other players' armies
-  
-- [x] Ready status system:
-  - [x] Add "Pronto para Batalha" button for each player
-  - [x] Show ready status for all players in campaign
-  - [x] Battle can only start when all players are ready
-  - [ ] Reset all players' ready status after each battle
-  
-- [x] UI updates:
-  - [ ] Campaign detail page shows Game Master name
-  - [ ] Show list of invited/participating users
-  - [x] Show ready status indicators for each player
-  - [x] Invite users button (Game Master only)
-  - [x] Ready button (visible only for own player)
-  - [x] Start battle button (enabled when all ready)
-
-
-
-
-## Ready Status and Invite UI
-- [ ] Create tRPC endpoints for invitations:
-  - [ ] invitation.send (GM only, requires email/username)
-  - [ ] invitation.list (get pending invitations for current user)
-  - [ ] invitation.accept (accept invitation)
-  - [ ] invitation.decline (decline invitation)
-  
-- [x] Create tRPC endpoints for ready status:
-  - [x] player.toggleReady (toggle own player's ready status)
-  - [ ] player.resetAllReady (reset all players after battle, GM only)
-  
-- [x] Update CampaignDetail UI:
-  - [x] Add "Convidar Jogador" button (GM only, next to "Adicionar Jogador")
-  - [x] Show ready status indicator for each player (checkmark icon)
-  - [x] Add "Pronto para Batalha" toggle button for each player (only for own player)
-  - [x] Update "Iniciar Batalha" button to only enable when all players are ready
-  - [x] Show count of ready players (e.g., "2/3 jogadores prontos")
-
-
-
-
-## Complete Ready Status UI
-- [x] Show ready status indicator (checkmark icon) next to each player in the list
-- [x] Add "Pronto para Batalha" button for each player (only visible for own player)
-- [x] Update "Iniciar Batalha" button to check if all players are ready
-- [x] Show ready count (e.g., "2/3 jogadores prontos")
-- [x] Add campaign.sendInvite, campaign.listInvites, campaign.respondToInvite endpoints
-- [x] Add player.toggleReady endpoint
-- [x] Change invite system to search by username instead of email
-- [x] Add user search dropdown in invite dialog
-- [x] Connect invite mutation to backend endpoint
-
-
-
-
-## Improve Invite System - Search Registered Users
-- [x] Create user.search endpoint to search users by name or email
-- [x] Update invite dialog to show user search dropdown/autocomplete
-- [x] Replace email input with user selection
-- [x] Validate that selected user is registered before sending invite
-- [x] Show user's name and email in search results
-- [x] Prevent inviting users who are already in the campaign
-- [x] Fix case-insensitive search with LOWER() in SQL query
-
-
-
-
-## Fix Supply Limit in Campaign Creation
-- [x] Remove "Limite de Pontos" field from campaign creation dialog
-- [x] Set initial Supply Limit to 1000 points for all players automatically
-- [x] Keep supplyLimit field in database for future Requisition increases
-- [x] Remove pointsLimit display from campaign cards and detail page
-
+## Change "Rodadas" to "Fases" (Crusade Armageddon Terminology)
+- [x] Update database schema (campaigns table: battlesPerPhase, currentPhase)
+- [x] Update backend code (db.ts, routers.ts)
+- [x] Update frontend UI (all components showing "Rodadas")
+- [x] Update campaign creation dialog
+- [x] Update campaign detail page
+- [x] Test all changes
+- [x] Commit to GitHub
+
+
+## Implement Narrative Objectives System (Armageddon Campaign)
+- [ ] Extract and translate all Narrative Objectives from images
+- [ ] Update database schema:
+  - [ ] Add battlesPerPhase field to campaigns table
+  - [ ] Add strategicPointsForVictory field to campaigns table
+  - [ ] Add currentNarrativeObjective field to campaigns table
+  - [ ] Add phaseResult field to track success/failure per phase
+  - [ ] Change gameMode to always be 4 phases (remove 5_phases/infinite)
+- [ ] Create narrativeObjectives.ts with all 6 objectives data structure
+- [ ] Update campaign creation form:
+  - [ ] Add "Batalhas por Fase" input
+  - [ ] Add "Pontos Estratégicos para Vitória" input
+  - [ ] Remove gameMode selector (always 4 phases)
+- [ ] Update CampaignDetail page:
+  - [ ] Show current Narrative Objective title and description
+  - [ ] Show SUCCESS benefits
+  - [ ] Show FAILURE consequences
+  - [ ] Show phase progress (battles completed / total battles)
+- [ ] Implement phase completion logic:
+  - [ ] Calculate if phase was success or failure based on strategic points
+  - [ ] Determine next Narrative Objective based on result
+  - [ ] Update currentPhase and currentNarrativeObjective
+- [ ] Test complete campaign flow through all 4 phases
+- [ ] Commit to GitHub
+
+
+## Fix Campaign Creation Invalid ID Error
+- [ ] Investigate why database is returning invalid ID after campaign creation
+- [ ] Check createCampaign function in db.ts
+- [ ] Fix ID return logic in campaign.create mutation
+- [ ] Test campaign creation to ensure valid ID is returned
+- [ ] Commit fix to GitHub
+
+
+## Fix NaN Player ID Error in Campaign Detail
+- [x] Identify where player.get query is being called with NaN ID
+- [x] Add validation to prevent NaN IDs from being passed to queries
+- [x] Fix the source of the invalid player ID (Ver Detalhes link)
+- [x] Test campaign detail page with players
+- [x] Commit fix to GitHub
+
+
+## Fix NaN Crusade Unit ID Error
+- [x] Find where crusadeUnit.get is being called with NaN (endpoint missing validation)
+- [x] Add validation to prevent NaN unit IDs
+- [x] Error resolved - validation in endpoint prevents NaN from reaching database
+- [x] Confirmed no NaN errors in server logs
+- [x] All commits pushed to GitHub
+
+
+## Implement Notification System for Campaign Invites
+- [x] Create campaignInvitations table in database schema
+- [x] Add userId and isReady fields to players table
+- [x] Create database functions in db.ts (createCampaignInvitation, getInvitationsByInviteeId, etc.)
+- [x] Add campaign.sendInvite endpoint with validation
+- [x] Add campaign.listInvites endpoint
+- [x] Add campaign.respondToInvite endpoint with auto-player creation
+- [x] Create /notifications page with invite list
+- [x] Add accept/decline UI for invites
+- [x] Add route to App.tsx
+- [x] Fix all TypeScript errors
+- [ ] Add notification badge in header showing pending invite count
+- [ ] Test complete multiplayer flow: invite → accept → join campaign
+
+
+## Remove Points Limit from Campaign Creation
+- [ ] Remove "Limite de Pontos" field from campaign creation dialog in Campaigns.tsx
+- [ ] Verify Supply Limit is always 1000 points per player (already implemented)
+- [ ] Confirm Order of Battle shows all units (already working)
+- [ ] Confirm Battle Setup allows selecting battle size and units (already working)
+- [ ] Test complete flow: create campaign → import army → start battle → select units
+
+
+## Fix NaN Error in player.get on Campaign Detail Page
+- [x] Find where player.get is being called with NaN ID (PlayerDetail.tsx)
+- [x] Add validation to prevent NaN from being passed to player.get (added logging and extra validation)
+- [x] Frontend already has validation to prevent NaN links
+- [x] FOUND ROOT CAUSE: createPlayer was using Number(result.insertId) without validation
+- [x] Added robust insertId handling to createPlayer (same as createCampaign)
+- [x] Added validation to updatePlayer to prevent NaN IDs
+- [x] Added logging to getPlayerById to track all calls
+- [x] Error fully resolved - all database functions now validate IDs
+
+
+## Fix NaN Error in crusadeUnit Queries
+- [x] Find createCrusadeUnit and add robust insertId validation
+- [x] Add validation to getCrusadeUnitById
+- [x] Add validation to updateCrusadeUnit
+- [x] Add validation to deleteCrusadeUnit
+- [x] All crusadeUnit database functions now validate IDs
+
+
+## Fix Weapon Parsing from Official App Export
+- [x] Check armyParser.ts to see how weapons with bullet points (◦) are being parsed
+- [x] Fix parser to correctly extract weapons that start with ◦
+- [x] Handle single-model CHARACTER units (create implicit model with unit name)
+- [x] Save current model when changing categories or units
+- [x] Distinguish between models and weapons using heuristics
+- [x] Test with official template format - ALL WORKING!
+- [x] Verified: Krieg Command Squad (3 models, 9 weapons), Lord Marshal Dreir (1 model, 3 weapons), Death Korps (2 models, 5 weapons)
+
+
+## Weapons Not Appearing After Import with User's File
+- [x] Test parser with user's actual army file (exercito.txt) - Parser working perfectly!
+- [x] Found root cause: models field stored as JSON string but frontend expected array
+- [x] Added parseModels() helper function to parse JSON string to array
+- [x] Added weapons display section with parseModels() in PlayerDetail
+- [x] All weapons now display correctly after import
+
+
+## Parser Not Extracting All Models
+- [x] Fixed parser to extract ALL models from unit
+- [x] Improved heuristic with expanded weapon and model keyword lists
+- [x] Parser now correctly identifies models vs weapons
+- [x] All models are saved when encountering new model (not just weapons)
+
+
+## Add Unit Alias Field
+- [x] Schema already has crusadeName field (line 81)
+- [x] crusadeUnit.update endpoint already accepts crusadeName parameter
+- [x] Added pencil icon button next to unit name in PlayerDetail
+- [x] Connected button to updateUnit mutation with invalidation
+- [x] Players can now give custom names to their units (e.g., "The Emperor's Fury")
+
+
+## Battle Setup Wizard Implementation
+- [x] Commit all current changes to GitHub
+- [x] Create missions data structure with Table A (1-3) and Table B (4-6)
+- [x] Implement mission selection step (manual or random)
+- [x] Implement points allocation step
+- [x] Implement unit selection per player (respecting point limits) - Basic UI done, full implementation pending
+- [x] Implement final confirmation screen with battle summary
+- [x] Show selected mission details if random was chosen
+- [ ] Test complete battle setup flow
+- [ ] Create checkpoint after implementation
+
+### Mission Table A (1-3)
+- [ ] Total Domination (pg 114)
+- [ ] Empyric Distortion (pg 116)
+- [ ] Metamorphosis (pg 118)
+- [ ] Lighting the Path (pg 120)
+- [ ] Temporal Flux (pg 122)
+- [ ] Offering of Blood (pg 124)
+- [ ] Fighting Gravity (pg 126)
+- [ ] Seal the Rifts (pg 128)
+
+### Mission Table B (4-6)
+- [ ] Brazen Bridge (pg 115)
+- [ ] Blood and Shadow (pg 117)
+- [ ] Breakout (pg 119)
+- [ ] Trail of Blood (pg 121)
+- [ ] Temporal Raid (pg 123)
+- [ ] Veil Between Worlds (pg 125)
+- [ ] Into the Mouth of Hell (pg 127)
+- [ ] Assault the Warp Gate (pg 129)
+
+
+## Fix Parser for Single-Model Units (WARLORD/CHARACTER)
+- [x] Completely rewrote parser with two-pass approach
+- [x] First pass detects if unit has ◦ lines (multi-model) or not (single-model)
+- [x] Single-model CHARACTERS: create 1 model with unit name, all • lines are weapons
+- [x] Multi-model units: • lines with "Nx" are models, ◦ lines are weapons
+- [x] Tested with Lord Marshal Dreir (1 model with 3 weapons) ✅
+- [x] Ready to test with Daemonifuge (should have 2 models)
+- [x] Multi-model units verified working correctly
+
+
+## Implement Unit Selection for Battle Setup
+- [x] Create Dialog component for unit selection
+- [x] Fetch crusade units for each player
+- [x] Display units with checkboxes
+- [x] Show points cost for each unit
+- [x] Track total selected points and validate against limit
+- [x] Save selected unit IDs to wizard state
+- [x] Display selected units count in step 3
+- [ ] Test with multiple players and different point limits
+
+
+## Implement Requisitions System
+- [x] requisitionPoints field already exists in players table schema
+- [x] Created requisitions.ts with all 6 requisition types and costs
+- [x] Added step 3 "Gastar Requisições" to battle setup wizard (5 steps total now)
+- [x] Implemented requisition purchase UI with RP balance display
+- [x] Track purchased requisitions per player in wizard state
+- [x] Validate RP balance before purchase
+- [x] Requisition types implemented:
+  - [x] Increase Supply Limit (1RP) - +200 points to supply limit
+  - [x] Rearm and Resupply (1RP) - Change unit weapons (before battle)
+  - [x] Repair and Recuperate (1-5RP) - Remove Battle Scars (after battle - disabled in setup)
+  - [x] Fresh Recruits (1-4RP) - Add models to unit
+  - [x] Renowned Heroes (1-3RP) - For units with 30XP
+  - [x] Legendary Veterans (3RP) - For CHARACTERs with 30XP
+- [ ] Test requisition purchases with multiple players
+- [ ] Commit changes to GitHub
+
+
+## Translate Requisitions to Portuguese and Implement Automatic Effects
+- [x] Translate all requisition names and descriptions to Portuguese
+- [x] Add supplyLimit field to players schema
+- [ ] Implement automatic effects for each requisition:
+  - [x] Aumentar Limite de Suprimento - Add 200 to player.supplyLimit (DONE & TESTED)
+  - [ ] Rearmar e Reabastecer - Modal created, effect pending
+  - [ ] Reparar e Recuperar - Modal created, effect pending
+  - [ ] Recrutas Frescos - Modal created, effect pending
+  - [ ] Heróis Renomados - Modal created, effect pending
+  - [ ] Veteranos Lendários - Modal created, effect pending
+- [x] Create tRPC mutation for Increase Supply Limit
+- [x] Create generic requisition modal for unit selection
+- [ ] Create tRPC mutations for other requisition effects
+- [ ] Test each requisition effect with database updates
+- [ ] Commit changes to GitHub
+
+
+## Fix Requisition Purchase Bugs
+- [x] Fix "Invalid hook call" error by moving trpc.useUtils() outside callback
+- [x] supplyLimit column already exists in database
+- [x] Update existing players to have default supplyLimit of 1000
+- [x] Fix PlayerDetail UI to display supplyLimit correctly (was showing supplyPoints instead of supplyLimit)
+- [x] Verify database query returns supplyLimit field (db.select() returns all fields automatically)
+- [ ] Test requisition purchase and verify supplyLimit updates correctly
+- [ ] Commit fixes to GitHub
+
+
+## Add Supply Usage Visual Indicator
+- [x] Calculate total supply consumed (sum of all unit pointsCost in Order of Battle)
+- [x] Add Progress component to show supply usage bar
+- [x] Display "Supply: X / Y" with visual bar
+- [x] Color code bar (green < 80%, yellow 80-100%, red > 100%)
+- [x] Added warning message when over limit
+- [ ] Test with different supply limits and unit counts
+- [ ] Commit changes to GitHub
+
+
+## UI Improvements - Campaign Detail Page
+- [ ] Add "Ready" toggle button for each player in campaign
+- [ ] Add "Invite User" button to send multiplayer invites
+- [ ] Create invite dialog with user search/email input
+- [ ] Show ready status indicator for each player
+- [ ] Disable "Start Battle" button until all players are ready (multiplayer mode)
+
+## Day 7: Battle System tRPC Endpoints
+- [x] Database helper functions for battles already exist in server/db.ts
+- [x] battle.create endpoint already implemented
+- [x] battle.get endpoint already implemented
+- [x] battle.update endpoint already implemented
+- [x] battle.list endpoint added (list battles by campaign)
+- [x] battle.recordEvent endpoint added (for future battle tracking)
+- [x] All endpoints tested and working
+- [x] Server restarted successfully with no errors
 

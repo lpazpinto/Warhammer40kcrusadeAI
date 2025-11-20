@@ -1,6 +1,5 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { sql } from "drizzle-orm";
 import { 
   InsertUser, 
   users, 
@@ -19,8 +18,6 @@ import {
   battleParticipants,
   BattleParticipant,
   InsertBattleParticipant,
-  campaignPhaseTemplates,
-  CampaignPhaseTemplate,
   campaignInvitations,
   CampaignInvitation,
   InsertCampaignInvitation
@@ -113,30 +110,6 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function searchUsers(query: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot search users: database not available");
-    return [];
-  }
-
-  // Search by name or email (case-insensitive)
-  const searchPattern = `%${query.toLowerCase()}%`;
-  const result = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-    })
-    .from(users)
-    .where(
-      sql`LOWER(${users.name}) LIKE ${searchPattern} OR LOWER(${users.email}) LIKE ${searchPattern}`
-    )
-    .limit(10);
-
-  return result;
-}
-
 // Campaign helpers
 export async function createCampaign(campaign: InsertCampaign): Promise<Campaign> {
   const db = await getDb();
@@ -144,31 +117,21 @@ export async function createCampaign(campaign: InsertCampaign): Promise<Campaign
 
   const result: any = await db.insert(campaigns).values(campaign);
   
-  // Log the full result object to debug
-  console.log('[createCampaign] Full insert result:', JSON.stringify(result, null, 2));
-  console.log('[createCampaign] result.insertId:', result.insertId, 'type:', typeof result.insertId);
-  console.log('[createCampaign] result[0]:', result[0]);
-  
-  // Try multiple ways to extract the ID from the result
-  let insertId: number | undefined;
-  
-  // Method 1: Direct insertId property
-  if (result.insertId !== undefined && result.insertId !== null) {
+  // Try different ways to get the insert ID (Drizzle ORM compatibility)
+  let insertId: number;
+  if (result.insertId !== undefined) {
     insertId = Number(result.insertId);
-  }
-  // Method 2: Check if result is an array with insertId
-  else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
+  } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
     insertId = Number(result[0].insertId);
-  }
-  // Method 3: Check for id property directly
-  else if (result.id !== undefined) {
+  } else if (result.id !== undefined) {
     insertId = Number(result.id);
+  } else {
+    console.error('[createCampaign] Cannot find insertId in result:', result);
+    throw new Error('Failed to create campaign: invalid ID returned from database');
   }
   
-  console.log('[createCampaign] Extracted insertId:', insertId);
-  
-  if (insertId === undefined || isNaN(insertId) || insertId <= 0) {
-    console.error('[createCampaign] Failed to extract valid insertId from result');
+  if (isNaN(insertId) || insertId <= 0) {
+    console.error('[createCampaign] Invalid insertId:', result.insertId);
     throw new Error('Failed to create campaign: invalid ID returned from database');
   }
   
@@ -227,25 +190,21 @@ export async function createPlayer(player: InsertPlayer): Promise<Player> {
 
   const result: any = await db.insert(players).values(player);
   
-  // Log the full result object to debug
-  console.log('[createPlayer] Full insert result:', JSON.stringify(result, null, 2));
-  console.log('[createPlayer] result.insertId:', result.insertId, 'type:', typeof result.insertId);
-  
-  // Try multiple ways to extract the ID from the result
-  let insertId: number | undefined;
-  
-  if (result.insertId !== undefined && result.insertId !== null) {
+  // Handle different insertId formats from Drizzle ORM
+  let insertId: number;
+  if (result.insertId !== undefined) {
     insertId = Number(result.insertId);
   } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
     insertId = Number(result[0].insertId);
   } else if (result.id !== undefined) {
     insertId = Number(result.id);
+  } else {
+    console.error('[createPlayer] Cannot find insertId in result:', result);
+    throw new Error('Failed to create player: invalid ID returned from database');
   }
   
-  console.log('[createPlayer] Extracted insertId:', insertId);
-  
-  if (insertId === undefined || isNaN(insertId) || insertId <= 0) {
-    console.error('[createPlayer] Failed to extract valid insertId from result');
+  if (isNaN(insertId) || insertId <= 0) {
+    console.error('[createPlayer] Invalid insertId:', insertId, 'from result:', result);
     throw new Error('Failed to create player: invalid ID returned from database');
   }
   
@@ -256,7 +215,6 @@ export async function createPlayer(player: InsertPlayer): Promise<Player> {
     throw new Error('Failed to retrieve created player');
   }
   
-  console.log('[createPlayer] Successfully created player:', newPlayer.id);
   return newPlayer;
 }
 
@@ -268,6 +226,8 @@ export async function getPlayersByCampaignId(campaignId: number): Promise<Player
 }
 
 export async function getPlayerById(id: number): Promise<Player | undefined> {
+  console.log('[getPlayerById] Called with:', id, 'Type:', typeof id, 'isNaN:', isNaN(id));
+  
   // Validate ID FIRST before any other logic
   if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
     console.error(`[Database] Invalid player ID rejected: ${id} (type: ${typeof id})`);
@@ -287,6 +247,11 @@ export async function getPlayerById(id: number): Promise<Player | undefined> {
 }
 
 export async function updatePlayer(id: number, updates: Partial<Player>): Promise<void> {
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[updatePlayer] Invalid player ID: ${id}`);
+    throw new Error(`Invalid player ID: ${id}`);
+  }
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -300,25 +265,21 @@ export async function createCrusadeUnit(unit: InsertCrusadeUnit): Promise<Crusad
 
   const result: any = await db.insert(crusadeUnits).values(unit);
   
-  // Log the full result object to debug
-  console.log('[createCrusadeUnit] Full insert result:', JSON.stringify(result, null, 2));
-  console.log('[createCrusadeUnit] result.insertId:', result.insertId, 'type:', typeof result.insertId);
-  
-  // Try multiple ways to extract the ID from the result
-  let insertId: number | undefined;
-  
-  if (result.insertId !== undefined && result.insertId !== null) {
+  // Handle different insertId formats from Drizzle ORM
+  let insertId: number;
+  if (result.insertId !== undefined) {
     insertId = Number(result.insertId);
   } else if (Array.isArray(result) && result[0]?.insertId !== undefined) {
     insertId = Number(result[0].insertId);
   } else if (result.id !== undefined) {
     insertId = Number(result.id);
+  } else {
+    console.error('[createCrusadeUnit] Cannot find insertId in result:', result);
+    throw new Error('Failed to create crusade unit: invalid ID returned from database');
   }
   
-  console.log('[createCrusadeUnit] Extracted insertId:', insertId);
-  
-  if (insertId === undefined || isNaN(insertId) || insertId <= 0) {
-    console.error('[createCrusadeUnit] Failed to extract valid insertId from result');
+  if (isNaN(insertId) || insertId <= 0) {
+    console.error('[createCrusadeUnit] Invalid insertId:', insertId, 'from result:', result);
     throw new Error('Failed to create crusade unit: invalid ID returned from database');
   }
   
@@ -329,7 +290,6 @@ export async function createCrusadeUnit(unit: InsertCrusadeUnit): Promise<Crusad
     throw new Error('Failed to retrieve created crusade unit');
   }
   
-  console.log('[createCrusadeUnit] Successfully created unit:', newUnit.id, newUnit.unitName);
   return newUnit;
 }
 
@@ -352,26 +312,26 @@ export async function getCrusadeUnitsByPlayerId(playerId: number): Promise<Crusa
 }
 
 export async function getCrusadeUnitById(id: number): Promise<CrusadeUnit | undefined> {
-  // Validate ID FIRST before any other logic
+  console.log('[getCrusadeUnitById] Called with:', id, 'Type:', typeof id, 'isNaN:', isNaN(id));
+  
   if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
-    console.error(`[Database] Invalid crusade unit ID rejected: ${id} (type: ${typeof id})`);
-    console.error(`[Database] Stack trace:`, new Error().stack);
+    console.error(`[getCrusadeUnitById] Invalid unit ID: ${id}`);
     return undefined;
   }
-
+  
   const db = await getDb();
   if (!db) return undefined;
 
-  try {
-    const result = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, id)).limit(1);
-    return result.length > 0 ? result[0] : undefined;
-  } catch (error: any) {
-    console.error(`[Database] Query failed for crusade unit ID ${id}:`, error.message);
-    return undefined;
-  }
+  const result = await db.select().from(crusadeUnits).where(eq(crusadeUnits.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }
 
 export async function updateCrusadeUnit(id: number, updates: Partial<CrusadeUnit>): Promise<void> {
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[updateCrusadeUnit] Invalid unit ID: ${id}`);
+    throw new Error(`Invalid crusade unit ID: ${id}`);
+  }
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -379,6 +339,11 @@ export async function updateCrusadeUnit(id: number, updates: Partial<CrusadeUnit
 }
 
 export async function deleteCrusadeUnit(id: number): Promise<void> {
+  if (typeof id !== 'number' || isNaN(id) || !isFinite(id) || id <= 0) {
+    console.error(`[deleteCrusadeUnit] Invalid unit ID: ${id}`);
+    throw new Error(`Invalid crusade unit ID: ${id}`);
+  }
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -441,215 +406,92 @@ export async function updateBattleParticipant(id: number, updates: Partial<Battl
   await db.update(battleParticipants).set(updates).where(eq(battleParticipants.id, id));
 }
 
-
-// Crusade Battle helpers (simplified battle recording for PvP)
-export async function createCrusadeBattle(data: { campaignId: number; mission: string; deployment?: string }): Promise<number> {
+// Campaign Invitation helpers
+export async function createCampaignInvitation(invitation: InsertCampaignInvitation): Promise<CampaignInvitation> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Create a simple battle record
-  const result: any = await db.insert(battles).values({
-    campaignId: data.campaignId,
-    battleNumber: 0, // Will be updated by campaign logic
-    deployment: data.deployment || '',
-    missionPack: data.mission,
-  });
-
-  console.log('[createCrusadeBattle] Database result:', result);
-
-  // Try multiple methods to extract the ID
-  let battleId: number | undefined;
-
-  // Method 1: Direct insertId
-  if (result.insertId && !isNaN(Number(result.insertId))) {
-    battleId = Number(result.insertId);
-  }
-  // Method 2: Check if result is an array with insertId
-  else if (Array.isArray(result) && result[0]?.insertId) {
-    battleId = Number(result[0].insertId);
-  }
-  // Method 3: Check nested structure
-  else if (result[0]?.insertId) {
-    battleId = Number(result[0].insertId);
+  const result: any = await db.insert(campaignInvitations).values(invitation);
+  const insertId = result.insertId || result[0]?.insertId || result.insertedId;
+  
+  if (!insertId || isNaN(Number(insertId))) {
+    throw new Error(`Failed to create invitation: invalid insertId (${insertId})`);
   }
 
-  if (!battleId || isNaN(battleId) || !isFinite(battleId)) {
-    console.error('[createCrusadeBattle] Failed to extract valid battle ID from result:', result);
-    throw new Error('Failed to create battle: invalid ID returned from database');
-  }
-
-  console.log(`[createCrusadeBattle] Successfully created battle with ID: ${battleId}`);
-  return battleId;
+  const [newInvitation] = await db.select().from(campaignInvitations).where(eq(campaignInvitations.id, Number(insertId)));
+  return newInvitation;
 }
 
-export async function getCrusadeBattlesByCampaignId(campaignId: number): Promise<any[]> {
+export async function getInvitationsByInviteeId(inviteeId: number): Promise<any[]> {
   const db = await getDb();
   if (!db) return [];
 
-  // Get all battles for this campaign with participants
-  const battlesList = await db.select().from(battles)
-    .where(eq(battles.campaignId, campaignId))
-    .orderBy(desc(battles.createdAt));
+  // Join with campaigns and users to get full details
+  const invites = await db
+    .select({
+      id: campaignInvitations.id,
+      campaignId: campaignInvitations.campaignId,
+      inviterId: campaignInvitations.inviterId,
+      inviteeId: campaignInvitations.inviteeId,
+      status: campaignInvitations.status,
+      createdAt: campaignInvitations.createdAt,
+      respondedAt: campaignInvitations.respondedAt,
+      campaignName: campaigns.name,
+      hordeFaction: campaigns.hordeFaction,
+      inviterName: users.name,
+    })
+    .from(campaignInvitations)
+    .leftJoin(campaigns, eq(campaignInvitations.campaignId, campaigns.id))
+    .leftJoin(users, eq(campaignInvitations.inviterId, users.id))
+    .where(eq(campaignInvitations.inviteeId, inviteeId));
 
-  const battlesWithParticipants = await Promise.all(
-    battlesList.map(async (battle) => {
-      const participants = await getBattleParticipantsByBattleId(battle.id);
+  // Get player count for each campaign
+  const invitesWithPlayerCount = await Promise.all(
+    invites.map(async (invite) => {
+      const playerCount = await db
+        .select()
+        .from(players)
+        .where(eq(players.campaignId, invite.campaignId));
+      
       return {
-        ...battle,
-        participants,
+        ...invite,
+        playerCount: playerCount.length,
       };
     })
   );
 
-  return battlesWithParticipants;
+  return invitesWithPlayerCount;
 }
 
-export async function getCrusadeBattlesByPlayerId(playerId: number): Promise<any[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  // Get all battle participants for this player
-  const participantRecords = await db.select()
-    .from(battleParticipants)
-    .where(eq(battleParticipants.playerId, playerId));
-
-  // Get full battle details for each
-  const battlesWithDetails = await Promise.all(
-    participantRecords.map(async (participant) => {
-      const battle = await getBattleById(participant.battleId);
-      return {
-        ...battle,
-        playerParticipation: participant,
-      };
-    })
-  );
-
-  return battlesWithDetails.filter(b => b !== null);
-}
-
-
-
-
-
-export async function getNextBattleNumber(campaignId: number): Promise<number> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db
-    .select({ maxNumber: sql<number>`MAX(${battles.battleNumber})` })
-    .from(battles)
-    .where(eq(battles.campaignId, campaignId));
-  
-  return (result[0]?.maxNumber || 0) + 1;
-}
-
-
-
-// Campaign Phase Templates
-export async function getCampaignPhaseTemplates(campaignType: string = 'armageddon'): Promise<CampaignPhaseTemplate[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select().from(campaignPhaseTemplates)
-    .where(eq(campaignPhaseTemplates.campaignType, campaignType))
-    .orderBy(campaignPhaseTemplates.phaseNumber);
-}
-
-export async function getCampaignPhaseTemplate(campaignType: string, phaseNumber: number): Promise<CampaignPhaseTemplate | undefined> {
+export async function getInvitationById(id: number): Promise<CampaignInvitation | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  
-  const result = await db.select().from(campaignPhaseTemplates)
-    .where(and(
-      eq(campaignPhaseTemplates.campaignType, campaignType),
-      eq(campaignPhaseTemplates.phaseNumber, phaseNumber)
-    ))
-    .limit(1);
-  
-  return result.length > 0 ? result[0] : undefined;
+
+  const [invitation] = await db.select().from(campaignInvitations).where(eq(campaignInvitations.id, id));
+  return invitation;
 }
 
-
-
-// ==================== Campaign Invitations ====================
-
-export async function createInvitation(invitation: InsertCampaignInvitation) {
+export async function updateCampaignInvitation(id: number, updates: Partial<CampaignInvitation>): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(campaignInvitations).values(invitation);
-  return result;
+
+  await db.update(campaignInvitations).set(updates).where(eq(campaignInvitations.id, id));
 }
 
-export async function getInvitationsByUserId(userId: number) {
+export async function checkExistingInvitation(campaignId: number, inviteeId: number): Promise<CampaignInvitation | undefined> {
   const db = await getDb();
-  if (!db) return [];
-  
-  return await db
+  if (!db) return undefined;
+
+  const [invitation] = await db
     .select()
     .from(campaignInvitations)
-    .where(eq(campaignInvitations.invitedUserId, userId))
-    .orderBy(desc(campaignInvitations.createdAt));
+    .where(
+      and(
+        eq(campaignInvitations.campaignId, campaignId),
+        eq(campaignInvitations.inviteeId, inviteeId),
+        eq(campaignInvitations.status, "pending")
+      )
+    );
+  
+  return invitation;
 }
-
-export async function updateInvitationStatus(
-  invitationId: number,
-  status: "accepted" | "declined"
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db
-    .update(campaignInvitations)
-    .set({ status, respondedAt: new Date() })
-    .where(eq(campaignInvitations.id, invitationId));
-}
-
-// ==================== Player Ready Status ====================
-
-export async function togglePlayerReady(playerId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Get current ready status
-  const player = await db
-    .select()
-    .from(players)
-    .where(eq(players.id, playerId))
-    .limit(1);
-  
-  if (player.length === 0) throw new Error("Player not found");
-  
-  const newStatus = !player[0].isReady;
-  
-  await db
-    .update(players)
-    .set({ isReady: newStatus })
-    .where(eq(players.id, playerId));
-  
-  return newStatus;
-}
-
-export async function resetAllPlayersReady(campaignId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db
-    .update(players)
-    .set({ isReady: false })
-    .where(eq(players.campaignId, campaignId));
-}
-
-export async function getUserByEmail(email: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-  
-  return result.length > 0 ? result[0] : undefined;
-}
-

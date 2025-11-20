@@ -1,9 +1,0 @@
-{
-  "query": "SELECT id, name, email FROM users WHERE name LIKE '%lucas%' OR email LIKE '%lucas%' LIMIT 10",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, name, email FROM users WHERE name LIKE '%lucas%' OR email LIKE '%lucas%' LIMIT 10",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 400
-}

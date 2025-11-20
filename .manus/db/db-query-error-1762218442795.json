@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE campaigns \nADD COLUMN battlesPerPhase int NOT NULL DEFAULT 3,\nADD COLUMN strategicPointsForVictory int NOT NULL DEFAULT 10,\nADD COLUMN currentNarrativeObjective varchar(100) NOT NULL DEFAULT 'establishing_the_front',\nADD COLUMN phase1Result ENUM('success', 'failure', 'pending') DEFAULT 'pending',\nADD COLUMN phase2Result ENUM('success', 'failure', 'pending') DEFAULT 'pending',\nADD COLUMN phase3Result ENUM('success', 'failure', 'pending') DEFAULT 'pending',\nADD COLUMN phase4Result ENUM('success', 'failure', 'pending') DEFAULT 'pending';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute ALTER TABLE campaigns \nADD COLUMN battlesPerPhase int NOT NULL DEFAULT 3,\nADD COLUMN strategicPointsForVictory int NOT NULL DEFAULT 10,\nADD COLUMN currentNarrativeObjective varchar(100) NOT NULL DEFAULT 'establishing_the_front',\nADD COLUMN phase1Result ENUM('success', 'failure', 'pending') DEFAULT 'pending',\nADD COLUMN phase2Result ENUM('success', 'failure', 'pending') DEFAULT 'pending',\nADD COLUMN phase3Result ENUM('success', 'failure', 'pending') DEFAULT 'pending',\nADD COLUMN phase4Result ENUM('success', 'failure', 'pending') DEFAULT 'pending';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'battlesPerPhase'"
+  ]
+}

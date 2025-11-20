@@ -1,0 +1,9 @@
+{
+  "query": "\nCREATE TABLE IF NOT EXISTS campaignInvitations (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  campaignId INT NOT NULL,\n  inviterId INT NOT NULL,\n  inviteeId INT NOT NULL,\n  status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending' NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  respondedAt TIMESTAMP NULL\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute \nCREATE TABLE IF NOT EXISTS campaignInvitations (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  campaignId INT NOT NULL,\n  inviterId INT NOT NULL,\n  inviteeId INT NOT NULL,\n  status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending' NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  respondedAt TIMESTAMP NULL\n);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 744
+}

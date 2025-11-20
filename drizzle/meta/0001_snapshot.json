@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "e49f565c-9401-44de-8b26-7c781d8c2585",
+  "id": "05d77382-d354-4199-ac0c-fdde7438807e",
   "prevId": "563d3ba4-0d07-4f1e-bdad-d9775590e80a",
   "tables": {
     "battleParticipants": {
@@ -265,11 +265,11 @@
         },
         "gameMode": {
           "name": "gameMode",
-          "type": "enum('5_rounds','infinite')",
+          "type": "enum('5_phases','infinite')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'5_rounds'"
+          "default": "'5_phases'"
         },
         "pointsLimit": {
           "name": "pointsLimit",
@@ -279,8 +279,8 @@
           "autoincrement": false,
           "default": 1000
         },
-        "currentBattleRound": {
-          "name": "currentBattleRound",
+        "currentPhase": {
+          "name": "currentPhase",
           "type": "int",
           "primaryKey": false,
           "notNull": true,
@@ -442,13 +442,6 @@
         },
         "battleScars": {
           "name": "battleScars",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "crusadeRelics": {
-          "name": "crusadeRelics",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
