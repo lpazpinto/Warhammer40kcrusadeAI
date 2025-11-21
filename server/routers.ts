@@ -490,6 +490,64 @@ export const appRouter = router({
         console.log('[Battle Event]', input);
         return { success: true, message: 'Event recorded (logging only for now)' };
       }),
+
+    // Distribute XP after battle
+    distributeXP: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        unitResults: z.array(z.object({
+          unitId: z.number(),
+          survived: z.boolean(),
+          enemyUnitsKilled: z.number(),
+          markedForGreatness: z.boolean().optional(),
+        })),
+        rpAwarded: z.number().default(1), // Base RP for completing battle
+      }))
+      .mutation(async ({ input }) => {
+        const battle = await db.getBattleById(input.battleId);
+        if (!battle) throw new Error('Battle not found');
+        
+        const results = [];
+        
+        // Distribute XP to each unit
+        for (const unitResult of input.unitResults) {
+          const xpGained = db.calculateXP({
+            survived: unitResult.survived,
+            enemyUnitsKilled: unitResult.enemyUnitsKilled,
+            markedForGreatness: unitResult.markedForGreatness,
+          });
+          
+          const result = await db.distributeXPToUnit({
+            unitId: unitResult.unitId,
+            xpGained,
+            survived: unitResult.survived,
+            enemyUnitsKilled: unitResult.enemyUnitsKilled,
+          });
+          
+          results.push({
+            unitId: unitResult.unitId,
+            xpGained,
+            ...result,
+          });
+        }
+        
+        // Award RP to all players in the battle
+        const participants = await db.getBattleParticipantsByBattleId(input.battleId);
+        for (const participant of participants) {
+          const player = await db.getPlayerById(participant.playerId);
+          if (player) {
+            await db.updatePlayer(player.id, {
+              requisitionPoints: player.requisitionPoints + input.rpAwarded,
+            });
+          }
+        }
+        
+        return {
+          success: true,
+          unitResults: results,
+          rpAwarded: input.rpAwarded,
+        };
+      }),
   }),
 
   // Horde spawn system

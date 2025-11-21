@@ -385,3 +385,13 @@
 - [x] All endpoints tested and working
 - [x] Server restarted successfully with no errors
 
+
+## Day 8: XP Distribution System
+- [x] Create XP calculation helper function (base XP + survival + kills)
+- [x] Create rank progression helper function (check XP thresholds)
+- [x] Implement battle.distributeXP endpoint
+- [x] Update crusade units with new XP and ranks
+- [x] Distribute RP to players after battle
+- [x] Test complete XP distribution flow
+- [x] Save checkpoint and commit to GitHub
+

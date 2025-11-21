@@ -495,3 +495,65 @@ export async function checkExistingInvitation(campaignId: number, inviteeId: num
   
   return invitation;
 }
+
+// XP and Rank Progression helpers
+export function calculateXP(params: {
+  survived: boolean;
+  enemyUnitsKilled: number;
+  markedForGreatness?: boolean;
+}): number {
+  let xp = 1; // Base XP for participating
+  
+  if (params.survived) xp += 1;
+  xp += params.enemyUnitsKilled;
+  if (params.markedForGreatness) xp += 1;
+  
+  return xp;
+}
+
+export function getRankFromXP(xp: number): string {
+  if (xp >= 51) return "legendary";
+  if (xp >= 31) return "heroic";
+  if (xp >= 16) return "battle_hardened";
+  if (xp >= 6) return "blooded";
+  return "battle_ready";
+}
+
+export function getXPThresholdForNextRank(currentRank: string): number {
+  switch (currentRank) {
+    case "battle_ready": return 6;
+    case "blooded": return 16;
+    case "battle_hardened": return 31;
+    case "heroic": return 51;
+    case "legendary": return Infinity;
+    default: return 6;
+  }
+}
+
+export async function distributeXPToUnit(params: {
+  unitId: number;
+  xpGained: number;
+  survived: boolean;
+  enemyUnitsKilled: number;
+}): Promise<{ promoted: boolean; oldRank: string; newRank: string }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const unit = await getCrusadeUnitById(params.unitId);
+  if (!unit) throw new Error(`Unit ${params.unitId} not found`);
+  
+  const oldRank = unit.rank;
+  const newXP = unit.experiencePoints + params.xpGained;
+  const newRank = getRankFromXP(newXP);
+  const promoted = newRank !== oldRank;
+  
+  await updateCrusadeUnit(params.unitId, {
+    experiencePoints: newXP,
+    rank: newRank as any,
+    battlesPlayed: unit.battlesPlayed + 1,
+    battlesSurvived: params.survived ? unit.battlesSurvived + 1 : unit.battlesSurvived,
+    enemyUnitsDestroyed: unit.enemyUnitsDestroyed + params.enemyUnitsKilled,
+  });
+  
+  return { promoted, oldRank, newRank };
+}
