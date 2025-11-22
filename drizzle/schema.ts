@@ -32,6 +32,7 @@ export const campaigns = mysqlTable("campaigns", {
   strategicPointsForVictory: int("strategicPointsForVictory").default(10).notNull(), // Points needed to consider phase a success
   currentPhase: int("currentPhase").default(1).notNull(), // Always 4 phases total
   currentNarrativeObjective: varchar("currentNarrativeObjective", { length: 100 }).default("establishing_the_front").notNull(),
+  battlePhotos: text("battlePhotos"), // JSON array of battle photo URLs
   phase1Result: mysqlEnum("phase1Result", ["success", "failure", "pending"]).default("pending"),
   phase2Result: mysqlEnum("phase2Result", ["success", "failure", "pending"]).default("pending"),
   phase3Result: mysqlEnum("phase3Result", ["success", "failure", "pending"]).default("pending"),
@@ -54,6 +55,7 @@ export const players = mysqlTable("players", {
   faction: varchar("faction", { length: 100 }).notNull(), // e.g., "Astra Militarum"
   detachment: varchar("detachment", { length: 100 }), // e.g., "Combined Arms"
   crusadeForceName: varchar("crusadeForceName", { length: 255 }), // Name of the crusade force
+  armyBadge: varchar("armyBadge", { length: 500 }), // URL to army badge/emblem image
   requisitionPoints: int("requisitionPoints").default(0).notNull(),
   supplyLimit: int("supplyLimit").default(1000).notNull(), // Crusade supply limit in points
   battleTally: int("battleTally").default(0).notNull(),

@@ -395,3 +395,12 @@
 - [x] Test complete XP distribution flow
 - [x] Save checkpoint and commit to GitHub
 
+
+## Day 9: Customization Fields
+- [x] Add armyBadge field to players table (varchar URL)
+- [x] Add battlePhotos field to campaigns table (JSON array of URLs)
+- [x] Update database schema in drizzle/schema.ts
+- [x] Create SQL migration to add columns safely
+- [x] Test schema changes
+- [x] Update todo.md and save checkpoint
+
