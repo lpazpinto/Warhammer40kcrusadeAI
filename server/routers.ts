@@ -89,6 +89,32 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Add battle photo to campaign
+    addBattlePhoto: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        photoUrl: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const campaign = await db.getCampaignById(input.campaignId);
+        if (!campaign) throw new Error('Campaign not found');
+        
+        // Parse existing photos or initialize empty array
+        const existingPhotos = campaign.battlePhotos 
+          ? JSON.parse(campaign.battlePhotos) 
+          : [];
+        
+        // Add new photo
+        existingPhotos.push(input.photoUrl);
+        
+        // Update campaign
+        await db.updateCampaign(input.campaignId, {
+          battlePhotos: JSON.stringify(existingPhotos),
+        });
+        
+        return { success: true, totalPhotos: existingPhotos.length };
+      }),
+
     // Send invitation to user
     sendInvite: protectedProcedure
       .input(z.object({
@@ -240,6 +266,19 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
         await db.updatePlayer(id, updates);
+        return { success: true };
+      }),
+
+    // Update army badge URL
+    updateArmyBadge: protectedProcedure
+      .input(z.object({
+        playerId: z.number(),
+        badgeUrl: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updatePlayer(input.playerId, {
+          armyBadge: input.badgeUrl,
+        });
         return { success: true };
       }),
 
@@ -643,6 +682,38 @@ export const appRouter = router({
           input.completedObjective,
           input.isVictorious
         );
+      }),
+  }),
+
+  // Storage and image upload
+  storage: router({
+    // Upload image to S3 and return URL
+    uploadImage: protectedProcedure
+      .input(z.object({
+        fileName: z.string(),
+        fileData: z.string(), // Base64 encoded image data
+        contentType: z.string().default('image/jpeg'),
+        folder: z.string().default('images'), // e.g., 'badges', 'battle-photos'
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { storagePut } = await import('./storage');
+        
+        // Decode base64 to buffer
+        const buffer = Buffer.from(input.fileData, 'base64');
+        
+        // Generate unique filename with timestamp
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(7);
+        const fileKey = `${input.folder}/${ctx.user.id}-${timestamp}-${randomSuffix}-${input.fileName}`;
+        
+        // Upload to S3
+        const result = await storagePut(fileKey, buffer, input.contentType);
+        
+        return {
+          success: true,
+          url: result.url,
+          key: result.key,
+        };
       }),
   }),
 });

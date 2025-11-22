@@ -404,3 +404,12 @@
 - [x] Test schema changes
 - [x] Update todo.md and save checkpoint
 
+
+## Day 10: Image Upload Endpoints
+- [x] Create storage router in routers.ts
+- [x] Implement storage.uploadImage endpoint (generic S3 upload)
+- [x] Implement player.updateArmyBadge endpoint
+- [x] Implement campaign.addBattlePhoto endpoint
+- [x] Test image upload with S3 integration
+- [x] Update todo.md and save checkpoint
+
