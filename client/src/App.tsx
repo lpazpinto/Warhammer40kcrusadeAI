@@ -10,6 +10,7 @@ import CampaignDetail from "./pages/CampaignDetail";
 import PlayerDetail from "./pages/PlayerDetail";
 import BattleSetup from "./pages/BattleSetup";
 import BattlePlay from "./pages/BattlePlay";
+import BattleTracker from "./pages/BattleTracker";
 import Notifications from "./pages/Notifications";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/player/:id" component={PlayerDetail} />
       <Route path="/battle/setup/:campaignId" component={BattleSetup} />
       <Route path="/battle/play/:battleId" component={BattlePlay} />
+      <Route path="/battle/:id" component={BattleTracker} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

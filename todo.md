@@ -413,3 +413,14 @@
 - [x] Test image upload with S3 integration
 - [x] Update todo.md and save checkpoint
 
+
+## Day 11: BattlePhaseTracker UI Component
+- [x] Create BattlePhaseTracker component in client/src/components/
+- [x] Implement phase navigation (Command, Movement, Shooting, Charge, Fight)
+- [x] Add turn counter and round tracker
+- [x] Create visual indicators for current phase
+- [x] Add buttons to advance/go back phases
+- [x] Create BattleTracker page to test the component
+- [x] Add route to App.tsx
+- [x] Update todo.md and save checkpoint
+
