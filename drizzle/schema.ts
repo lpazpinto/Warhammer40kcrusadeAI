@@ -121,6 +121,8 @@ export const battles = mysqlTable("battles", {
   deployment: varchar("deployment", { length: 100 }), // e.g., "Dawn of War"
   missionPack: varchar("missionPack", { length: 100 }), // e.g., "Leviathan"
   battleRound: int("battleRound").default(1).notNull(), // Current round (1-5 or more)
+  currentPhase: varchar("currentPhase", { length: 50 }).default("command"), // Current battle phase
+  playerTurn: mysqlEnum("playerTurn", ["player", "opponent"]).default("player"), // Whose turn it is
   status: mysqlEnum("status", ["setup", "in_progress", "completed"]).default("setup").notNull(),
   victors: text("victors"), // JSON string of player IDs who won
   miseryCards: text("miseryCards"), // JSON string of active misery cards

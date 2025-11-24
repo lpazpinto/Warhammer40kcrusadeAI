@@ -18,8 +18,21 @@ export default function BattleTracker() {
 
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
 
-  const handlePhaseChange = (phase: string, round: number) => {
+  const updateBattleMutation = trpc.battle.update.useMutation();
+
+  const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
+    
+    // Auto-save to database
+    if (battleId) {
+      updateBattleMutation.mutate({
+        id: battleId,
+        battleRound: round,
+        // @ts-ignore - currentPhase and playerTurn exist in schema but not in type yet
+        currentPhase: phase,
+        playerTurn: playerTurn,
+      });
+    }
   };
 
   if (isLoading) {
@@ -70,6 +83,9 @@ export default function BattleTracker() {
           <div className="lg:col-span-2">
             <BattlePhaseTracker
               battleId={battleId}
+              initialPhase={battle?.currentPhase || "command"}
+              initialRound={battle?.battleRound || 1}
+              initialPlayerTurn={(battle as any)?.playerTurn || "player"}
               onPhaseChange={handlePhaseChange}
             />
           </div>

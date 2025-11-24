@@ -424,3 +424,14 @@
 - [x] Add route to App.tsx
 - [x] Update todo.md and save checkpoint
 
+
+## Day 12: Battle State Persistence
+- [x] Add currentPhase field to battles table (varchar)
+- [x] Add playerTurn field to battles table (enum: player/opponent)
+- [x] Update database schema and run migration
+- [x] Modify BattlePhaseTracker to accept initial state props
+- [x] Add auto-save on phase change using battle.update mutation
+- [x] Restore state from database when loading battle
+- [x] Test save/restore functionality
+- [x] Update todo.md and save checkpoint
+

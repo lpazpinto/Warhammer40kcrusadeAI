@@ -14,16 +14,25 @@ const BATTLE_PHASES = [
 
 interface BattlePhaseTrackerProps {
   battleId?: number;
-  onPhaseChange?: (phase: string, round: number) => void;
+  initialPhase?: string;
+  initialRound?: number;
+  initialPlayerTurn?: "player" | "opponent";
+  onPhaseChange?: (phase: string, round: number, playerTurn: "player" | "opponent") => void;
 }
 
 export default function BattlePhaseTracker({ 
-  battleId, 
+  battleId,
+  initialPhase = "command",
+  initialRound = 1,
+  initialPlayerTurn = "player",
   onPhaseChange 
 }: BattlePhaseTrackerProps) {
-  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
-  const [currentRound, setCurrentRound] = useState(1);
-  const [playerTurn, setPlayerTurn] = useState<"player" | "opponent">("player");
+  // Find initial phase index
+  const initialPhaseIndex = BATTLE_PHASES.findIndex(p => p.id === initialPhase);
+  
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(initialPhaseIndex >= 0 ? initialPhaseIndex : 0);
+  const [currentRound, setCurrentRound] = useState(initialRound);
+  const [playerTurn, setPlayerTurn] = useState<"player" | "opponent">(initialPlayerTurn);
 
   const currentPhase = BATTLE_PHASES[currentPhaseIndex];
 
@@ -42,7 +51,7 @@ export default function BattlePhaseTracker({
       setCurrentPhaseIndex(currentPhaseIndex + 1);
     }
     
-    onPhaseChange?.(BATTLE_PHASES[currentPhaseIndex].id, currentRound);
+    onPhaseChange?.(BATTLE_PHASES[currentPhaseIndex].id, currentRound, playerTurn);
   };
 
   const handlePreviousPhase = () => {
