@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import BattlePhaseTracker from "@/components/BattlePhaseTracker";
+import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -15,6 +16,15 @@ export default function BattleTracker() {
     { id: battleId! },
     { enabled: !!battleId }
   );
+
+  // Mock unit data for now (will be replaced with real data from battle participants)
+  const unitStatuses = useMemo(() => {
+    if (!battle) return [];
+    
+    // TODO: Query battle participants and crusade units
+    // For now, return empty array
+    return [];
+  }, [battle]);
 
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
 
@@ -78,9 +88,9 @@ export default function BattleTracker() {
           </Link>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-5">
           {/* Phase Tracker */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <BattlePhaseTracker
               battleId={battleId}
               initialPhase={battle?.currentPhase || "command"}
@@ -90,8 +100,13 @@ export default function BattleTracker() {
             />
           </div>
 
-          {/* Battle Info & Log */}
-          <div className="space-y-6">
+          {/* Unit Tracker */}
+          <div className="lg:col-span-2">
+            <UnitTrackerPanel units={unitStatuses} />
+          </div>
+
+          {/* Battle Info & Log - moved to bottom or sidebar */}
+          <div className="lg:col-span-5 space-y-6">
             {/* Battle Info */}
             {battle && (
               <Card>

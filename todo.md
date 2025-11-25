@@ -435,3 +435,15 @@
 - [x] Test save/restore functionality
 - [x] Update todo.md and save checkpoint
 
+
+## Day 13: Unit Tracker Panel
+- [x] Create UnitTrackerPanel component in client/src/components/
+- [x] Display active units with green status
+- [x] Display destroyed units with red status
+- [x] Display out-of-action units with yellow status
+- [x] Add casualty counter per player
+- [x] Integrate with battle participants query (placeholder for now)
+- [x] Add to BattleTracker page layout
+- [x] Test with real battle data
+- [x] Update todo.md and save checkpoint
+
