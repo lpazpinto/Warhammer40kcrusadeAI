@@ -400,6 +400,29 @@ export const appRouter = router({
         };
       }),
 
+    // Get multiple units by IDs (for battle tracker)
+    getByIds: protectedProcedure
+      .input(z.object({
+        ids: z.array(z.number()),
+      }))
+      .query(async ({ input }) => {
+        if (input.ids.length === 0) return [];
+        
+        const units = await Promise.all(
+          input.ids.map(id => db.getCrusadeUnitById(id))
+        );
+        
+        return units
+          .filter(unit => unit !== null)
+          .map(unit => ({
+            ...unit!,
+            models: unit!.models ? JSON.parse(unit!.models) : [],
+            battleHonours: unit!.battleHonours ? JSON.parse(unit!.battleHonours) : [],
+            battleTraits: unit!.battleTraits ? JSON.parse(unit!.battleTraits) : [],
+            battleScars: unit!.battleScars ? JSON.parse(unit!.battleScars) : [],
+          }));
+      }),
+
     // Update unit (for crusade name, notes, etc.)
     update: protectedProcedure
       .input(z.object({

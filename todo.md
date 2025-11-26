@@ -459,3 +459,12 @@
 - [x] Test complete data flow
 - [x] Update todo.md and save checkpoint
 
+
+## Day 15: Query Crusade Units for Unit Tracker
+- [x] Create crusadeUnit.getByIds endpoint to fetch multiple units
+- [x] Update BattleTracker to query crusade units
+- [x] Map real unit data (name, crusadeName, powerRating, rank)
+- [x] Replace placeholder data with real unit information
+- [x] Test Unit Tracker with real crusade unit data
+- [x] Update todo.md and save checkpoint
+

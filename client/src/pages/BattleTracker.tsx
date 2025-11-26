@@ -29,9 +29,25 @@ export default function BattleTracker() {
     { enabled: !!battle?.campaignId }
   );
 
+  // Collect all unit IDs from participants
+  const allUnitIds = useMemo(() => {
+    if (!participants) return [];
+    const ids: number[] = [];
+    participants.forEach(p => {
+      if (p.unitsDeployed) ids.push(...p.unitsDeployed);
+    });
+    return ids;
+  }, [participants]);
+
+  // Query crusade units
+  const { data: crusadeUnits } = trpc.crusadeUnit.getByIds.useQuery(
+    { ids: allUnitIds },
+    { enabled: allUnitIds.length > 0 }
+  );
+
   // Build unit status list from participants and crusade units
   const unitStatuses = useMemo(() => {
-    if (!participants || !players) return [];
+    if (!participants || !players || !crusadeUnits) return [];
     
     const statuses: any[] = [];
     
@@ -41,12 +57,14 @@ export default function BattleTracker() {
       const destroyedUnits = participant.unitsDestroyed || [];
       
       deployedUnits.forEach((unitId: number) => {
+        const unit = crusadeUnits.find(u => u.id === unitId);
         const isDestroyed = destroyedUnits.includes(unitId);
+        
         statuses.push({
           id: unitId,
-          name: `Unit ${unitId}`,
-          crusadeName: `Unit ${unitId}`,
-          powerRating: 5, // TODO: Query actual crusade unit data
+          name: unit?.unitName || `Unit ${unitId}`,
+          crusadeName: unit?.crusadeName || unit?.unitName || `Unit ${unitId}`,
+          powerRating: unit?.powerRating || 0,
           status: isDestroyed ? "destroyed" : "active",
           playerName: player?.name || "Unknown",
         });
@@ -54,7 +72,7 @@ export default function BattleTracker() {
     });
     
     return statuses;
-  }, [participants, players]);
+  }, [participants, players, crusadeUnits]);
 
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
 
