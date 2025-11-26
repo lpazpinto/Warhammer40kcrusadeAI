@@ -96,3 +96,276 @@ export function calculateRequisitionCost(
       return 1;
   }
 }
+
+
+/**
+ * Faction-Specific Requisitions
+ * Each faction can have unique requisitions that reflect their playstyle and lore
+ */
+
+export type FactionRequisition = Requisition & {
+  faction: string; // Faction identifier
+};
+
+/**
+ * Astra Militarum Faction Requisitions
+ */
+export const ASTRA_MILITARUM_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'am_regimental_honors',
+    name: 'Honras Regimentais',
+    cost: 1,
+    faction: 'Astra Militarum',
+    description: 'Compre quando uma unidade ASTRA MILITARUM ganhar uma patente. Aquela unidade ganha a palavra-chave VETERANOS DO REGIMENTO. Unidades com esta palavra-chave podem re-rolar testes de Liderança e testes de Battle-shock.',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ter ganho uma patente'
+  },
+  {
+    id: 'am_artillery_barrage',
+    name: 'Barragem de Artilharia',
+    cost: 2,
+    faction: 'Astra Militarum',
+    description: 'Compre antes de uma batalha. Selecione uma unidade ASTRA MILITARUM ARTILHARIA. Durante esta batalha, aquela unidade pode disparar duas vezes na fase de Disparo (mas deve mirar no mesmo alvo).',
+    timing: 'before_battle',
+    restrictions: 'A unidade deve ter a palavra-chave ARTILHARIA'
+  }
+];
+
+/**
+ * Space Marines Faction Requisitions
+ */
+export const SPACE_MARINES_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'sm_chapter_relic',
+    name: 'Relíquia do Capítulo',
+    cost: 2,
+    faction: 'Space Marines',
+    description: 'Compre quando uma unidade ADEPTUS ASTARTES PERSONAGEM ganhar 20XP. Aquela unidade ganha uma Relíquia de Cruzada adicional do seu Capítulo (além do limite normal de 1 Relíquia por unidade).',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ser PERSONAGEM com 20+ XP'
+  },
+  {
+    id: 'sm_veteran_intercessors',
+    name: 'Intercessores Veteranos',
+    cost: 1,
+    faction: 'Space Marines',
+    description: 'Compre quando uma unidade INTERCESSOR ganhar uma patente. Aquela unidade ganha +1 Ataque e pode re-rolar 1s para acertar em combate corpo a corpo.',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ser INTERCESSOR e ter ganho uma patente'
+  }
+];
+
+/**
+ * Chaos Space Marines Faction Requisitions
+ */
+export const CHAOS_SPACE_MARINES_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'csm_dark_blessing',
+    name: 'Bênção Sombria',
+    cost: 2,
+    faction: 'Chaos Space Marines',
+    description: 'Compre após uma batalha. Selecione uma unidade HERETIC ASTARTES que destruiu 3+ unidades inimigas. Aquela unidade ganha uma Honra de Batalha adicional (além do limite normal). Role na tabela de Honras de Batalha do Caos.',
+    timing: 'after_battle',
+    restrictions: 'A unidade deve ter destruído 3+ unidades inimigas'
+  },
+  {
+    id: 'csm_daemon_engine_repair',
+    name: 'Reparos de Motor Daemônico',
+    cost: 1,
+    faction: 'Chaos Space Marines',
+    description: 'Compre após uma batalha. Selecione uma unidade DAEMON ENGINE que sobreviveu à batalha. Restaure todos os ferimentos perdidos e remova uma Cicatriz de Batalha (se houver).',
+    timing: 'after_battle',
+    restrictions: 'A unidade deve ser DAEMON ENGINE'
+  }
+];
+
+/**
+ * Necrons Faction Requisitions
+ */
+export const NECRONS_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'nec_reanimation_upgrade',
+    name: 'Aprimoramento de Reanimação',
+    cost: 2,
+    faction: 'Necrons',
+    description: 'Compre a qualquer momento. Selecione uma unidade NECRONS. Aquela unidade adiciona +1 aos testes de Protocolos de Reanimação para o resto da Cruzada.',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ter Protocolos de Reanimação'
+  },
+  {
+    id: 'nec_phase_out',
+    name: 'Saída de Fase',
+    cost: 1,
+    faction: 'Necrons',
+    description: 'Compre antes de uma batalha. Selecione até 3 unidades NECRONS. Durante esta batalha, se essas unidades forem destruídas, role 1D6. Em 4+, a unidade não é removida do Order of Battle (mas ainda conta como destruída para fins de VP).',
+    timing: 'before_battle'
+  }
+];
+
+/**
+ * Orks Faction Requisitions
+ */
+export const ORKS_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'ork_more_dakka',
+    name: 'Mais Dakka',
+    cost: 1,
+    faction: 'Orks',
+    description: 'Compre a qualquer momento. Selecione uma unidade ORKS. Todas as armas de disparo dessa unidade ganham a habilidade [RAPID FIRE 1] (ou melhoram em +1 se já tiverem RAPID FIRE).',
+    timing: 'anytime'
+  },
+  {
+    id: 'ork_kustom_job',
+    name: 'Trabalho Kustom',
+    cost: 2,
+    faction: 'Orks',
+    description: 'Compre quando uma unidade ORKS VEÍCULO ganhar uma patente. Aquele veículo ganha +1 Tenacidade e pode re-rolar 1 dado de dano por ataque.',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ser VEÍCULO e ter ganho uma patente'
+  }
+];
+
+/**
+ * Tyranids Faction Requisitions
+ */
+export const TYRANIDS_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'tyr_adaptive_evolution',
+    name: 'Evolução Adaptativa',
+    cost: 2,
+    faction: 'Tyranids',
+    description: 'Compre após uma batalha. Selecione uma unidade TYRANIDS que sobreviveu. Aquela unidade ganha uma Adaptação Bio-morfa permanente (escolha: +1 Força, +1 Tenacidade, +1 Movimento, ou +1 Ataque).',
+    timing: 'after_battle',
+    restrictions: 'A unidade deve ter sobrevivido à batalha'
+  },
+  {
+    id: 'tyr_spawn_more',
+    name: 'Gerar Mais',
+    cost: 1,
+    faction: 'Tyranids',
+    description: 'Compre antes de uma batalha. Selecione uma unidade TYRANIDS. Durante esta batalha, quando essa unidade for destruída, role 1D6. Em 4+, coloque uma nova unidade idêntica em Reservas Estratégicas (chega no próximo turno).',
+    timing: 'before_battle'
+  }
+];
+
+/**
+ * T'au Empire Faction Requisitions
+ */
+export const TAU_EMPIRE_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'tau_prototype_systems',
+    name: 'Sistemas Protótipo',
+    cost: 2,
+    faction: 'T\'au Empire',
+    description: 'Compre quando uma unidade T\'AU EMPIRE BATTLESUIT ganhar uma patente. Aquela unidade ganha um Sistema de Suporte adicional (além do limite normal) e pode re-rolar testes de acerto de 1 ao disparar.',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ser BATTLESUIT e ter ganho uma patente'
+  },
+  {
+    id: 'tau_drone_reinforcements',
+    name: 'Reforços de Drones',
+    cost: 1,
+    faction: 'T\'au Empire',
+    description: 'Compre a qualquer momento. Selecione uma unidade T\'AU EMPIRE. Adicione até 2 DRONES à unidade (sem custo de pontos, mas não pode exceder Limite de Suprimento total).',
+    timing: 'anytime'
+  }
+];
+
+/**
+ * Aeldari Faction Requisitions
+ */
+export const AELDARI_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'ael_craftworld_relic',
+    name: 'Relíquia do Mundo-Artesão',
+    cost: 2,
+    faction: 'Aeldari',
+    description: 'Compre quando uma unidade AELDARI PERSONAGEM ganhar 15XP. Aquela unidade ganha uma Relíquia de Cruzada do Mundo-Artesão (além do limite normal). A Relíquia concede +1 Liderança a unidades amigas a 6".',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ser PERSONAGEM com 15+ XP'
+  },
+  {
+    id: 'ael_aspect_warrior_shrine',
+    name: 'Santuário dos Guerreiros Aspecto',
+    cost: 1,
+    faction: 'Aeldari',
+    description: 'Compre quando uma unidade ASPECT WARRIOR ganhar uma patente. Aquela unidade ganha a habilidade de re-rolar todos os testes de acerto falhados ao disparar ou lutar.',
+    timing: 'anytime',
+    restrictions: 'A unidade deve ser ASPECT WARRIOR e ter ganho uma patente'
+  }
+];
+
+/**
+ * Drukhari Faction Requisitions
+ */
+export const DRUKHARI_REQUISITIONS: FactionRequisition[] = [
+  {
+    id: 'dru_pain_token',
+    name: 'Token de Dor',
+    cost: 1,
+    faction: 'Drukhari',
+    description: 'Compre após uma batalha. Selecione uma unidade DRUKHARI que destruiu 2+ unidades inimigas. Aquela unidade ganha um Token de Dor permanente (+1 Força e +1 Ataque).',
+    timing: 'after_battle',
+    restrictions: 'A unidade deve ter destruído 2+ unidades inimigas'
+  },
+  {
+    id: 'dru_raid_spoils',
+    name: 'Espólios do Ataque',
+    cost: 2,
+    faction: 'Drukhari',
+    description: 'Compre após uma batalha vencida. Ganhe +1 RP adicional e selecione uma unidade DRUKHARI. Aquela unidade ganha uma Honra de Batalha adicional.',
+    timing: 'after_battle',
+    restrictions: 'Você deve ter vencido a batalha'
+  }
+];
+
+/**
+ * Get all faction-specific requisitions
+ */
+export const FACTION_REQUISITIONS: Record<string, FactionRequisition[]> = {
+  'Astra Militarum': ASTRA_MILITARUM_REQUISITIONS,
+  'Space Marines': SPACE_MARINES_REQUISITIONS,
+  'Chaos Space Marines': CHAOS_SPACE_MARINES_REQUISITIONS,
+  'Necrons': NECRONS_REQUISITIONS,
+  'Orks': ORKS_REQUISITIONS,
+  'Tyranids': TYRANIDS_REQUISITIONS,
+  'T\'au Empire': TAU_EMPIRE_REQUISITIONS,
+  'Aeldari': AELDARI_REQUISITIONS,
+  'Drukhari': DRUKHARI_REQUISITIONS,
+  // Placeholders for other factions - to be expanded
+  'Adeptus Custodes': [],
+  'Adeptus Mechanicus': [],
+  'Adepta Sororitas': [],
+  'Death Guard': [],
+  'Thousand Sons': [],
+  'World Eaters': [],
+  'Genestealer Cults': [],
+  'Imperial Knights': [],
+  'Chaos Knights': [],
+  'Leagues of Votann': [],
+  'Grey Knights': [],
+  'Agents of the Imperium': []
+};
+
+/**
+ * Get requisitions available for a specific faction
+ */
+export function getRequisitionsForFaction(faction: string): Requisition[] {
+  const factionRequisitions = FACTION_REQUISITIONS[faction] || [];
+  return [...REQUISITIONS, ...factionRequisitions];
+}
+
+/**
+ * Get only faction-specific requisitions
+ */
+export function getFactionSpecificRequisitions(faction: string): FactionRequisition[] {
+  return FACTION_REQUISITIONS[faction] || [];
+}
+
+/**
+ * Check if a faction has custom requisitions
+ */
+export function hasFactionRequisitions(faction: string): boolean {
+  const requisitions = FACTION_REQUISITIONS[faction];
+  return requisitions !== undefined && requisitions.length > 0;
+}

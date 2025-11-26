@@ -279,3 +279,301 @@ export const TACTICAL_AGENDAS: Record<'A' | 'B' | 'C', Agenda[]> = {
     }
   ]
 };
+
+
+/**
+ * Faction-Specific Agendas
+ * Each faction can have unique agendas that reflect their playstyle and lore
+ */
+
+export type FactionAgenda = Agenda & {
+  faction: string; // Faction identifier
+  restrictions?: string[]; // Optional restrictions (e.g., "Requires PSYKER unit")
+};
+
+/**
+ * Astra Militarum Faction Agendas
+ */
+export const ASTRA_MILITARUM_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'am_hold_the_line',
+    name: 'Segurar a Linha',
+    type: 'normal',
+    faction: 'Astra Militarum',
+    description: 'A Guarda Imperial nunca recua. Mantenha suas posições a todo custo.',
+    objectives: [
+      'Ao final de cada turno, se você tem mais unidades ASTRA MILITARUM dentro da sua zona de implantação do que o oponente tem na zona dele, você ganha 1 ponto estratégico.',
+      'Ao final da batalha, selecione até duas unidades ASTRA MILITARUM que permaneceram dentro da sua zona de implantação durante toda a batalha. Cada uma ganha 2XP.'
+    ],
+    rewards: [
+      { type: 'rp', amount: 1, condition: 'Por turno com mais unidades na zona' },
+      { type: 'xp', amount: 2, condition: 'Por unidade que segurou posição' }
+    ]
+  },
+  {
+    id: 'am_artillery_supremacy',
+    name: 'Supremacia de Artilharia',
+    type: 'normal',
+    faction: 'Astra Militarum',
+    description: 'A artilharia da Guarda Imperial é lendária. Demonstre seu poder de fogo.',
+    objectives: [
+      'Ao final de cada fase de Disparo, se uma ou mais unidades ASTRA MILITARUM com a palavra-chave ARTILHARIA destruíram unidades inimigas, selecione uma dessas unidades. Aquela unidade ganha 1XP (máximo 3XP por batalha).',
+      'Ao final da batalha, se unidades ARTILHARIA destruíram 3+ unidades inimigas, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por fase de Disparo (máx 3XP)' },
+      { type: 'rp', amount: 1, condition: 'Se ARTILHARIA destruiu 3+ unidades' }
+    ]
+  }
+];
+
+/**
+ * Space Marines Faction Agendas
+ */
+export const SPACE_MARINES_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'sm_know_no_fear',
+    name: 'Não Conhecem Medo',
+    type: 'normal',
+    faction: 'Space Marines',
+    description: 'Os Adeptus Astartes são a elite da humanidade. Prove sua coragem.',
+    objectives: [
+      'Ao final da batalha, se nenhuma unidade ADEPTUS ASTARTES do seu exército fugiu ou ficou Battle-shocked, você ganha 1 ponto estratégico.',
+      'Selecione até duas unidades ADEPTUS ASTARTES que destruíram unidades inimigas enquanto abaixo de metade da força. Cada uma ganha 2XP.'
+    ],
+    rewards: [
+      { type: 'rp', amount: 1, condition: 'Se nenhuma unidade fugiu/Battle-shocked' },
+      { type: 'xp', amount: 2, condition: 'Por unidade que lutou ferida' }
+    ]
+  },
+  {
+    id: 'sm_surgical_strike',
+    name: 'Ataque Cirúrgico',
+    type: 'normal',
+    faction: 'Space Marines',
+    description: 'Precisão e eficiência são as marcas dos Space Marines.',
+    objectives: [
+      'Ao final da batalha, se você destruiu o SENHOR DA GUERRA inimigo com uma unidade ADEPTUS ASTARTES, aquela unidade ganha 3XP e você ganha 1 ponto estratégico.',
+      'Se você também destruiu pelo menos 2 unidades PERSONAGEM inimigas, você ganha 1 ponto estratégico adicional.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 3, condition: 'Por destruir SENHOR DA GUERRA' },
+      { type: 'rp', amount: 1, condition: 'Se destruiu SENHOR DA GUERRA' },
+      { type: 'rp', amount: 1, condition: 'Se destruiu 2+ PERSONAGENS' }
+    ]
+  }
+];
+
+/**
+ * Chaos Space Marines Faction Agendas
+ */
+export const CHAOS_SPACE_MARINES_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'csm_blood_for_the_blood_god',
+    name: 'Sangue para o Deus do Sangue',
+    type: 'normal',
+    faction: 'Chaos Space Marines',
+    description: 'Khorne exige sacrifício. Deixe os corpos se acumularem.',
+    objectives: [
+      'Ao final de cada fase de Combate, se uma ou mais unidades HERETIC ASTARTES destruíram unidades inimigas em combate corpo a corpo, selecione uma dessas unidades. Aquela unidade ganha 1XP (máximo 4XP por batalha).',
+      'Ao final da batalha, se você destruiu 5+ unidades inimigas em combate corpo a corpo, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por fase de Combate (máx 4XP)' },
+      { type: 'rp', amount: 1, condition: 'Se destruiu 5+ unidades em corpo a corpo' }
+    ]
+  },
+  {
+    id: 'csm_dark_pacts',
+    name: 'Pactos Sombrios',
+    type: 'normal',
+    faction: 'Chaos Space Marines',
+    description: 'Os Deuses do Caos recompensam aqueles que servem bem.',
+    objectives: [
+      'Ao final da batalha, selecione uma unidade HERETIC ASTARTES PERSONAGEM que destruiu uma ou mais unidades inimigas. Aquele PERSONAGEM ganha 2XP.',
+      'Se aquele PERSONAGEM também sobreviveu à batalha com menos de metade dos ferimentos, você ganha 1 ponto estratégico e o PERSONAGEM ganha 1XP adicional.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 2, condition: 'PERSONAGEM que destruiu inimigos' },
+      { type: 'rp', amount: 1, condition: 'Se sobreviveu ferido' },
+      { type: 'xp', amount: 1, condition: 'Bônus por sobreviver ferido' }
+    ]
+  }
+];
+
+/**
+ * Necrons Faction Agendas
+ */
+export const NECRONS_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'nec_reanimation_protocols',
+    name: 'Protocolos de Reanimação',
+    type: 'normal',
+    faction: 'Necrons',
+    description: 'Os Necrons não morrem facilmente. Levante-se novamente.',
+    objectives: [
+      'Ao final de cada turno, conte quantos modelos NECRONS retornaram via Protocolos de Reanimação neste turno. Selecione uma unidade que teve modelos reanimados. Aquela unidade ganha 1XP (máximo 3XP por batalha).',
+      'Ao final da batalha, se você reanimou 10+ modelos durante a batalha, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por turno com reanimação (máx 3XP)' },
+      { type: 'rp', amount: 1, condition: 'Se reanim ou 10+ modelos' }
+    ]
+  }
+];
+
+/**
+ * Orks Faction Agendas
+ */
+export const ORKS_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'ork_waaagh',
+    name: 'WAAAGH!',
+    type: 'normal',
+    faction: 'Orks',
+    description: 'Quanto mais Orkos, mais forte o WAAAGH!',
+    objectives: [
+      'Ao final de cada fase de Combate, se você tem mais unidades ORKS engajadas em combate do que o oponente, selecione uma unidade ORKS que destruiu uma unidade inimiga. Aquela unidade ganha 1XP (máximo 3XP por batalha).',
+      'Ao final da batalha, se você destruiu mais unidades inimigas em combate corpo a corpo do que em disparos, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por fase de Combate (máx 3XP)' },
+      { type: 'rp', amount: 1, condition: 'Se mais mortes em corpo a corpo' }
+    ]
+  }
+];
+
+/**
+ * Tyranids Faction Agendas
+ */
+export const TYRANIDS_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'tyr_endless_swarm',
+    name: 'Enxame Infinito',
+    type: 'normal',
+    faction: 'Tyranids',
+    description: 'A Mente Colmeia nunca para. O enxame sempre cresce.',
+    objectives: [
+      'Ao final de cada turno, se você tem mais unidades TYRANIDS no campo de batalha do que tinha no início do turno (via reforços, etc.), você ganha 1 ponto estratégico.',
+      'Ao final da batalha, selecione até duas unidades TYRANIDS que foram reforçadas durante a batalha. Cada uma ganha 2XP.'
+    ],
+    rewards: [
+      { type: 'rp', amount: 1, condition: 'Por turno com mais unidades' },
+      { type: 'xp', amount: 2, condition: 'Por unidade reforçada' }
+    ]
+  }
+];
+
+/**
+ * Tau Empire Faction Agendas
+ */
+export const TAU_EMPIRE_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'tau_greater_good',
+    name: 'Bem Maior',
+    type: 'normal',
+    faction: 'T\'au Empire',
+    description: 'Para o Tau\'va. Trabalhe em conjunto para a vitória.',
+    objectives: [
+      'Ao final de cada fase de Disparo, se duas ou mais unidades T\'AU EMPIRE dispararam na mesma unidade inimiga e a destruíram, selecione uma dessas unidades. Aquela unidade ganha 1XP (máximo 3XP por batalha).',
+      'Ao final da batalha, se você destruiu 3+ unidades inimigas via fogo combinado, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por fase de Disparo (máx 3XP)' },
+      { type: 'rp', amount: 1, condition: 'Se destruiu 3+ via fogo combinado' }
+    ]
+  }
+];
+
+/**
+ * Aeldari Faction Agendas
+ */
+export const AELDARI_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'ael_swift_strike',
+    name: 'Ataque Veloz',
+    type: 'normal',
+    faction: 'Aeldari',
+    description: 'Os Aeldari atacam onde o inimigo é mais fraco.',
+    objectives: [
+      'Ao final de cada turno, se uma ou mais unidades AELDARI se moveram 12"+ e destruíram uma unidade inimiga, selecione uma dessas unidades. Aquela unidade ganha 1XP (máximo 3XP por batalha).',
+      'Ao final da batalha, se nenhuma unidade AELDARI foi destruída, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por turno (máx 3XP)' },
+      { type: 'rp', amount: 1, condition: 'Se nenhuma unidade perdida' }
+    ]
+  }
+];
+
+/**
+ * Drukhari Faction Agendas
+ */
+export const DRUKHARI_AGENDAS: FactionAgenda[] = [
+  {
+    id: 'dru_pain_and_suffering',
+    name: 'Dor e Sofrimento',
+    type: 'normal',
+    faction: 'Drukhari',
+    description: 'Os Drukhari se alimentam da agonia dos outros.',
+    objectives: [
+      'Ao final de cada fase de Combate, se uma ou mais unidades DRUKHARI destruíram unidades inimigas em combate, selecione uma dessas unidades. Aquela unidade ganha 1XP (máximo 3XP por batalha).',
+      'Ao final da batalha, se você destruiu o SENHOR DA GUERRA inimigo em combate corpo a corpo, você ganha 1 ponto estratégico.'
+    ],
+    rewards: [
+      { type: 'xp', amount: 1, condition: 'Por fase de Combate (máx 3XP)' },
+      { type: 'rp', amount: 1, condition: 'Se destruiu SENHOR DA GUERRA em corpo a corpo' }
+    ]
+  }
+];
+
+/**
+ * Get all faction-specific agendas
+ */
+export const FACTION_AGENDAS: Record<string, FactionAgenda[]> = {
+  'Astra Militarum': ASTRA_MILITARUM_AGENDAS,
+  'Space Marines': SPACE_MARINES_AGENDAS,
+  'Chaos Space Marines': CHAOS_SPACE_MARINES_AGENDAS,
+  'Necrons': NECRONS_AGENDAS,
+  'Orks': ORKS_AGENDAS,
+  'Tyranids': TYRANIDS_AGENDAS,
+  'T\'au Empire': TAU_EMPIRE_AGENDAS,
+  'Aeldari': AELDARI_AGENDAS,
+  'Drukhari': DRUKHARI_AGENDAS,
+  // Placeholders for other factions - to be expanded
+  'Adeptus Custodes': [],
+  'Adeptus Mechanicus': [],
+  'Adepta Sororitas': [],
+  'Death Guard': [],
+  'Thousand Sons': [],
+  'World Eaters': [],
+  'Genestealer Cults': [],
+  'Imperial Knights': [],
+  'Chaos Knights': [],
+  'Leagues of Votann': [],
+  'Grey Knights': [],
+  'Agents of the Imperium': []
+};
+
+/**
+ * Get agendas available for a specific faction
+ */
+export function getAgendasForFaction(faction: string): Agenda[] {
+  const factionAgendas = FACTION_AGENDAS[faction] || [];
+  return [...NORMAL_AGENDAS, ...factionAgendas];
+}
+
+/**
+ * Get only faction-specific agendas
+ */
+export function getFactionSpecificAgendas(faction: string): FactionAgenda[] {
+  return FACTION_AGENDAS[faction] || [];
+}
+
+/**
+ * Check if a faction has custom agendas
+ */
+export function hasFactionAgendas(faction: string): boolean {
+  const agendas = FACTION_AGENDAS[faction];
+  return agendas !== undefined && agendas.length > 0;
+}
