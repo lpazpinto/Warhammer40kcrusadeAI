@@ -447,3 +447,15 @@
 - [x] Test with real battle data
 - [x] Update todo.md and save checkpoint
 
+
+## Day 14: Battle Participants Router
+- [x] Create battleParticipant router in routers.ts
+- [x] Implement battleParticipant.list endpoint
+- [x] Implement battleParticipant.get endpoint
+- [x] Implement battleParticipant.create endpoint
+- [x] Implement battleParticipant.update endpoint
+- [x] Connect Unit Tracker to real participant data
+- [x] Query crusade units for each participant (placeholder for now)
+- [x] Test complete data flow
+- [x] Update todo.md and save checkpoint
+

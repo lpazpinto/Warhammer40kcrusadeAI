@@ -685,6 +685,76 @@ export const appRouter = router({
       }),
   }),
 
+  // Battle participants management
+  battleParticipant: router({
+    // List all participants in a battle
+    list: protectedProcedure
+      .input(z.object({ battleId: z.number() }))
+      .query(async ({ input }) => {
+        const participants = await db.getBattleParticipantsByBattleId(input.battleId);
+        return participants.map(p => ({
+          ...p,
+          unitsDeployed: p.unitsDeployed ? JSON.parse(p.unitsDeployed) : [],
+          unitsDestroyed: p.unitsDestroyed ? JSON.parse(p.unitsDestroyed) : [],
+        }));
+      }),
+
+    // Get a specific participant by battleId and playerId
+    get: protectedProcedure
+      .input(z.object({ 
+        battleId: z.number(),
+        playerId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const participants = await db.getBattleParticipantsByBattleId(input.battleId);
+        const participant = participants.find(p => p.playerId === input.playerId);
+        if (!participant) return null;
+        return {
+          ...participant,
+          unitsDeployed: participant.unitsDeployed ? JSON.parse(participant.unitsDeployed) : [],
+          unitsDestroyed: participant.unitsDestroyed ? JSON.parse(participant.unitsDestroyed) : [],
+        };
+      }),
+
+    // Create a new participant
+    create: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        playerId: z.number(),
+        unitsDeployed: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createBattleParticipant({
+          battleId: input.battleId,
+          playerId: input.playerId,
+          unitsDeployed: JSON.stringify(input.unitsDeployed),
+        });
+      }),
+
+    // Update participant data
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        unitsDestroyed: z.array(z.number()).optional(),
+        enemyUnitsKilled: z.number().optional(),
+        objectivesControlled: z.number().optional(),
+        supplyPointsGained: z.number().optional(),
+        survived: z.boolean().optional(),
+        completedObjective: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, unitsDestroyed, ...updates } = input;
+        
+        const finalUpdates: any = { ...updates };
+        if (unitsDestroyed) {
+          finalUpdates.unitsDestroyed = JSON.stringify(unitsDestroyed);
+        }
+        
+        await db.updateBattleParticipant(id, finalUpdates);
+        return { success: true };
+      }),
+  }),
+
   // Storage and image upload
   storage: router({
     // Upload image to S3 and return URL
