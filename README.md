@@ -6,9 +6,9 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ## 📋 Status do Projeto
 
-**Última Atualização:** 14 de Novembro de 2025  
+**Última Atualização:** 27 de Novembro de 2025  
 **Status:** 🚧 Em desenvolvimento ativo  
-**Versão Atual:** 0.8.0 Beta
+**Versão Atual:** 1.2.0 Beta
 
 ---
 
@@ -72,6 +72,32 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 - **Passo 4:** Seleção de unidades (apenas unidades selecionadas participam)
 - **Passo 5:** Confirmação final com resumo completo
 
+### ✅ Sistema de Batalha em Tempo Real
+- **Battle Phase Tracker**: Rastreamento completo das 5 fases (Command, Movement, Shooting, Charge, Fight)
+- **Contador de turnos**: Controle de rodadas e alternância jogador/oponente
+- **Persistência de estado**: Salva automaticamente fase atual e turno no banco
+- **Histórico de fases**: Log completo de todas as mudanças de fase
+- **Restauração de batalhas**: Continue batalhas pausadas exatamente de onde parou
+
+### ✅ Unit Tracker Panel
+- **Rastreamento em tempo real**: Visualização de todas as unidades durante a batalha
+- **Status visual**: Indicadores coloridos (verde=ativo, vermelho=destruído, amarelo=fora de ação)
+- **Dados reais**: Integração com crusade units (nome, power rating, rank)
+- **Quick Actions**: Botões rápidos para marcar unidades destruídas e adicionar kills
+- **Rank badges**: Badges coloridos mostrando progressão (Battle Ready → Legendary)
+- **Estatísticas**: Contadores de baixas por jogador
+
+### ✅ Sistema de XP Automático
+- **Cálculo automático**: XP base + sobrevivência + kills
+- **Progressão de ranks**: Detecção automática de promoções (6/16/31/51 XP)
+- **Distribuição de RP**: Requisition Points distribuídos após batalha
+- **Atualização em lote**: Todas as unidades atualizadas simultaneamente
+
+### ✅ Customização Visual
+- **Army Badges**: Upload de emblemas de exército (S3 storage)
+- **Battle Photos**: Galeria de fotos de batalhas
+- **Endpoints de upload**: Sistema completo de upload de imagens
+
 ### ✅ Lógica Pós-Batalha
 - Cálculo automático de XP com bônus do Horde Mode
 - Sistema de progressão de ranks (Battle-ready → Blooded → Battle-hardened → Heroic → Legendary)
@@ -101,36 +127,30 @@ Cada dia, uma tarefa pequena e bem definida:
 - ⏳ **Dia 5 (19 Nov):** Requisições específicas por facção
 
 #### Semana 2: Schema e Backend
-- ⏳ **Dia 6 (20 Nov):** Tabelas de batalha (battles, battle_participants, battle_events)
-- ⏳ **Dia 7 (21 Nov):** Endpoints tRPC para batalha (battle.start, battle.recordEvent)
-- ⏳ **Dia 8 (22 Nov):** Endpoints para XP automático (battle.distributeXP)
-- ⏳ **Dia 9 (23 Nov):** Campos de personalização (armyBadge, battlePhotos)
-- ⏳ **Dia 10 (24 Nov):** Endpoints para upload de imagens
+- ✅ **Dia 6 (20 Nov):** Tabelas de batalha (battles, battle_participants, battle_events) ✓
+- ✅ **Dia 7 (21 Nov):** Endpoints tRPC para batalha (battle.start, battle.recordEvent, battle.list) ✓
+- ✅ **Dia 8 (22 Nov):** Sistema de XP automático (battle.distributeXP) ✓
+- ✅ **Dia 9 (23 Nov):** Campos de personalização (armyBadge, battlePhotos) ✓
+- ✅ **Dia 10 (24 Nov):** Endpoints para upload de imagens (storage.uploadImage) ✓
 
-#### Semana 3: UI Preparatória
-- ⏳ **Dia 11 (25 Nov):** Componente BattlePhaseTracker (UI básica)
-- ⏳ **Dia 12 (26 Nov):** Componente AgendaTracker (UI básica)
+#### Semana 3: UI de Batalha
+- ✅ **Dia 11 (25 Nov):** Componente BattlePhaseTracker completo ✓
+- ✅ **Dia 12 (26 Nov):** Persistência de estado da batalha ✓
+- ✅ **Dia 13 (27 Nov):** Unit Tracker Panel com status visual ✓
+- ✅ **Dia 14 (27 Nov):** Battle Participants Router (CRUD completo) ✓
+- ✅ **Dia 15 (27 Nov):** Integração de dados reais de crusade units ✓
+- ✅ **Dia 16 (27 Nov):** Quick Actions e rank display ✓
 
-### **Fase 2: Implementação Massiva** (Dia 27 Nov - 8000 créditos)
+### **Fase 2: Próximas Implementações**
 
-#### Manhã (2500 créditos): Sistema de Batalha Core
-1. Implementar página BattlePlay.tsx completa
-2. Rastreamento de fases (Command, Movement, Shooting, Charge, Fight, Morale)
-3. Sistema de eventos de batalha (unidade destruída, XP ganho, etc.)
-4. Controle de IA da Horda integrado
-
-#### Tarde (2500 créditos): Contabilização Automática de Agendas
-1. Lógica de detecção de condições de agenda
-2. Sistema de notificações quando agenda é completada
-3. Distribuição automática de XP/RP baseado em agendas completadas
-
-#### Noite (2500 créditos): Pós-Batalha e Personalização
-1. Tela de resumo pós-batalha com XP distribuído
-2. Retorno automático para campanha com dados atualizados
-3. Progressão automática de fase de batalha
-4. UI de personalização (brasão, fotos de batalhas)
-
-#### Buffer (500 créditos): Testes e Ajustes
+#### Próximas Funcionalidades
+- ⏳ **Dia 17:** Integração Horde Spawn (botão no Phase Tracker)
+- ⏳ **Dia 18:** Battle Summary Modal (estatísticas + distribuir XP)
+- ⏳ **Dia 19:** Unit Details Popover (honours, traits, scars)
+- ⏳ **Dia 20:** Agenda Tracker completo
+- ⏳ **Dia 21:** Contabilização automática de agendas
+- ⏳ **Dia 22:** Tela de resumo pós-batalha
+- ⏳ **Dia 23:** UI de personalização (badges, fotos)
 
 ### **Fase 3: Mecânicas Únicas de Facção** (Futuro)
 - [ ] Implementar mecânica única para cada facção (uma por vez)
@@ -207,7 +227,8 @@ Cada dia, uma tarefa pequena e bem definida:
 - **weapons** - Armas de cada modelo
 - **battleHonours** - Honras de batalha
 - **battleScars** - Cicatrizes de batalha
-- **battles** - Registro de batalhas (em desenvolvimento)
+- **battles** - Registro de batalhas com estado persistente
+- **battleParticipants** - Participantes e unidades deployadas
 - **battleEvents** - Eventos durante batalhas (em desenvolvimento)
 
 ---
@@ -331,10 +352,10 @@ Adepta Sororitas, Adeptus Custodes, Adeptus Mechanicus, Aeldari, Astra Militarum
 
 ## 📊 Estatísticas do Projeto
 
-- **Linhas de Código:** ~15,000+
-- **Commits:** 55+
-- **Arquivos:** 100+
-- **Tempo de Desenvolvimento:** 3 meses
+- **Linhas de Código:** ~18,000+
+- **Commits:** 70+
+- **Arquivos:** 120+
+- **Tempo de Desenvolvimento:** 3.5 meses
 - **Status:** Em desenvolvimento ativo
 
 ---
