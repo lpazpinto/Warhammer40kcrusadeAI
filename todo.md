@@ -468,3 +468,14 @@
 - [x] Test Unit Tracker with real crusade unit data
 - [x] Update todo.md and save checkpoint
 
+
+## Day 16: Quick Actions and Enhanced Unit Display
+- [x] Add Quick Action buttons to UnitTrackerPanel (Mark Destroyed, Add Kill)
+- [x] Add rank badge display with color coding
+- [x] Implement out-of-action status (yellow)
+- [x] Integrate Mark Destroyed with battleParticipant.update
+- [x] Integrate Add Kill with battleParticipant.update
+- [x] Add toast notifications for user feedback
+- [x] Test all quick actions
+- [x] Update todo.md and save checkpoint
+

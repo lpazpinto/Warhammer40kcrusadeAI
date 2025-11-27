@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import BattlePhaseTracker from "@/components/BattlePhaseTracker";
@@ -65,8 +66,10 @@ export default function BattleTracker() {
           name: unit?.unitName || `Unit ${unitId}`,
           crusadeName: unit?.crusadeName || unit?.unitName || `Unit ${unitId}`,
           powerRating: unit?.powerRating || 0,
+          rank: unit?.rank,
           status: isDestroyed ? "destroyed" : "active",
           playerName: player?.name || "Unknown",
+          participantId: participant.id,
         });
       });
     });
@@ -77,6 +80,56 @@ export default function BattleTracker() {
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
 
   const updateBattleMutation = trpc.battle.update.useMutation();
+  const updateParticipantMutation = trpc.battleParticipant.update.useMutation({
+    onSuccess: () => {
+      toast.success("Unit status updated");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update: ${error.message}`);
+    },
+  });
+
+  const utils = trpc.useUtils();
+
+  const handleMarkDestroyed = (unitId: number, participantId: number) => {
+    const participant = participants?.find(p => p.id === participantId);
+    if (!participant) return;
+
+    const destroyedUnits = participant.unitsDestroyed || [];
+    if (destroyedUnits.includes(unitId)) {
+      toast.info("Unit already marked as destroyed");
+      return;
+    }
+
+    updateParticipantMutation.mutate(
+      {
+        id: participantId,
+        unitsDestroyed: [...destroyedUnits, unitId],
+      },
+      {
+        onSuccess: () => {
+          utils.battleParticipant.list.invalidate({ battleId: battleId! });
+        },
+      }
+    );
+  };
+
+  const handleAddKill = (participantId: number) => {
+    const participant = participants?.find(p => p.id === participantId);
+    if (!participant) return;
+
+    updateParticipantMutation.mutate(
+      {
+        id: participantId,
+        enemyUnitsKilled: (participant.enemyUnitsKilled || 0) + 1,
+      },
+      {
+        onSuccess: () => {
+          utils.battleParticipant.list.invalidate({ battleId: battleId! });
+        },
+      }
+    );
+  };
 
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
@@ -150,7 +203,11 @@ export default function BattleTracker() {
 
           {/* Unit Tracker */}
           <div className="lg:col-span-2">
-            <UnitTrackerPanel units={unitStatuses} />
+            <UnitTrackerPanel 
+              units={unitStatuses}
+              onMarkDestroyed={handleMarkDestroyed}
+              onAddKill={handleAddKill}
+            />
           </div>
 
           {/* Battle Info & Log - moved to bottom or sidebar */}

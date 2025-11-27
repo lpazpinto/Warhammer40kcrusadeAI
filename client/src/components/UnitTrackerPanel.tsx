@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skull, Heart, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skull, Heart, AlertTriangle, Swords } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface UnitStatus {
@@ -8,15 +9,19 @@ interface UnitStatus {
   name: string;
   crusadeName?: string;
   powerRating: number;
+  rank?: string;
   status: "active" | "destroyed" | "out_of_action";
   playerName: string;
+  participantId?: number;
 }
 
 interface UnitTrackerPanelProps {
   units: UnitStatus[];
+  onMarkDestroyed?: (unitId: number, participantId: number) => void;
+  onAddKill?: (participantId: number) => void;
 }
 
-export default function UnitTrackerPanel({ units }: UnitTrackerPanelProps) {
+export default function UnitTrackerPanel({ units, onMarkDestroyed, onAddKill }: UnitTrackerPanelProps) {
   const activeUnits = units.filter(u => u.status === "active");
   const destroyedUnits = units.filter(u => u.status === "destroyed");
   const outOfActionUnits = units.filter(u => u.status === "out_of_action");
@@ -43,6 +48,32 @@ export default function UnitTrackerPanel({ units }: UnitTrackerPanelProps) {
     }
   };
 
+  const getRankBadge = (rank?: string) => {
+    if (!rank) return null;
+    
+    const rankColors: Record<string, string> = {
+      battle_ready: "bg-gray-500",
+      blooded: "bg-blue-500",
+      battle_hardened: "bg-purple-500",
+      heroic: "bg-orange-500",
+      legendary: "bg-yellow-500",
+    };
+    
+    const rankLabels: Record<string, string> = {
+      battle_ready: "Battle Ready",
+      blooded: "Blooded",
+      battle_hardened: "Battle Hardened",
+      heroic: "Heroic",
+      legendary: "Legendary",
+    };
+    
+    return (
+      <Badge className={`${rankColors[rank]} text-white text-xs`}>
+        {rankLabels[rank] || rank}
+      </Badge>
+    );
+  };
+
   const renderUnitList = (unitList: UnitStatus[], title: string, emptyMessage: string) => (
     <div className="space-y-2">
       <h4 className="text-sm font-semibold text-muted-foreground">{title}</h4>
@@ -55,18 +86,43 @@ export default function UnitTrackerPanel({ units }: UnitTrackerPanelProps) {
               key={unit.id}
               className={`p-3 rounded-lg border ${getStatusColor(unit.status)}`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(unit.status)}
-                    <p className="font-medium text-sm truncate">
-                      {unit.crusadeName || unit.name}
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(unit.status)}
+                      <p className="font-medium text-sm truncate">
+                        {unit.crusadeName || unit.name}
+                      </p>
+                      {getRankBadge(unit.rank)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {unit.playerName} • PR {unit.powerRating}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {unit.playerName} • PR {unit.powerRating}
-                  </p>
                 </div>
+                {unit.status === "active" && unit.participantId && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="flex-1 h-7 text-xs"
+                      onClick={() => onMarkDestroyed?.(unit.id, unit.participantId!)}
+                    >
+                      <Skull className="h-3 w-3 mr-1" />
+                      Mark Destroyed
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-7 text-xs"
+                      onClick={() => onAddKill?.(unit.participantId!)}
+                    >
+                      <Swords className="h-3 w-3 mr-1" />
+                      Add Kill
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
