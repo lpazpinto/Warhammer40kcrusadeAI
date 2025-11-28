@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skull, Heart, AlertTriangle, Swords } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import UnitDetailsPopover from "@/components/UnitDetailsPopover";
 
 interface UnitStatus {
   id: number;
@@ -13,6 +14,15 @@ interface UnitStatus {
   status: "active" | "destroyed" | "out_of_action";
   playerName: string;
   participantId?: number;
+  // Full unit details for popover
+  experiencePoints?: number;
+  crusadePoints?: number;
+  battlesPlayed?: number;
+  battlesSurvived?: number;
+  enemyUnitsDestroyed?: number;
+  battleHonours?: string[];
+  battleTraits?: string[];
+  battleScars?: string[];
 }
 
 interface UnitTrackerPanelProps {
@@ -82,25 +92,42 @@ export default function UnitTrackerPanel({ units, onMarkDestroyed, onAddKill }: 
       ) : (
         <div className="space-y-2">
           {unitList.map((unit) => (
-            <div
+            <UnitDetailsPopover
               key={unit.id}
-              className={`p-3 rounded-lg border ${getStatusColor(unit.status)}`}
+              unit={{
+                id: unit.id,
+                unitName: unit.name,
+                crusadeName: unit.crusadeName,
+                powerRating: unit.powerRating,
+                rank: unit.rank || "battle_ready",
+                experiencePoints: unit.experiencePoints || 0,
+                crusadePoints: unit.crusadePoints || 0,
+                battlesPlayed: unit.battlesPlayed || 0,
+                battlesSurvived: unit.battlesSurvived || 0,
+                enemyUnitsDestroyed: unit.enemyUnitsDestroyed || 0,
+                battleHonours: unit.battleHonours,
+                battleTraits: unit.battleTraits,
+                battleScars: unit.battleScars,
+              }}
             >
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(unit.status)}
-                      <p className="font-medium text-sm truncate">
-                        {unit.crusadeName || unit.name}
+              <div
+                className={`p-3 rounded-lg border ${getStatusColor(unit.status)} cursor-pointer hover:shadow-md transition-shadow`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(unit.status)}
+                        <p className="font-medium text-sm truncate">
+                          {unit.crusadeName || unit.name}
+                        </p>
+                        {getRankBadge(unit.rank)}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {unit.playerName} • PR {unit.powerRating}
                       </p>
-                      {getRankBadge(unit.rank)}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {unit.playerName} • PR {unit.powerRating}
-                    </p>
                   </div>
-                </div>
                 {unit.status === "active" && unit.participantId && (
                   <div className="flex gap-2">
                     <Button
@@ -123,8 +150,9 @@ export default function UnitTrackerPanel({ units, onMarkDestroyed, onAddKill }: 
                     </Button>
                   </div>
                 )}
+                </div>
               </div>
-            </div>
+            </UnitDetailsPopover>
           ))}
         </div>
       )}

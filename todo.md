@@ -479,3 +479,37 @@
 - [x] Test all quick actions
 - [x] Update todo.md and save checkpoint
 
+
+## Days 17-19: Complete Integrated Battle System (8000 credits)
+
+### Day 17: Horde Spawn Integration
+- [x] Add "Spawn Horde" button to BattlePhaseTracker (Command Phase only)
+- [x] Integrate with horde.spawn endpoint
+- [x] Add spawned units to battle participants (toast notification)
+- [x] Display spawn roll results (2D6 + modifiers)
+- [x] Loading state during spawn
+
+### Day 18: Battle Summary Modal
+- [x] Create BattleSummaryModal component
+- [x] Display battle statistics (kills, destroyed, objectives)
+- [x] "Distribute XP" button with backend integration
+- [x] Calculate and display RP awarded
+- [x] Navigate back to campaign after completion
+- [x] Show victory/defeat status
+- [x] List all participants with final stats
+- [x] Add "End Battle" button to BattleTracker page
+
+### Day 19: Unit Details Popover
+- [x] Create UnitDetailsPopover component
+- [x] Trigger on unit card click in Unit Tracker
+- [x] Display battle honours, traits, and scars
+- [x] Show XP and rank progression
+- [x] Show complete unit statistics (battles, kills, etc.)
+- [x] Integrated with Unit Tracker cards
+- [x] Full unit data passed from BattleTracker
+
+### Integration & Testing
+- [x] Complete battle flow implemented (spawn → track → finish → XP)
+- [x] All components compiled successfully
+- [x] Update todo.md and save checkpoint
+

@@ -4,6 +4,7 @@ import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import BattlePhaseTracker from "@/components/BattlePhaseTracker";
 import UnitTrackerPanel from "@/components/UnitTrackerPanel";
+import BattleSummaryModal from "@/components/BattleSummaryModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -12,6 +13,8 @@ import { Link } from "wouter";
 export default function BattleTracker() {
   const [, params] = useRoute("/battle/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
+  const [showSummary, setShowSummary] = useState(false);
+  const [isDistributingXP, setIsDistributingXP] = useState(false);
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId! },
@@ -70,6 +73,15 @@ export default function BattleTracker() {
           status: isDestroyed ? "destroyed" : "active",
           playerName: player?.name || "Unknown",
           participantId: participant.id,
+          // Full details for popover
+          experiencePoints: unit?.experiencePoints || 0,
+          crusadePoints: unit?.powerRating || 0, // Use powerRating as crusade points
+          battlesPlayed: unit?.battlesPlayed || 0,
+          battlesSurvived: unit?.battlesSurvived || 0,
+          enemyUnitsDestroyed: unit?.enemyUnitsDestroyed || 0,
+          battleHonours: unit?.battleHonours ? JSON.parse(unit.battleHonours as any) : [],
+          battleTraits: unit?.battleTraits ? JSON.parse(unit.battleTraits as any) : [],
+          battleScars: unit?.battleScars ? JSON.parse(unit.battleScars as any) : [],
         });
       });
     });
@@ -131,6 +143,40 @@ export default function BattleTracker() {
     );
   };
 
+  const [isSpawningHorde, setIsSpawningHorde] = useState(false);
+  
+  // Get campaign to know horde faction
+  const { data: campaign } = trpc.campaign.get.useQuery(
+    { id: battle?.campaignId! },
+    { enabled: !!battle?.campaignId }
+  );
+
+  const spawnHordeMutation = trpc.horde.spawn.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Horda spawned! Roll: ${data.roll} | ${data.units.length} unidades (${data.totalPower} pontos)`);
+      setIsSpawningHorde(false);
+      // TODO: Add spawned units to battle participants
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to spawn horde: ${error.message}`);
+      setIsSpawningHorde(false);
+    },
+  });
+
+  const handleSpawnHorde = () => {
+    if (!campaign?.hordeFaction) {
+      toast.error("Horde faction not configured");
+      return;
+    }
+
+    setIsSpawningHorde(true);
+    spawnHordeMutation.mutate({
+      faction: campaign.hordeFaction,
+      battleRound: battle?.battleRound || 1,
+      additionalModifiers: 0,
+    });
+  };
+
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
     
@@ -145,6 +191,65 @@ export default function BattleTracker() {
       });
     }
   };
+
+  const distributeXPMutation = trpc.battle.distributeXP.useMutation({
+    onSuccess: () => {
+      toast.success("XP distribuído com sucesso!");
+      setIsDistributingXP(false);
+      setShowSummary(false);
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao distribuir XP: ${error.message}`);
+      setIsDistributingXP(false);
+    },
+  });
+
+  const handleDistributeXP = () => {
+    if (!battleId || !participants) return;
+    setIsDistributingXP(true);
+    
+    // Build unit results from participants
+    const unitResults: any[] = [];
+    participants.forEach(p => {
+      const deployedUnits = p.unitsDeployed || [];
+      const destroyedUnits = p.unitsDestroyed || [];
+      
+      deployedUnits.forEach((unitId: number) => {
+        unitResults.push({
+          unitId,
+          survived: !destroyedUnits.includes(unitId),
+          enemyUnitsKilled: p.enemyUnitsKilled || 0,
+          markedForGreatness: false,
+        });
+      });
+    });
+    
+    distributeXPMutation.mutate({ 
+      battleId, 
+      unitResults,
+      rpAwarded: 1, // Base RP
+    });
+  };
+
+  const handleReturnToCampaign = () => {
+    setShowSummary(false);
+    // Navigation handled by Link component
+  };
+
+  // Build participant stats for summary modal
+  const participantStats = useMemo(() => {
+    if (!participants || !players) return [];
+    return participants.map(p => {
+      const player = players.find(pl => pl.id === p.playerId);
+      return {
+        playerName: player?.name || "Unknown",
+        unitsDeployed: p.unitsDeployed?.length || 0,
+        unitsDestroyed: p.unitsDestroyed?.length || 0,
+        enemyUnitsKilled: p.enemyUnitsKilled || 0,
+        objectivesCaptured: p.objectivesControlled || 0,
+      };
+    });
+  }, [participants, players]);
 
   if (isLoading) {
     return (
@@ -198,6 +303,8 @@ export default function BattleTracker() {
               initialRound={battle?.battleRound || 1}
               initialPlayerTurn={(battle as any)?.playerTurn || "player"}
               onPhaseChange={handlePhaseChange}
+              onSpawnHorde={handleSpawnHorde}
+              isSpawningHorde={isSpawningHorde}
             />
           </div>
 
@@ -267,9 +374,32 @@ export default function BattleTracker() {
                 )}
               </CardContent>
             </Card>
+
+            {/* End Battle Button */}
+            <Button
+              variant="destructive"
+              size="lg"
+              className="w-full"
+              onClick={() => setShowSummary(true)}
+            >
+              Finalizar Batalha
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Battle Summary Modal */}
+      <BattleSummaryModal
+        open={showSummary}
+        onOpenChange={setShowSummary}
+        battleNumber={battle?.battleNumber}
+        deployment={battle?.deployment || "Unknown"}
+        victory="draw"
+        participants={participantStats}
+        onDistributeXP={handleDistributeXP}
+        onReturnToCampaign={handleReturnToCampaign}
+        isDistributingXP={isDistributingXP}
+      />
     </div>
   );
 }

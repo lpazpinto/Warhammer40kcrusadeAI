@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw, Skull } from "lucide-react";
+import { toast } from "sonner";
 
 const BATTLE_PHASES = [
   { id: "command", name: "Comando", color: "bg-blue-500" },
@@ -18,6 +19,8 @@ interface BattlePhaseTrackerProps {
   initialRound?: number;
   initialPlayerTurn?: "player" | "opponent";
   onPhaseChange?: (phase: string, round: number, playerTurn: "player" | "opponent") => void;
+  onSpawnHorde?: () => void;
+  isSpawningHorde?: boolean;
 }
 
 export default function BattlePhaseTracker({ 
@@ -25,7 +28,9 @@ export default function BattlePhaseTracker({
   initialPhase = "command",
   initialRound = 1,
   initialPlayerTurn = "player",
-  onPhaseChange 
+  onPhaseChange,
+  onSpawnHorde,
+  isSpawningHorde = false
 }: BattlePhaseTrackerProps) {
   // Find initial phase index
   const initialPhaseIndex = BATTLE_PHASES.findIndex(p => p.id === initialPhase);
@@ -145,6 +150,20 @@ export default function BattlePhaseTracker({
             ))}
           </div>
         </div>
+
+        {/* Spawn Horde Button (Command Phase only) */}
+        {currentPhase.id === "command" && playerTurn === "player" && onSpawnHorde && (
+          <Button
+            variant="destructive"
+            onClick={onSpawnHorde}
+            disabled={isSpawningHorde}
+            className="w-full gap-2"
+            size="lg"
+          >
+            <Skull className="h-5 w-5" />
+            {isSpawningHorde ? "Spawnando Horda..." : "Spawn Horda (2D6)"}
+          </Button>
+        )}
 
         {/* Navigation Buttons */}
         <div className="flex gap-2">
