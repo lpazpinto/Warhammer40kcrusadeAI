@@ -141,6 +141,13 @@ export default function BattleSetup() {
         missionPack: config.selectedMission?.name || 'Ponte Descarada',
       });
 
+      console.log('Battle created:', battle);
+
+      // Validate battle ID
+      if (!battle || !battle.id || isNaN(battle.id)) {
+        throw new Error('Failed to create battle: invalid ID returned');
+      }
+
       // Create battle participants for each player with selected units
       for (const player of players || []) {
         const selectedUnits = config.playerUnits[player.id] || [];
@@ -154,10 +161,11 @@ export default function BattleSetup() {
       }
 
       toast.success('Batalha criada com sucesso!');
+      console.log('Redirecting to:', `/battle/tracker/${battle.id}`);
       setLocation(`/battle/tracker/${battle.id}`);
     } catch (error) {
       console.error('Error creating battle:', error);
-      toast.error('Erro ao criar batalha');
+      toast.error(`Erro ao criar batalha: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
   

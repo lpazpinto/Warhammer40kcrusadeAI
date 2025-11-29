@@ -11,7 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
 export default function BattleTracker() {
-  const [, params] = useRoute("/battle/:id");
+  const [, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
   const [showSummary, setShowSummary] = useState(false);
   const [isDistributingXP, setIsDistributingXP] = useState(false);

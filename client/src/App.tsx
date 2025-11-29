@@ -22,7 +22,7 @@ function Router() {
       <Route path="/player/:id" component={PlayerDetail} />
       <Route path="/battle/setup/:campaignId" component={BattleSetup} />
       <Route path="/battle/play/:battleId" component={BattlePlay} />
-      <Route path="/battle/:id" component={BattleTracker} />
+      <Route path="/battle/tracker/:id" component={BattleTracker} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

@@ -528,3 +528,12 @@
 - [x] Pass battle ID to BattleTracker route
 - [x] Create battle and participants before redirect
 - [x] Test complete flow
+
+
+## Fix NaN Battle ID Error in BattleTracker
+- [x] Debug why battle.id is NaN after creation
+- [x] Fixed route conflict between /battle/:id and /battle/setup/:campaignId
+- [x] Changed BattleTracker route to /battle/tracker/:id
+- [x] Updated route in App.tsx and BattleTracker.tsx
+- [x] Added validation and error handling in handleStartBattle
+- [x] Test complete flow
