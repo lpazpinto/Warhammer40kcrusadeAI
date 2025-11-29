@@ -537,3 +537,11 @@
 - [x] Updated route in App.tsx and BattleTracker.tsx
 - [x] Added validation and error handling in handleStartBattle
 - [x] Test complete flow
+
+
+## Debug Persistent NaN Battle ID Error
+- [x] Check if BattleSetup imports any components that query battle.get
+- [x] Search for useRoute hooks that might be extracting wrong params
+- [x] Check if there's a global context or provider querying battles
+- [x] Add better validation to prevent NaN queries
+- [x] Fixed by adding isValidBattleId check in BattleTracker

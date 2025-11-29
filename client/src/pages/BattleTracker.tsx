@@ -16,15 +16,18 @@ export default function BattleTracker() {
   const [showSummary, setShowSummary] = useState(false);
   const [isDistributingXP, setIsDistributingXP] = useState(false);
 
+  // Validate battleId is a valid number
+  const isValidBattleId = battleId !== undefined && !isNaN(battleId) && battleId > 0;
+
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId! },
-    { enabled: !!battleId }
+    { enabled: isValidBattleId }
   );
 
   // Query battle participants
   const { data: participants } = trpc.battleParticipant.list.useQuery(
     { battleId: battleId! },
-    { enabled: !!battleId }
+    { enabled: isValidBattleId }
   );
 
   // Query players for names
