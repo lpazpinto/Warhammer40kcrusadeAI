@@ -16,13 +16,8 @@ export default function BattleTracker() {
   const [showSummary, setShowSummary] = useState(false);
   const [isDistributingXP, setIsDistributingXP] = useState(false);
 
-  // Early return if route doesn't match or ID is invalid
-  if (!match || !battleId || isNaN(battleId) || battleId <= 0) {
-    return null;
-  }
-
   // Validate battleId is a valid number
-  const isValidBattleId = battleId !== undefined && !isNaN(battleId) && battleId > 0;
+  const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId! },
@@ -279,6 +274,11 @@ export default function BattleTracker() {
         </Link>
       </div>
     );
+  }
+
+  // Show nothing if route doesn't match or ID is invalid
+  if (!isValidBattleId) {
+    return null;
   }
 
   return (

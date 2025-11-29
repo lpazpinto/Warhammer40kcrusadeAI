@@ -552,3 +552,11 @@
 - [x] Add early return when battleId is invalid
 - [x] Return null instead of rendering with NaN
 - [x] Test fix - server compiled successfully
+
+
+## Investigate Why NaN Error Persists
+- [x] Check if BattleSetup imports BattleTracker or shared components
+- [x] Check for tRPC prefetch or cache issues
+- [x] Add console.log to trace query origin
+- [x] Fixed React hooks violation - moved early return after all hooks
+- [x] Added proper validation with enabled flag on queries
