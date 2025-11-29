@@ -11,10 +11,15 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
 export default function BattleTracker() {
-  const [, params] = useRoute("/battle/tracker/:id");
+  const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
   const [showSummary, setShowSummary] = useState(false);
   const [isDistributingXP, setIsDistributingXP] = useState(false);
+
+  // Early return if route doesn't match or ID is invalid
+  if (!match || !battleId || isNaN(battleId) || battleId <= 0) {
+    return null;
+  }
 
   // Validate battleId is a valid number
   const isValidBattleId = battleId !== undefined && !isNaN(battleId) && battleId > 0;
