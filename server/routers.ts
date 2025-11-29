@@ -492,8 +492,12 @@ export const appRouter = router({
       }),
 
     // Get battle by ID
-    get: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      get: publicProcedure
+      .input(z.object({ 
+        id: z.number().refine((val) => !isNaN(val) && val > 0, {
+          message: "Battle ID must be a valid positive number"
+        })
+      }))
       .query(async ({ input }) => {
         const battle = await db.getBattleById(input.id);
         if (!battle) return null;

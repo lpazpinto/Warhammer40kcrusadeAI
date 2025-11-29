@@ -560,3 +560,11 @@
 - [x] Add console.log to trace query origin
 - [x] Fixed React hooks violation - moved early return after all hooks
 - [x] Added proper validation with enabled flag on queries
+
+
+## Add Detailed Logging to Trace NaN Query
+- [x] Add console.log at start of BattleTracker component
+- [x] Log match, params, battleId, isValidBattleId
+- [x] Analyzed logs - BattleTracker not mounting on /battle/setup
+- [x] Discovered query executed despite enabled:false
+- [x] Implemented Zod validation to reject NaN at input level
