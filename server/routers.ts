@@ -242,13 +242,18 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         campaignId: z.number(),
+        userId: z.number(),
         name: z.string(),
         faction: z.string(),
         detachment: z.string().optional(),
         crusadeForceName: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createPlayer(input);
+        // Set initial requisition points to 5 when creating player
+        return await db.createPlayer({
+          ...input,
+          requisitionPoints: 5,
+        });
       }),
 
     // Update player stats

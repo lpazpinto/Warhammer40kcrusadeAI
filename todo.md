@@ -513,3 +513,18 @@
 - [x] All components compiled successfully
 - [x] Update todo.md and save checkpoint
 
+
+
+## Change Initial Requisition Points to 5
+- [x] Update player.create endpoint to set requisitionPoints to 5 by default
+- [x] Add useAuth hook to CampaignDetail to get userId
+- [x] Test player creation with army import
+- [x] Verified server compiles successfully
+
+
+## Fix Battle Start Redirect
+- [x] Find battle setup wizard "Iniciar Batalha" button handler
+- [x] Change redirect from campaign page to BattleTracker
+- [x] Pass battle ID to BattleTracker route
+- [x] Create battle and participants before redirect
+- [x] Test complete flow

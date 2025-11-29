@@ -10,11 +10,13 @@ import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import { NARRATIVE_OBJECTIVES } from "@shared/narrativeObjectives";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
   const campaignId = parseInt(id || '0');
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -207,7 +209,7 @@ export default function CampaignDetail() {
                       
                       <DialogFooter>
                         <Button
-                          onClick={() => createPlayer.mutate({ campaignId, ...newPlayer })}
+                          onClick={() => createPlayer.mutate({ campaignId, userId: user?.id || 0, ...newPlayer })}
                           disabled={!newPlayer.name || !newPlayer.faction || createPlayer.isPending}
                         >
                           {createPlayer.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

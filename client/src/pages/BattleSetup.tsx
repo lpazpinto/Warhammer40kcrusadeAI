@@ -49,6 +49,8 @@ export default function BattleSetup() {
   const [selectedUnitForRequisition, setSelectedUnitForRequisition] = useState<number | null>(null);
   
   const increaseSupplyLimitMutation = trpc.player.applyIncreaseSupplyLimit.useMutation();
+  const createBattle = trpc.battle.create.useMutation();
+  const createParticipant = trpc.battleParticipant.create.useMutation();
   const utils = trpc.useUtils();
 
   const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
@@ -130,10 +132,33 @@ export default function BattleSetup() {
     setStep(step - 1);
   };
 
-  const handleStartBattle = () => {
-    // TODO: Create battle and navigate to battle page
-    toast.success('Batalha iniciada!');
-    setLocation(`/campaign/${id}`);
+  const handleStartBattle = async () => {
+    try {
+      // Create battle with selected configuration
+      const battle = await createBattle.mutateAsync({
+        campaignId: id,
+        deployment: 'Standard',
+        missionPack: config.selectedMission?.name || 'Ponte Descarada',
+      });
+
+      // Create battle participants for each player with selected units
+      for (const player of players || []) {
+        const selectedUnits = config.playerUnits[player.id] || [];
+        if (selectedUnits.length > 0) {
+          await createParticipant.mutateAsync({
+            battleId: battle.id,
+            playerId: player.id,
+            unitsDeployed: selectedUnits,
+          });
+        }
+      }
+
+      toast.success('Batalha criada com sucesso!');
+      setLocation(`/battle/tracker/${battle.id}`);
+    } catch (error) {
+      console.error('Error creating battle:', error);
+      toast.error('Erro ao criar batalha');
+    }
   };
   
   const handleOpenUnitDialog = (playerId: number) => {
