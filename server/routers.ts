@@ -493,13 +493,27 @@ export const appRouter = router({
 
     // Get battle by ID
       get: publicProcedure
-      .input(z.object({ 
-        id: z.number().refine((val) => !isNaN(val) && val > 0, {
-          message: "Battle ID must be a valid positive number"
+      .input(z.preprocess(
+        (val: any) => {
+          console.log('[battle.get] Raw input received:', val);
+          if (val && typeof val === 'object' && 'id' in val) {
+            const id = val.id;
+            console.log('[battle.get] ID value:', id, 'type:', typeof id, 'isNaN:', isNaN(id));
+            if (typeof id === 'number' && isNaN(id)) {
+              console.error('[battle.get] NaN detected! Rejecting.');
+              throw new Error('Invalid battle ID: NaN is not allowed');
+            }
+          }
+          return val;
+        },
+        z.object({ 
+          id: z.number().refine((val) => !isNaN(val) && val > 0, {
+            message: "Battle ID must be a valid positive number"
+          })
         })
-      }))
+      ))
       .query(async ({ input }) => {
-        console.log('[battle.get] Called with:', { id: input.id, type: typeof input.id, isNaN: isNaN(input.id) });
+        console.log('[battle.get] Query executing with:', { id: input.id, type: typeof input.id, isNaN: isNaN(input.id) });
         const battle = await db.getBattleById(input.id);
         if (!battle) return null;
         
