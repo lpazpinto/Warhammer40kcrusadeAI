@@ -20,12 +20,15 @@ export default function BattleTracker() {
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
   // DEBUG: Log component state
-  console.log('[BattleTracker] Mounted:', {
+  console.log('[BattleTracker] Component rendered:', {
     match,
     params,
     battleId,
+    battleIdType: typeof battleId,
     isValidBattleId,
-    currentPath: window.location.pathname
+    currentPath: window.location.pathname,
+    willExecuteQuery: isValidBattleId,
+    queryInput: { id: battleId || 0 }
   });
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(

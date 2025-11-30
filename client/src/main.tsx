@@ -45,16 +45,40 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Recursive function to check for NaN values
+function containsNaN(obj: any, path = ''): string | null {
+  if (typeof obj === 'number' && isNaN(obj)) {
+    return path || 'root';
+  }
+  if (obj && typeof obj === 'object') {
+    for (const key in obj) {
+      const result = containsNaN(obj[key], path ? `${path}.${key}` : key);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
 // Custom transformer that validates data before sending
 const validatingTransformer = {
   input: {
     serialize: (object: any) => {
+      // Check for NaN BEFORE serialization
+      const nanPath = containsNaN(object);
+      if (nanPath) {
+        console.error('[TRPC Client] NaN detected at path:', nanPath);
+        console.error('[TRPC Client] Full object:', object);
+        console.error('[TRPC Client] Stack trace:', new Error().stack);
+        throw new Error(`Invalid data: NaN value found at ${nanPath}`);
+      }
+      
       const serialized = superjson.serialize(object);
-      // Check for NaN in the serialized data
+      
+      // Double-check after serialization
       const jsonString = JSON.stringify(serialized);
       if (jsonString.includes('NaN')) {
-        console.error('[TRPC Client] NaN detected in request:', object);
-        throw new Error('Invalid data: NaN values are not allowed');
+        console.error('[TRPC Client] NaN detected in serialized data:', serialized);
+        throw new Error('Invalid data: NaN values are not allowed after serialization');
       }
       return serialized;
     },

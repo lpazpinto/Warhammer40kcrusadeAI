@@ -499,6 +499,7 @@ export const appRouter = router({
         })
       }))
       .query(async ({ input }) => {
+        console.log('[battle.get] Called with:', { id: input.id, type: typeof input.id, isNaN: isNaN(input.id) });
         const battle = await db.getBattleById(input.id);
         if (!battle) return null;
         
