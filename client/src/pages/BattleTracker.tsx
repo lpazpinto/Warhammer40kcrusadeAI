@@ -29,13 +29,13 @@ export default function BattleTracker() {
   });
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
-    { id: battleId! },
+    { id: battleId || 0 },
     { enabled: isValidBattleId }
   );
 
   // Query battle participants
   const { data: participants } = trpc.battleParticipant.list.useQuery(
-    { battleId: battleId! },
+    { battleId: battleId || 0 },
     { enabled: isValidBattleId }
   );
 
