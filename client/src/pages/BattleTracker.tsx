@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
-export default function BattleTracker() {
+function BattleTrackerInner() {
   const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
   const [showSummary, setShowSummary] = useState(false);
@@ -422,4 +422,17 @@ export default function BattleTracker() {
       />
     </div>
   );
+}
+
+// Wrapper component that prevents rendering if route doesn't match
+export default function BattleTracker() {
+  const [match] = useRoute("/battle/tracker/:id");
+  
+  // Don't render the component at all if route doesn't match
+  if (!match) {
+    console.log('[BattleTracker] Route does not match, not rendering');
+    return null;
+  }
+  
+  return <BattleTrackerInner />;
 }
