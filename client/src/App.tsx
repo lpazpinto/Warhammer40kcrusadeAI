@@ -10,8 +10,12 @@ import CampaignDetail from "./pages/CampaignDetail";
 import PlayerDetail from "./pages/PlayerDetail";
 import BattleSetup from "./pages/BattleSetup";
 import BattlePlay from "./pages/BattlePlay";
-import BattleTracker from "./pages/BattleTracker";
 import Notifications from "./pages/Notifications";
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+// Lazy load BattleTracker to prevent it from loading on other routes
+const BattleTracker = lazy(() => import("./pages/BattleTracker"));
 
 function Router() {
   return (
@@ -22,7 +26,17 @@ function Router() {
       <Route path="/player/:id" component={PlayerDetail} />
       <Route path="/battle/setup/:campaignId" component={BattleSetup} />
       <Route path="/battle/play/:battleId" component={BattlePlay} />
-      <Route path="/battle/tracker/:id" component={BattleTracker} />
+      <Route path="/battle/tracker/:id">
+        {(params) => (
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
+            <BattleTracker />
+          </Suspense>
+        )}
+      </Route>
       <Route path="/notifications" component={Notifications} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

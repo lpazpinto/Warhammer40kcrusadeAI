@@ -1,3 +1,5 @@
+console.log('[BattleTracker MODULE] File loaded at:', new Date().toISOString(), 'Path:', window.location.pathname);
+
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useRoute } from "wouter";
