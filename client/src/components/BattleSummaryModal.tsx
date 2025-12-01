@@ -9,7 +9,7 @@ interface BattleParticipantStats {
   unitsDeployed: number;
   unitsDestroyed: number;
   enemyUnitsKilled: number;
-  objectivesCaptured: number;
+  supplyPoints: number;
 }
 
 interface BattleSummaryModalProps {
@@ -50,7 +50,7 @@ export default function BattleSummaryModal({
   // Calculate total RP awarded (1 RP per battle + bonuses)
   const totalRP = participants.reduce((sum, p) => {
     let rp = 1; // Base RP
-    if (p.objectivesCaptured >= 3) rp += 1; // Bonus for objectives
+    if (p.supplyPoints >= 5) rp += 1; // Bonus for SP earned
     if (p.enemyUnitsKilled >= 5) rp += 1; // Bonus for kills
     return sum + rp;
   }, 0);
@@ -108,10 +108,10 @@ export default function BattleSummaryModal({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-green-500" />
+                      <Zap className="h-4 w-4 text-yellow-500" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Objetivos</p>
-                        <p className="font-bold">{participant.objectivesCaptured}</p>
+                        <p className="text-xs text-muted-foreground">Pontos de Suprimento</p>
+                        <p className="font-bold">{participant.supplyPoints} SP</p>
                       </div>
                     </div>
                   </div>

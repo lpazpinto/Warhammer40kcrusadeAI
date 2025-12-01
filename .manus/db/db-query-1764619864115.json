@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS purchasedCards (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  battleId INT NOT NULL,\n  participantId INT NOT NULL,\n  cardId INT NOT NULL,\n  battleRound INT NOT NULL,\n  used BOOLEAN DEFAULT FALSE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute CREATE TABLE IF NOT EXISTS purchasedCards (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  battleId INT NOT NULL,\n  participantId INT NOT NULL,\n  cardId INT NOT NULL,\n  battleRound INT NOT NULL,\n  used BOOLEAN DEFAULT FALSE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 208
+}

@@ -286,7 +286,7 @@ function BattleTrackerInner() {
         unitsDeployed: p.unitsDeployed?.length || 0,
         unitsDestroyed: p.unitsDestroyed?.length || 0,
         enemyUnitsKilled: p.enemyUnitsKilled || 0,
-        objectivesCaptured: p.objectivesControlled || 0,
+        supplyPoints: p.supplyPoints || 0,
       };
     });
   }, [participants, players]);

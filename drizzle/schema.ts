@@ -122,7 +122,9 @@ export const battles = mysqlTable("battles", {
   missionPack: varchar("missionPack", { length: 100 }), // e.g., "Leviathan"
   battleRound: int("battleRound").default(1).notNull(), // Current round (1-5 or more)
   currentPhase: varchar("currentPhase", { length: 50 }).default("command"), // Current battle phase
+  currentPhaseStep: varchar("currentPhaseStep", { length: 100 }).default("start"), // Current sub-step within phase
   playerTurn: mysqlEnum("playerTurn", ["player", "opponent"]).default("player"), // Whose turn it is
+  objectivesControlled: int("objectivesControlled").default(0).notNull(), // Number of objectives currently controlled
   status: mysqlEnum("status", ["setup", "in_progress", "completed"]).default("setup").notNull(),
   victors: text("victors"), // JSON string of player IDs who won
   miseryCards: text("miseryCards"), // JSON string of active misery cards
@@ -145,8 +147,9 @@ export const battleParticipants = mysqlTable("battleParticipants", {
   unitsDeployed: text("unitsDeployed").notNull(), // JSON string of crusadeUnit IDs
   unitsDestroyed: text("unitsDestroyed"), // JSON string of units lost in battle
   enemyUnitsKilled: int("enemyUnitsKilled").default(0).notNull(),
-  objectivesControlled: int("objectivesControlled").default(0).notNull(),
-  supplyPointsGained: int("supplyPointsGained").default(0).notNull(),
+  supplyPoints: int("supplyPoints").default(0).notNull(), // Current SP balance for this battle
+  supplyPointsGained: int("supplyPointsGained").default(0).notNull(), // Total SP gained in battle
+  supplyPointsSpent: int("supplyPointsSpent").default(0).notNull(), // Total SP spent in battle
   survived: boolean("survived").default(true).notNull(),
   completedObjective: boolean("completedObjective").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -190,3 +193,38 @@ export const battleEvents = mysqlTable("battleEvents", {
 
 export type BattleEvent = typeof battleEvents.$inferSelect;
 export type InsertBattleEvent = typeof battleEvents.$inferInsert;
+
+/**
+ * Resupply Cards table - defines all available resupply cards
+ */
+export const resupplyCards = mysqlTable("resupplyCards", {
+  id: int("id").autoincrement().primaryKey(),
+  nameEn: varchar("nameEn", { length: 255 }).notNull(), // English name
+  namePt: varchar("namePt", { length: 255 }).notNull(), // Portuguese name
+  cost: int("cost").notNull(), // SP cost
+  descriptionEn: text("descriptionEn").notNull(), // English description
+  descriptionPt: text("descriptionPt").notNull(), // Portuguese description
+  tags: varchar("tags", { length: 255 }), // Comma-separated tags (e.g., "Strike", "Supply", "Fortify")
+  maxPerPlayer: int("maxPerPlayer"), // Maximum purchases per player (null = unlimited)
+  maxPerTurn: int("maxPerTurn"), // Maximum uses per turn per player (null = unlimited)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ResupplyCard = typeof resupplyCards.$inferSelect;
+export type InsertResupplyCard = typeof resupplyCards.$inferInsert;
+
+/**
+ * Purchased Cards table - tracks which cards players have purchased in battles
+ */
+export const purchasedCards = mysqlTable("purchasedCards", {
+  id: int("id").autoincrement().primaryKey(),
+  battleId: int("battleId").notNull(),
+  participantId: int("participantId").notNull(), // battleParticipants.id
+  cardId: int("cardId").notNull(), // resupplyCards.id
+  battleRound: int("battleRound").notNull(), // Round when purchased
+  used: boolean("used").default(false).notNull(), // Whether card has been used
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PurchasedCard = typeof purchasedCards.$inferSelect;
+export type InsertPurchasedCard = typeof purchasedCards.$inferInsert;

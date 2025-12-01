@@ -20,7 +20,13 @@ import {
   InsertBattleParticipant,
   campaignInvitations,
   CampaignInvitation,
-  InsertCampaignInvitation
+  InsertCampaignInvitation,
+  resupplyCards,
+  ResupplyCard,
+  InsertResupplyCard,
+  purchasedCards,
+  PurchasedCard,
+  InsertPurchasedCard
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -601,4 +607,134 @@ export async function distributeXPToUnit(params: {
   });
   
   return { promoted, oldRank, newRank };
+}
+
+// ==================== Resupply Cards ====================
+
+export async function getAllResupplyCards() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get resupply cards: database not available");
+    return [];
+  }
+
+  const cards = await db.select().from(resupplyCards);
+  return cards;
+}
+
+export async function getResupplyCardById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get resupply card: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(resupplyCards).where(eq(resupplyCards.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getPurchasedCards(battleId: number, participantId?: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get purchased cards: database not available");
+    return [];
+  }
+
+  if (participantId) {
+    return await db.select().from(purchasedCards)
+      .where(and(
+        eq(purchasedCards.battleId, battleId),
+        eq(purchasedCards.participantId, participantId)
+      ));
+  }
+
+  return await db.select().from(purchasedCards)
+    .where(eq(purchasedCards.battleId, battleId));
+}
+
+export async function purchaseCard(data: {
+  battleId: number;
+  participantId: number;
+  cardId: number;
+  battleRound: number;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Insert the purchased card
+  const result: any = await db.insert(purchasedCards).values({
+    battleId: data.battleId,
+    participantId: data.participantId,
+    cardId: data.cardId,
+    battleRound: data.battleRound,
+    used: false,
+  });
+
+  // Extract insertId from result
+  let rawInsertId: any;
+  if (typeof result === 'object' && result !== null) {
+    rawInsertId = result.insertId || (result as any)[0]?.insertId;
+  }
+
+  const insertId = Number(rawInsertId);
+  if (!insertId || isNaN(insertId)) {
+    console.error("[purchaseCard] Failed to extract insertId:", { result, rawInsertId, insertId });
+    throw new Error("Failed to get insertId from purchaseCard");
+  }
+
+  console.log("[purchaseCard] Success! Card purchased with ID:", insertId);
+
+  const [newCard] = await db.select().from(purchasedCards).where(eq(purchasedCards.id, insertId));
+  return newCard;
+}
+
+export async function updateSupplyPoints(participantId: number, delta: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get current participant
+  const [participant] = await db.select().from(battleParticipants).where(eq(battleParticipants.id, participantId)).limit(1);
+  if (!participant) {
+    throw new Error("Participant not found");
+  }
+
+  const newSP = Math.max(0, participant.supplyPoints + delta);
+  const newGained = delta > 0 ? participant.supplyPointsGained + delta : participant.supplyPointsGained;
+  const newSpent = delta < 0 ? participant.supplyPointsSpent + Math.abs(delta) : participant.supplyPointsSpent;
+
+  await db.update(battleParticipants)
+    .set({
+      supplyPoints: newSP,
+      supplyPointsGained: newGained,
+      supplyPointsSpent: newSpent,
+    })
+    .where(eq(battleParticipants.id, participantId));
+
+  return newSP;
+}
+
+export async function updatePhaseStep(battleId: number, phaseStep: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.update(battles)
+    .set({ currentPhaseStep: phaseStep })
+    .where(eq(battles.id, battleId));
+}
+
+export async function updateObjectivesControlled(battleId: number, count: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.update(battles)
+    .set({ objectivesControlled: count })
+    .where(eq(battles.id, battleId));
 }

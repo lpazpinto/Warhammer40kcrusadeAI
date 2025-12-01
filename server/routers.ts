@@ -577,6 +577,86 @@ export const appRouter = router({
         return { success: true, message: 'Event recorded (logging only for now)' };
       }),
 
+    // Update phase step
+    updatePhaseStep: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        phaseStep: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updatePhaseStep(input.battleId, input.phaseStep);
+        return { success: true };
+      }),
+
+    // Update objectives controlled
+    updateObjectives: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        count: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateObjectivesControlled(input.battleId, input.count);
+        return { success: true };
+      }),
+
+    // Get all resupply cards
+    getResupplyCards: publicProcedure
+      .query(async () => {
+        return await db.getAllResupplyCards();
+      }),
+
+    // Get purchased cards for a battle
+    getPurchasedCards: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        participantId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getPurchasedCards(input.battleId, input.participantId);
+      }),
+
+    // Purchase a resupply card
+    purchaseCard: protectedProcedure
+      .input(z.object({
+        battleId: z.number(),
+        participantId: z.number(),
+        cardId: z.number(),
+        battleRound: z.number(),
+        cost: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        // Deduct SP from participant
+        const newSP = await db.updateSupplyPoints(input.participantId, -input.cost);
+        
+        // Record the purchase
+        const purchasedCard = await db.purchaseCard({
+          battleId: input.battleId,
+          participantId: input.participantId,
+          cardId: input.cardId,
+          battleRound: input.battleRound,
+        });
+        
+        return {
+          success: true,
+          purchasedCard,
+          remainingSP: newSP,
+        };
+      }),
+
+    // Award SP to participant
+    awardSupplyPoints: protectedProcedure
+      .input(z.object({
+        participantId: z.number(),
+        amount: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const newSP = await db.updateSupplyPoints(input.participantId, input.amount);
+        return {
+          success: true,
+          newTotal: newSP,
+        };
+      }),
+
     // Distribute XP after battle
     distributeXP: protectedProcedure
       .input(z.object({

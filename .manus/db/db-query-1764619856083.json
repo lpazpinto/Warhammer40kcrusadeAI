@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS resupplyCards (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  nameEn VARCHAR(255) NOT NULL,\n  namePt VARCHAR(255) NOT NULL,\n  cost INT NOT NULL,\n  descriptionEn TEXT NOT NULL,\n  descriptionPt TEXT NOT NULL,\n  tags VARCHAR(255),\n  maxPerPlayer INT,\n  maxPerTurn INT,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute CREATE TABLE IF NOT EXISTS resupplyCards (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  nameEn VARCHAR(255) NOT NULL,\n  namePt VARCHAR(255) NOT NULL,\n  cost INT NOT NULL,\n  descriptionEn TEXT NOT NULL,\n  descriptionPt TEXT NOT NULL,\n  tags VARCHAR(255),\n  maxPerPlayer INT,\n  maxPerTurn INT,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 180
+}

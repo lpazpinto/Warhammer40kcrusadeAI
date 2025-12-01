@@ -568,3 +568,57 @@
 - [x] Analyzed logs - BattleTracker not mounting on /battle/setup
 - [x] Discovered query executed despite enabled:false
 - [x] Implemented Zod validation to reject NaN at input level
+
+
+## Implement Detailed Command Phase with Sub-Steps and Resupply Cards
+- [ ] Design database schema for phase steps tracking
+- [ ] Add supplyPoints field to battleParticipants table
+- [ ] Create resupplyCards table with card definitions
+- [ ] Create purchasedCards table to track player purchases
+- [ ] Translate all 25 Resupply Cards from English to Portuguese
+- [ ] Create resupply cards data file with all card details (name, cost, effect, tags)
+- [ ] Implement backend endpoints for SP management:
+  - [ ] Add SP to participant (objectives, horde kills, secondary missions)
+  - [ ] Get participant SP balance
+  - [ ] Purchase resupply card (validate SP, deduct cost, record purchase)
+  - [ ] List available resupply cards
+  - [ ] List purchased cards for participant
+- [ ] Implement phase step navigation system in BattleTracker:
+  - [ ] Add currentPhaseStep field to battles table
+  - [ ] Create phase step definitions (Command: Start/Battle-shock/Resupply)
+  - [ ] Add "Próximo Passo" button to advance through sub-steps
+  - [ ] Display current step instructions to players
+- [ ] Create Battle-shock test UI:
+  - [ ] List units Below Half-strength
+  - [ ] Roll 2D6 vs Leadership for each unit
+  - [ ] Mark units as Battle-shocked if failed
+  - [ ] Track Battle-shocked status until next Command phase
+- [ ] Create Resupply Card selection UI:
+  - [ ] Display all available cards in grid/list
+  - [ ] Show card cost, effect, and tags
+  - [ ] Show player's current SP balance
+  - [ ] Allow purchasing cards (deduct SP, add to player's purchases)
+  - [ ] Show purchased cards history
+  - [ ] Validate maximum uses per turn restrictions
+- [ ] Implement SP gain logic:
+  - [ ] 1 SP per objective marker controlled (during Resupply step)
+  - [ ] 1 SP when destroying Horde unit (immediate)
+  - [ ] SP from successful Secondary Missions
+  - [ ] Double SP gains in solo play
+- [ ] Test complete Command Phase flow with all sub-steps
+- [ ] Commit to GitHub
+
+
+
+## Implement Detailed Command Phase with Resupply Cards
+- [x] Add database schema for phase steps and SP tracking
+- [x] Create resupply cards table and purchased cards table
+- [x] Translate all 25 resupply cards to Portuguese
+- [x] Create backend endpoints for SP management
+- [x] Seed database with resupply cards
+- [ ] Implement phase step navigation in BattleTracker
+- [ ] Create Command Phase sub-steps UI (Start, Battle-shock, Resupply)
+- [ ] Build resupply card selection modal
+- [ ] Implement SP calculation and distribution
+- [ ] Add objective control tracking UI
+- [ ] Test complete Command Phase flow
