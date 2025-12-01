@@ -6,9 +6,9 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ## 📋 Status do Projeto
 
-**Última Atualização:** 27 de Novembro de 2025  
+**Última Atualização:** 01 de Dezembro de 2025  
 **Status:** 🚧 Em desenvolvimento ativo  
-**Versão Atual:** 1.2.0 Beta
+**Versão Atual:** 1.3.0 Beta
 
 ---
 
@@ -78,6 +78,31 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 - **Persistência de estado**: Salva automaticamente fase atual e turno no banco
 - **Histórico de fases**: Log completo de todas as mudanças de fase
 - **Restauração de batalhas**: Continue batalhas pausadas exatamente de onde parou
+
+### ✅ Sistema de Fase de Comando Detalhada
+- **3 Sub-Passos Guiados**: Início da Fase → Choque de Batalha → Reabastecimento
+- **Instruções em Português**: Cada passo explica as regras do Warhammer 40k 10th
+- **Navegação Controlada**: Só avança para próximo passo quando jogador confirmar
+- **Battle-shock Tests**: Lembretes para testar unidades abaixo de metade da força
+- **Integração com Objetivos**: Sistema de tracking de objetivos controlados
+
+### ✅ Sistema de Cartas de Reabastecimento (Supply Points)
+- **25 Cartas Traduzidas**: Todas as cartas oficiais em português brasileiro
+- **Supply Points (SP)**: Sistema completo de ganho e gasto de pontos
+  - 1 SP por objetivo controlado
+  - 1 SP por unidade Horda destruída
+  - SP de Missões Secundárias
+  - Dobro de SP em modo solo
+- **Loja de Reabastecimento**: Interface para comprar cartas durante Fase de Comando
+- **Validações Robustas**: Impede compras com SP insuficiente
+- **Tracking por Jogador**: Cada jogador gerencia seus próprios SP
+- **Histórico de Compras**: Registro de todas as cartas compradas por rodada
+- **Categorias de Cartas**:
+  - Táticas (Basic/Advanced Tactics, Emergency Evac)
+  - Suprimentos (Ammo, Supply Drop, Share Supplies)
+  - Fortificações (Deploy Fortification, Jamming Station, Shield Generator)
+  - Reforços (Reinforcements, Field Promotion, Patched Up)
+  - Ataques (Artillery Strike, Air Strike, Minefield, Razor Wire)
 
 ### ✅ Unit Tracker Panel
 - **Rastreamento em tempo real**: Visualização de todas as unidades durante a batalha
@@ -208,6 +233,7 @@ Cada dia, uma tarefa pequena e bem definida:
 │   ├── missions.ts         # 16 missões oficiais traduzidas
 │   ├── requisitions.ts     # Sistema de requisições
 │   ├── battleTraits.ts     # Battle traits (13 padrão + por facção)
+│   ├── resupplyCards.ts    # 25 cartas de reabastecimento traduzidas
 │   └── types.ts            # Tipos compartilhados
 ├── drizzle/
 │   └── schema.ts           # Schema do banco de dados
@@ -228,8 +254,10 @@ Cada dia, uma tarefa pequena e bem definida:
 - **battleHonours** - Honras de batalha
 - **battleScars** - Cicatrizes de batalha
 - **battles** - Registro de batalhas com estado persistente
-- **battleParticipants** - Participantes e unidades deployadas
+- **battleParticipants** - Participantes e unidades deployadas (com SP tracking)
 - **battleEvents** - Eventos durante batalhas (em desenvolvimento)
+- **resupplyCards** - Definições de 25 cartas de reabastecimento
+- **purchasedCards** - Histórico de compras de cartas por batalha
 
 ---
 
@@ -352,11 +380,12 @@ Adepta Sororitas, Adeptus Custodes, Adeptus Mechanicus, Aeldari, Astra Militarum
 
 ## 📊 Estatísticas do Projeto
 
-- **Linhas de Código:** ~18,000+
-- **Commits:** 70+
-- **Arquivos:** 120+
-- **Tempo de Desenvolvimento:** 3.5 meses
+- **Linhas de Código:** ~20,000+
+- **Commits:** 80+
+- **Arquivos:** 130+
+- **Tempo de Desenvolvimento:** 4 meses
 - **Status:** Em desenvolvimento ativo
+- **Testes:** 15 testes unitários (backend)
 
 ---
 
