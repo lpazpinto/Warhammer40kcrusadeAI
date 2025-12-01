@@ -190,7 +190,10 @@ function BattleTrackerInner() {
 
   const spawnHordeMutation = trpc.horde.spawn.useMutation({
     onSuccess: (data: any) => {
-      toast.success(`Horda spawned! Roll: ${data.roll} | ${data.units.length} unidades (${data.totalPower} pontos)`);
+      const unitCount = data?.units?.length || 0;
+      const totalPower = data?.totalPower || 0;
+      const roll = data?.roll || 0;
+      toast.success(`Horda spawned! Roll: ${roll} | ${unitCount} unidades (${totalPower} pontos)`);
       setIsSpawningHorde(false);
       // TODO: Add spawned units to battle participants
     },
