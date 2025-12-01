@@ -30,6 +30,23 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 };
 
 queryClient.getQueryCache().subscribe(event => {
+  // Intercept battle.get queries with invalid IDs BEFORE they execute
+  if (event.type === "added" || event.type === "updated") {
+    const queryKey = event.query.queryKey as any[];
+    // Check if this is a battle.get query
+    if (queryKey && queryKey[0]?.[0] === 'battle' && queryKey[0]?.[1] === 'get') {
+      const input = queryKey[0]?.[2]?.input;
+      if (input && typeof input === 'object' && 'id' in input) {
+        const id = input.id;
+        if (typeof id === 'number' && (isNaN(id) || id <= 0)) {
+          console.error('[QueryCache] Cancelling battle.get query with invalid ID:', id);
+          event.query.cancel();
+          return;
+        }
+      }
+    }
+  }
+  
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
     redirectToLoginIfUnauthorized(error);
