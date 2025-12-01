@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import BattlePhaseTracker from "@/components/BattlePhaseTracker";
+import CommandPhaseSteps from "@/components/CommandPhaseSteps";
+import ResupplyShop from "@/components/ResupplyShop";
 import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +39,9 @@ function BattleTrackerInner() {
   const battleId = params?.id ? parseInt(params.id) : undefined;
   const [showSummary, setShowSummary] = useState(false);
   const [isDistributingXP, setIsDistributingXP] = useState(false);
+  const [showCommandSteps, setShowCommandSteps] = useState(false);
+  const [showResupplyShop, setShowResupplyShop] = useState(false);
+  const [selectedParticipantForShop, setSelectedParticipantForShop] = useState<number | null>(null);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
@@ -341,7 +346,7 @@ function BattleTrackerInner() {
 
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Phase Tracker */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
             <BattlePhaseTracker
               battleId={battleId}
               initialPhase={battle?.currentPhase || "command"}
@@ -351,6 +356,36 @@ function BattleTrackerInner() {
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
             />
+            
+            {/* Command Phase Detailed Steps */}
+            {battle?.currentPhase === "command" && showCommandSteps && (
+              <CommandPhaseSteps
+                battleId={battleId}
+                onComplete={() => {
+                  setShowCommandSteps(false);
+                  toast.success("Fase de Comando concluída!");
+                }}
+                onOpenResupply={() => {
+                  // Open resupply shop for first participant (player)
+                  const playerParticipant = participants?.[0];
+                  if (playerParticipant) {
+                    setSelectedParticipantForShop(playerParticipant.id);
+                    setShowResupplyShop(true);
+                  }
+                }}
+              />
+            )}
+            
+            {/* Button to show Command Phase steps */}
+            {battle?.currentPhase === "command" && !showCommandSteps && (
+              <Button
+                onClick={() => setShowCommandSteps(true)}
+                variant="outline"
+                className="w-full"
+              >
+                Mostrar Passos Detalhados da Fase de Comando
+              </Button>
+            )}
           </div>
 
           {/* Unit Tracker */}
@@ -445,6 +480,21 @@ function BattleTrackerInner() {
         onReturnToCampaign={handleReturnToCampaign}
         isDistributingXP={isDistributingXP}
       />
+      
+      {/* Resupply Shop Modal */}
+      {selectedParticipantForShop && (
+        <ResupplyShop
+          open={showResupplyShop}
+          onOpenChange={setShowResupplyShop}
+          battleId={battleId}
+          participantId={selectedParticipantForShop}
+          playerName={players?.find(p => 
+            participants?.find(part => part.id === selectedParticipantForShop)?.playerId === p.id
+          )?.name || "Jogador"}
+          currentSP={participants?.find(p => p.id === selectedParticipantForShop)?.supplyPoints || 0}
+          battleRound={battle?.battleRound || 1}
+        />
+      )}
     </div>
   );
 }

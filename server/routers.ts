@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { parseArmyList, estimatePowerRating } from "./armyParser";
@@ -625,6 +626,24 @@ export const appRouter = router({
         cost: z.number(),
       }))
       .mutation(async ({ input }) => {
+        // Check if participant has enough SP
+        const participants = await db.getBattleParticipantsByBattleId(input.battleId);
+        const participant = participants.find(p => p.id === input.participantId);
+        
+        if (!participant) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Participant not found',
+          });
+        }
+        
+        if (participant.supplyPoints < input.cost) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Insufficient supply points. Have: ${participant.supplyPoints}, Need: ${input.cost}`,
+          });
+        }
+        
         // Deduct SP from participant
         const newSP = await db.updateSupplyPoints(input.participantId, -input.cost);
         
@@ -647,7 +666,7 @@ export const appRouter = router({
     awardSupplyPoints: protectedProcedure
       .input(z.object({
         participantId: z.number(),
-        amount: z.number(),
+        amount: z.number().min(0, "Amount must be non-negative"),
       }))
       .mutation(async ({ input }) => {
         const newSP = await db.updateSupplyPoints(input.participantId, input.amount);
