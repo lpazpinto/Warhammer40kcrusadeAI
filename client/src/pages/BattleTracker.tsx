@@ -1,6 +1,17 @@
 console.log('[BattleTracker MODULE] File loaded at:', new Date().toISOString(), 'Path:', window.location.pathname);
 
 import { useState, useMemo } from "react";
+
+// Safe JSON parse helper
+function safeJSONParse<T>(value: string | null | undefined, fallback: T): T {
+  if (!value || value.trim() === '') return fallback;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    console.warn('[BattleTracker] Failed to parse JSON:', value, error);
+    return fallback;
+  }
+}
 import { toast } from "sonner";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -96,9 +107,9 @@ function BattleTrackerInner() {
           battlesPlayed: unit?.battlesPlayed || 0,
           battlesSurvived: unit?.battlesSurvived || 0,
           enemyUnitsDestroyed: unit?.enemyUnitsDestroyed || 0,
-          battleHonours: unit?.battleHonours ? JSON.parse(unit.battleHonours as any) : [],
-          battleTraits: unit?.battleTraits ? JSON.parse(unit.battleTraits as any) : [],
-          battleScars: unit?.battleScars ? JSON.parse(unit.battleScars as any) : [],
+          battleHonours: safeJSONParse(unit?.battleHonours as any, []),
+          battleTraits: safeJSONParse(unit?.battleTraits as any, []),
+          battleScars: safeJSONParse(unit?.battleScars as any, []),
         });
       });
     });
