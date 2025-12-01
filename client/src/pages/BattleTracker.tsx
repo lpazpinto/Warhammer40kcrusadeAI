@@ -3,8 +3,17 @@ console.log('[BattleTracker MODULE] File loaded at:', new Date().toISOString(), 
 import { useState, useMemo } from "react";
 
 // Safe JSON parse helper
-function safeJSONParse<T>(value: string | null | undefined, fallback: T): T {
-  if (!value || value.trim() === '') return fallback;
+function safeJSONParse<T>(value: any, fallback: T): T {
+  // If value is already an object/array (parsed by superjson), return it
+  if (value && typeof value === 'object') return value as T;
+  
+  // If value is not a string, return fallback
+  if (typeof value !== 'string') return fallback;
+  
+  // If empty string, return fallback
+  if (value.trim() === '') return fallback;
+  
+  // Try to parse JSON string
   try {
     return JSON.parse(value);
   } catch (error) {
