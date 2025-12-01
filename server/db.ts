@@ -356,7 +356,32 @@ export async function createBattle(battle: InsertBattle): Promise<Battle> {
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(battles).values(battle);
-  const [newBattle] = await db.select().from(battles).where(eq(battles.id, Number(result.insertId)));
+  console.log('[createBattle] Insert result:', result);
+  
+  // Handle different insertId formats from different database drivers
+  const insertId = result.insertId || result[0]?.insertId || result.insertedId;
+  console.log('[createBattle] Extracted insertId:', insertId, 'type:', typeof insertId);
+  
+  if (!insertId) {
+    console.error('[createBattle] No insertId found in result:', result);
+    throw new Error('Failed to get battle ID after insert');
+  }
+  
+  const battleId = Number(insertId);
+  if (isNaN(battleId) || battleId <= 0) {
+    console.error('[createBattle] Invalid battleId:', battleId, 'from insertId:', insertId);
+    throw new Error(`Invalid battle ID generated: ${battleId}`);
+  }
+  
+  console.log('[createBattle] Fetching battle with ID:', battleId);
+  const [newBattle] = await db.select().from(battles).where(eq(battles.id, battleId));
+  
+  if (!newBattle) {
+    console.error('[createBattle] Battle not found after insert with ID:', battleId);
+    throw new Error(`Battle not found after creation with ID: ${battleId}`);
+  }
+  
+  console.log('[createBattle] Success! Battle created with ID:', newBattle.id);
   return newBattle;
 }
 
@@ -388,7 +413,27 @@ export async function createBattleParticipant(participant: InsertBattleParticipa
   if (!db) throw new Error("Database not available");
 
   const result: any = await db.insert(battleParticipants).values(participant);
-  const [newParticipant] = await db.select().from(battleParticipants).where(eq(battleParticipants.id, Number(result.insertId)));
+  console.log('[createBattleParticipant] Insert result:', result);
+  
+  const insertId = result.insertId || result[0]?.insertId || result.insertedId;
+  console.log('[createBattleParticipant] Extracted insertId:', insertId);
+  
+  if (!insertId) {
+    throw new Error('Failed to get participant ID after insert');
+  }
+  
+  const participantId = Number(insertId);
+  if (isNaN(participantId) || participantId <= 0) {
+    throw new Error(`Invalid participant ID generated: ${participantId}`);
+  }
+  
+  const [newParticipant] = await db.select().from(battleParticipants).where(eq(battleParticipants.id, participantId));
+  
+  if (!newParticipant) {
+    throw new Error(`Participant not found after creation with ID: ${participantId}`);
+  }
+  
+  console.log('[createBattleParticipant] Success! Participant created with ID:', newParticipant.id);
   return newParticipant;
 }
 
