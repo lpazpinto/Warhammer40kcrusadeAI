@@ -42,6 +42,7 @@ function BattleTrackerInner() {
   const [showCommandSteps, setShowCommandSteps] = useState(false);
   const [showResupplyShop, setShowResupplyShop] = useState(false);
   const [selectedParticipantForShop, setSelectedParticipantForShop] = useState<number | null>(null);
+  const [commandPhaseCompleted, setCommandPhaseCompleted] = useState(false);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
@@ -145,6 +146,16 @@ function BattleTrackerInner() {
 
   const utils = trpc.useUtils();
 
+  // Award SP mutation
+  const awardSPMutation = trpc.battle.awardSupplyPoints.useMutation({
+    onSuccess: () => {
+      utils.battleParticipant.list.invalidate({ battleId: battleId! });
+    },
+    onError: (error) => {
+      toast.error(`Failed to award SP: ${error.message}`);
+    },
+  });
+
   const handleMarkDestroyed = (unitId: number, participantId: number) => {
     const participant = participants?.find(p => p.id === participantId);
     if (!participant) return;
@@ -224,6 +235,11 @@ function BattleTrackerInner() {
 
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
+    
+    // Reset command phase completion when entering command phase again
+    if (phase === "command") {
+      setCommandPhaseCompleted(false);
+    }
     
     // Auto-save to database
     if (battleId) {
@@ -355,15 +371,19 @@ function BattleTrackerInner() {
               onPhaseChange={handlePhaseChange}
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
+              canAdvancePhase={battle?.currentPhase !== "command" || commandPhaseCompleted}
             />
             
             {/* Command Phase Detailed Steps */}
             {battle?.currentPhase === "command" && showCommandSteps && (
               <CommandPhaseSteps
                 battleId={battleId}
+                playerCount={participants?.length || 1}
+                isSoloMode={participants?.length === 1}
                 onComplete={() => {
                   setShowCommandSteps(false);
-                  toast.success("Fase de Comando concluída!");
+                  setCommandPhaseCompleted(true);
+                  toast.success("Fase de Comando concluída! Agora você pode avançar para a próxima fase.");
                 }}
                 onOpenResupply={() => {
                   // Open resupply shop for first participant (player)
@@ -373,18 +393,38 @@ function BattleTrackerInner() {
                     setShowResupplyShop(true);
                   }
                 }}
+                onDistributeSP={(objectivesCount) => {
+                  // Calculate SP per player
+                  const isSolo = participants?.length === 1;
+                  const spPerPlayer = isSolo ? objectivesCount * 2 : objectivesCount;
+                  
+                  // Award SP to all participants
+                  participants?.forEach(participant => {
+                    awardSPMutation.mutate({
+                      participantId: participant.id,
+                      amount: spPerPlayer,
+                    });
+                  });
+                }}
               />
             )}
             
             {/* Button to show Command Phase steps */}
             {battle?.currentPhase === "command" && !showCommandSteps && (
-              <Button
-                onClick={() => setShowCommandSteps(true)}
-                variant="outline"
-                className="w-full"
-              >
-                Mostrar Passos Detalhados da Fase de Comando
-              </Button>
+              <div className="space-y-3">
+                {!commandPhaseCompleted && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    ⚠️ <strong>Fase de Comando Incompleta:</strong> Você precisa completar todos os passos da Fase de Comando antes de avançar para a próxima fase.
+                  </div>
+                )}
+                <Button
+                  onClick={() => setShowCommandSteps(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Mostrar Passos Detalhados da Fase de Comando
+                </Button>
+              </div>
             )}
           </div>
 

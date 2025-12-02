@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight, CheckCircle2, Circle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ObjectivesInputModal from "@/components/ObjectivesInputModal";
+import { toast } from "sonner";
 
 const COMMAND_PHASE_STEPS = [
   {
@@ -44,20 +46,34 @@ interface CommandPhaseStepsProps {
   battleId: number;
   onComplete: () => void;
   onOpenResupply: () => void;
+  playerCount: number;
+  isSoloMode: boolean;
+  onDistributeSP: (objectivesCount: number) => void;
 }
 
 export default function CommandPhaseSteps({ 
   battleId, 
   onComplete,
-  onOpenResupply 
+  onOpenResupply,
+  playerCount,
+  isSoloMode,
+  onDistributeSP
 }: CommandPhaseStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [showObjectivesModal, setShowObjectivesModal] = useState(false);
+  const [spDistributed, setSpDistributed] = useState(false);
 
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
   const handleNextStep = () => {
+    // If on resupply step and SP not distributed yet, show modal first
+    if (step.id === "resupply" && !spDistributed) {
+      setShowObjectivesModal(true);
+      return;
+    }
+
     // Mark current step as completed
     setCompletedSteps(prev => new Set([...Array.from(prev), currentStep]));
 
@@ -70,12 +86,19 @@ export default function CommandPhaseSteps({
     }
   };
 
+  const handleDistributeSP = (objectivesCount: number) => {
+    onDistributeSP(objectivesCount);
+    setSpDistributed(true);
+    toast.success(`SP distribuídos! Cada jogador recebeu ${isSoloMode ? objectivesCount * 2 : objectivesCount} SP de objetivos.`);
+  };
+
   const handleStepClick = (index: number) => {
     // Allow jumping to any step
     setCurrentStep(index);
   };
 
   return (
+    <>
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
@@ -133,16 +156,26 @@ export default function CommandPhaseSteps({
             </AlertDescription>
           </Alert>
 
-          {/* Resupply Button (only on step 3) */}
+          {/* Resupply Actions (only on step 3) */}
           {step.id === "resupply" && (
-            <Button
-              variant="default"
-              size="lg"
-              onClick={onOpenResupply}
-              className="w-full"
-            >
-              Abrir Loja de Reabastecimento
-            </Button>
+            <div className="space-y-3">
+              {!spDistributed && (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertDescription className="text-yellow-800">
+                    ⚠️ Você precisa distribuir SP de objetivos antes de abrir a Loja de Reabastecimento.
+                  </AlertDescription>
+                </Alert>
+              )}
+              <Button
+                variant="default"
+                size="lg"
+                onClick={onOpenResupply}
+                className="w-full"
+                disabled={!spDistributed}
+              >
+                Abrir Loja de Reabastecimento
+              </Button>
+            </div>
           )}
         </div>
 
@@ -166,5 +199,14 @@ export default function CommandPhaseSteps({
         </div>
       </CardContent>
     </Card>
-  );
+
+    {/* Objectives Input Modal */}
+    <ObjectivesInputModal
+      open={showObjectivesModal}
+      onClose={() => setShowObjectivesModal(false)}
+      onConfirm={handleDistributeSP}
+      playerCount={playerCount}
+      isSoloMode={isSoloMode}
+    />
+  </>);
 }

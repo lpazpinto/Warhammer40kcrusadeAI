@@ -21,6 +21,7 @@ interface BattlePhaseTrackerProps {
   onPhaseChange?: (phase: string, round: number, playerTurn: "player" | "opponent") => void;
   onSpawnHorde?: () => void;
   isSpawningHorde?: boolean;
+  canAdvancePhase?: boolean; // Block phase advancement when in sub-steps
 }
 
 export default function BattlePhaseTracker({ 
@@ -30,7 +31,8 @@ export default function BattlePhaseTracker({
   initialPlayerTurn = "player",
   onPhaseChange,
   onSpawnHorde,
-  isSpawningHorde = false
+  isSpawningHorde = false,
+  canAdvancePhase = true
 }: BattlePhaseTrackerProps) {
   // Find initial phase index
   const initialPhaseIndex = BATTLE_PHASES.findIndex(p => p.id === initialPhase);
@@ -179,6 +181,7 @@ export default function BattlePhaseTracker({
           <Button
             onClick={handleNextPhase}
             className="flex-1 gap-2"
+            disabled={!canAdvancePhase}
           >
             Próxima Fase
             <ChevronRight className="h-4 w-4" />

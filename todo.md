@@ -622,3 +622,12 @@
 - [ ] Implement SP calculation and distribution
 - [ ] Add objective control tracking UI
 - [ ] Test complete Command Phase flow
+
+
+## Command Phase Improvements
+- [ ] Block "Próxima Fase" button when in Command Phase sub-steps
+- [ ] Create objectives input modal for Step 3 (Reabastecimento)
+- [ ] Implement automatic SP distribution for all players
+- [ ] Follow all SP rules: objectives, Horde kills, Secondary Missions, solo mode doubling
+- [ ] Show SP distribution summary after calculation
+- [ ] Only allow Resupply Shop after SP distribution is complete
