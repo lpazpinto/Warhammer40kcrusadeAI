@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,14 @@ export default function CommandPhaseSteps({
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [showObjectivesModal, setShowObjectivesModal] = useState(false);
   const [spDistributed, setSpDistributed] = useState(false);
+
+  // Auto-open objectives modal when entering Step 3 (Reabastecimento)
+  React.useEffect(() => {
+    if (currentStep === 2 && !spDistributed) {
+      // Step 3 is index 2 (0-indexed)
+      setShowObjectivesModal(true);
+    }
+  }, [currentStep, spDistributed]);
 
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;

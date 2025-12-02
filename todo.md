@@ -122,6 +122,7 @@
 - [x] Fix NaN error on campaign creation - campaign is created but frontend receives NaN (works after refresh)
 - [x] Fix NaN error on player creation - same issue as campaign creation
 - [x] Fix import army dialog - button not visible when text is too long (needs scroll)
+- [x] Fix objectives modal not appearing when clicking "Próximo Passo" in Command Phase Step 3 - modal now auto-opens when entering Step 3
 
 
 
