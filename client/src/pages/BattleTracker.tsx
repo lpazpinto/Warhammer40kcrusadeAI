@@ -26,6 +26,7 @@ import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import BattlePhaseTracker from "@/components/BattlePhaseTracker";
 import CommandPhaseSteps from "@/components/CommandPhaseSteps";
+import MovementPhaseSteps from "@/components/MovementPhaseSteps";
 import ResupplyShop from "@/components/ResupplyShop";
 import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
@@ -43,6 +44,8 @@ function BattleTrackerInner() {
   const [showResupplyShop, setShowResupplyShop] = useState(false);
   const [selectedParticipantForShop, setSelectedParticipantForShop] = useState<number | null>(null);
   const [commandPhaseCompleted, setCommandPhaseCompleted] = useState(false);
+  const [showMovementSteps, setShowMovementSteps] = useState(false);
+  const [movementPhaseCompleted, setMovementPhaseCompleted] = useState(false);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
@@ -236,9 +239,12 @@ function BattleTrackerInner() {
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
     
-    // Reset command phase completion when entering command phase again
+    // Reset phase completion when entering phases again
     if (phase === "command") {
       setCommandPhaseCompleted(false);
+    }
+    if (phase === "movement") {
+      setMovementPhaseCompleted(false);
     }
     
     // Auto-save to database
@@ -371,7 +377,10 @@ function BattleTrackerInner() {
               onPhaseChange={handlePhaseChange}
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
-              canAdvancePhase={battle?.currentPhase !== "command" || commandPhaseCompleted}
+              canAdvancePhase={
+                (battle?.currentPhase !== "command" || commandPhaseCompleted) &&
+                (battle?.currentPhase !== "movement" || movementPhaseCompleted)
+              }
             />
             
             {/* Command Phase Detailed Steps */}
@@ -423,6 +432,36 @@ function BattleTrackerInner() {
                   className="w-full"
                 >
                   Mostrar Passos Detalhados da Fase de Comando
+                </Button>
+              </div>
+            )}
+
+            {/* Movement Phase Detailed Steps */}
+            {battle?.currentPhase === "movement" && showMovementSteps && (
+              <MovementPhaseSteps
+                battleId={battleId}
+                onComplete={() => {
+                  setShowMovementSteps(false);
+                  setMovementPhaseCompleted(true);
+                  toast.success("Fase de Movimento concluída! Agora você pode avançar para a próxima fase.");
+                }}
+              />
+            )}
+
+            {/* Button to show Movement Phase steps */}
+            {battle?.currentPhase === "movement" && !showMovementSteps && (
+              <div className="space-y-3">
+                {!movementPhaseCompleted && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    ⚠️ <strong>Fase de Movimento Incompleta:</strong> Você precisa completar todos os passos da Fase de Movimento antes de avançar para a próxima fase.
+                  </div>
+                )}
+                <Button
+                  onClick={() => setShowMovementSteps(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Mostrar Passos Detalhados da Fase de Movimento
                 </Button>
               </div>
             )}

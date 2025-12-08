@@ -632,3 +632,15 @@
 - [ ] Follow all SP rules: objectives, Horde kills, Secondary Missions, solo mode doubling
 - [ ] Show SP distribution summary after calculation
 - [ ] Only allow Resupply Shop after SP distribution is complete
+
+
+## Movement Phase Detailed Steps Implementation
+- [x] Create MovementPhaseSteps component with 3 sub-steps:
+  - [x] Step 1: Começo da Fase de Movimento (resolve "at the start" abilities)
+  - [x] Step 2: Mover Unidades (Normal Move, Advance, Fall Back, Remain Stationary)
+  - [x] Step 3: Reforços (Reinforcements - Deep Strike/Reserves)
+- [x] Add phase blocking - cannot advance from Movement Phase until all steps completed
+- [x] Integrate MovementPhaseSteps into BattleTracker
+- [x] Add "Mostrar Passos Detalhados" button for Movement Phase
+- [x] Test complete Movement Phase flow (26 tests passing)
+- [x] Create checkpoint after implementation
