@@ -137,7 +137,12 @@ function BattleTrackerInner() {
 
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
 
-  const updateBattleMutation = trpc.battle.update.useMutation();
+  const updateBattleMutation = trpc.battle.update.useMutation({
+    onSuccess: () => {
+      // Invalidate battle query to refresh currentPhase
+      utils.battle.get.invalidate({ id: battleId! });
+    },
+  });
   const updateParticipantMutation = trpc.battleParticipant.update.useMutation({
     onSuccess: () => {
       toast.success("Unit status updated");

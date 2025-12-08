@@ -647,4 +647,4 @@
 
 
 ## Bugs to Fix
-- [x] Command Phase steps showing during Movement Phase - fixed by resetting showCommandSteps/showMovementSteps on phase change
+- [x] Command Phase warning and button showing in Movement Phase - fixed by invalidating battle query on phase change
