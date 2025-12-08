@@ -644,3 +644,7 @@
 - [x] Add "Mostrar Passos Detalhados" button for Movement Phase
 - [x] Test complete Movement Phase flow (26 tests passing)
 - [x] Create checkpoint after implementation
+
+
+## Bugs to Fix
+- [x] Command Phase steps showing during Movement Phase - fixed by resetting showCommandSteps/showMovementSteps on phase change

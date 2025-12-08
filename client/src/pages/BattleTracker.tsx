@@ -239,6 +239,10 @@ function BattleTrackerInner() {
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
     
+    // Close any open phase step panels
+    setShowCommandSteps(false);
+    setShowMovementSteps(false);
+    
     // Reset phase completion when entering phases again
     if (phase === "command") {
       setCommandPhaseCompleted(false);
