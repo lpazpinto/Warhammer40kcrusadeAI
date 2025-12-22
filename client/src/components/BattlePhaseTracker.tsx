@@ -44,21 +44,32 @@ export default function BattlePhaseTracker({
   const currentPhase = BATTLE_PHASES[currentPhaseIndex];
 
   const handleNextPhase = () => {
+    let nextPhaseIndex = currentPhaseIndex;
+    let nextRound = currentRound;
+    let nextPlayerTurn = playerTurn;
+    
     if (currentPhaseIndex === BATTLE_PHASES.length - 1) {
       // End of round - switch to opponent or next round
       if (playerTurn === "player") {
+        nextPlayerTurn = "opponent";
+        nextPhaseIndex = 0;
         setPlayerTurn("opponent");
         setCurrentPhaseIndex(0);
       } else {
+        nextPlayerTurn = "player";
+        nextPhaseIndex = 0;
+        nextRound = currentRound + 1;
         setPlayerTurn("player");
         setCurrentPhaseIndex(0);
         setCurrentRound(currentRound + 1);
       }
     } else {
+      nextPhaseIndex = currentPhaseIndex + 1;
       setCurrentPhaseIndex(currentPhaseIndex + 1);
     }
     
-    onPhaseChange?.(BATTLE_PHASES[currentPhaseIndex].id, currentRound, playerTurn);
+    // Call onPhaseChange with the NEW phase, not the old one
+    onPhaseChange?.(BATTLE_PHASES[nextPhaseIndex].id, nextRound, nextPlayerTurn);
   };
 
   const handlePreviousPhase = () => {

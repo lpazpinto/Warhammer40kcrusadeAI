@@ -648,3 +648,5 @@
 
 ## Bugs to Fix
 - [x] Command Phase warning and button showing in Movement Phase - fixed by invalidating battle query on phase change
+
+- [x] CRITICAL BUG: Command Phase steps panel still showing in Movement Phase - fixed by correcting handleNextPhase to pass new phase index instead of old one
