@@ -1,6 +1,6 @@
 console.log('[BattleTracker MODULE] File loaded at:', new Date().toISOString(), 'Path:', window.location.pathname);
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 // Safe JSON parse helper
 function safeJSONParse<T>(value: any, fallback: T): T {
@@ -136,6 +136,17 @@ function BattleTrackerInner() {
   }, [participants, players, crusadeUnits]);
 
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
+  
+  // Local state for current phase - updates immediately on phase change
+  // This is used for conditional rendering instead of battle?.currentPhase which depends on database sync
+  const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
+  
+  // Sync localCurrentPhase when battle data loads from database
+  useEffect(() => {
+    if (battle?.currentPhase) {
+      setLocalCurrentPhase(battle.currentPhase);
+    }
+  }, [battle?.currentPhase]);
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -243,6 +254,9 @@ function BattleTrackerInner() {
 
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
+    
+    // Update local phase state immediately for UI responsiveness
+    setLocalCurrentPhase(phase);
     
     // Close any open phase step panels
     setShowCommandSteps(false);
@@ -387,13 +401,13 @@ function BattleTrackerInner() {
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
               canAdvancePhase={
-                (battle?.currentPhase !== "command" || commandPhaseCompleted) &&
-                (battle?.currentPhase !== "movement" || movementPhaseCompleted)
+                (localCurrentPhase !== "command" || commandPhaseCompleted) &&
+                (localCurrentPhase !== "movement" || movementPhaseCompleted)
               }
             />
             
             {/* Command Phase Detailed Steps */}
-            {battle?.currentPhase === "command" && showCommandSteps && (
+            {localCurrentPhase === "command" && showCommandSteps && (
               <CommandPhaseSteps
                 battleId={battleId}
                 playerCount={participants?.length || 1}
@@ -428,7 +442,7 @@ function BattleTrackerInner() {
             )}
             
             {/* Button to show Command Phase steps */}
-            {battle?.currentPhase === "command" && !showCommandSteps && (
+            {localCurrentPhase === "command" && !showCommandSteps && (
               <div className="space-y-3">
                 {!commandPhaseCompleted && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
@@ -446,7 +460,7 @@ function BattleTrackerInner() {
             )}
 
             {/* Movement Phase Detailed Steps */}
-            {battle?.currentPhase === "movement" && showMovementSteps && (
+            {localCurrentPhase === "movement" && showMovementSteps && (
               <MovementPhaseSteps
                 battleId={battleId}
                 onComplete={() => {
@@ -458,7 +472,7 @@ function BattleTrackerInner() {
             )}
 
             {/* Button to show Movement Phase steps */}
-            {battle?.currentPhase === "movement" && !showMovementSteps && (
+            {localCurrentPhase === "movement" && !showMovementSteps && (
               <div className="space-y-3">
                 {!movementPhaseCompleted && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">

@@ -650,3 +650,5 @@
 - [x] Command Phase warning and button showing in Movement Phase - fixed by invalidating battle query on phase change
 
 - [x] CRITICAL BUG: Command Phase steps panel still showing in Movement Phase - fixed by correcting handleNextPhase to pass new phase index instead of old one
+
+- [x] PERSISTENT BUG: Phase display still showing Command Phase content in Movement Phase - fixed by using localCurrentPhase state that updates immediately on phase change
