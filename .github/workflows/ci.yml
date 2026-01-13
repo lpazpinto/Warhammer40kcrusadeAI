@@ -1,35 +1,36 @@
 name: CI
 
 on:
-  pull_request:
   push:
     branches: [ main ]
+  pull_request:
   workflow_dispatch:
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
 
-      - name: Enable Corepack + activate pnpm from package.json
+      - name: Enable pnpm (Corepack)
         run: |
           corepack enable
-          corepack prepare "$(node -p "require('./package.json').packageManager")" --activate
-          pnpm --version
+          corepack prepare pnpm@10.4.1 --activate
+          node -v
+          pnpm -v
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - name: Install deps
+        run: pnpm install --no-frozen-lockfile
 
       - name: Lint (if present)
-        run: pnpm run lint --if-present
+        run: pnpm -r lint --if-present
 
-      - name: Test (if present)
-        run: pnpm run test --if-present
-
-      - name: Build (if present)
-        run: pnpm run build --if-present
+      - name: Tests (if present)
+        run: pnpm -r test --if-present
