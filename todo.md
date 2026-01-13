@@ -674,3 +674,11 @@
 - [x] Update HordeSpawnModal to display assigned spawn zone
 - [x] Update HordeUnitsPanel to show spawn zone for each unit
 - [x] Test spawn zone system (86 tests passing)
+
+
+## Bug Fixes
+- [ ] Battle still starting on player turn instead of Horde turn - need to fix initial turn setting
+
+
+## Bug Fixes - January 2026
+- [x] Fix new battles not starting with Horde turn - added explicit playerTurn: "opponent" in createBattle call in battle.ts router

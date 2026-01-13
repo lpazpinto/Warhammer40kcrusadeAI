@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, playerTurn, battleRound, currentPhase FROM battles LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute SELECT id, playerTurn, battleRound, currentPhase FROM battles LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "2",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "3",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "30001",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "30002",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "30003",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "60001",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "90001",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "120001",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    },
+    {
+      "id": "120002",
+      "playerTurn": "opponent",
+      "battleRound": "1",
+      "currentPhase": "command"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplayerTurn\tbattleRound\tcurrentPhase\n1\topponent\t1\tcommand\n2\topponent\t1\tcommand\n3\topponent\t1\tcommand\n30001\topponent\t1\tcommand\n30002\topponent\t1\tcommand\n30003\topponent\t1\tcommand\n60001\topponent\t1\tcommand\n90001\topponent\t1\tcommand\n120001\topponent\t1\tcommand\n120002\topponent\t1\tcommand\n",
+  "stderr": "",
+  "execution_time_ms": 73
+}

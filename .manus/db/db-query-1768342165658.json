@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE battles SET playerTurn = 'opponent' WHERE playerTurn = 'player' AND battleRound = 1 AND currentPhase = 'command';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user y1cGfLdmebRhpZp.root --database gRS8T4icPQs9vemeq36gRn --execute UPDATE battles SET playerTurn = 'opponent' WHERE playerTurn = 'player' AND battleRound = 1 AND currentPhase = 'command';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 149
+}

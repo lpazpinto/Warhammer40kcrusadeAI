@@ -489,6 +489,7 @@ export const appRouter = router({
           battleNumber,
           deployment: input.deployment,
           missionPack: input.missionPack,
+          playerTurn: 'opponent', // Horde always plays first
         });
       }),
 

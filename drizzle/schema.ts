@@ -123,7 +123,7 @@ export const battles = mysqlTable("battles", {
   battleRound: int("battleRound").default(1).notNull(), // Current round (1-5 or more)
   currentPhase: varchar("currentPhase", { length: 50 }).default("command"), // Current battle phase
   currentPhaseStep: varchar("currentPhaseStep", { length: 100 }).default("start"), // Current sub-step within phase
-  playerTurn: mysqlEnum("playerTurn", ["player", "opponent"]).default("player"), // Whose turn it is
+  playerTurn: mysqlEnum("playerTurn", ["player", "opponent"]).default("opponent"), // Horde always plays first
   objectivesControlled: int("objectivesControlled").default(0).notNull(), // Number of objectives currently controlled
   status: mysqlEnum("status", ["setup", "in_progress", "completed"]).default("setup").notNull(),
   victors: text("victors"), // JSON string of player IDs who won
