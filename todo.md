@@ -657,3 +657,12 @@
 ## Turn Order Adjustments
 - [x] Change initial turn to Horde (opponent) instead of Player
 - [x] Make Spawn Horde button only visible during Horde turn
+
+
+## Horde Spawn System
+- [x] Review current spawn implementation and faction tables
+- [x] Update spawn logic to use faction-specific unit tables (Grey Knights, Chaos Daemons, etc.)
+- [x] Display spawned Horde units in battle tracker with HordeUnitsPanel component
+- [x] Create HordeSpawnModal to show spawn results (roll, bracket, selected unit)
+- [x] Implement unit destruction tracking with SP reward for killing player
+- [x] Test spawn with different factions (86 tests passing)

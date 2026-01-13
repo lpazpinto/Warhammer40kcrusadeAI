@@ -30,6 +30,8 @@ import MovementPhaseSteps from "@/components/MovementPhaseSteps";
 import ResupplyShop from "@/components/ResupplyShop";
 import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
+import HordeSpawnModal from "@/components/HordeSpawnModal";
+import HordeUnitsPanel, { HordeUnit } from "@/components/HordeUnitsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -46,6 +48,11 @@ function BattleTrackerInner() {
   const [commandPhaseCompleted, setCommandPhaseCompleted] = useState(false);
   const [showMovementSteps, setShowMovementSteps] = useState(false);
   const [movementPhaseCompleted, setMovementPhaseCompleted] = useState(false);
+  
+  // Horde spawn state
+  const [showSpawnModal, setShowSpawnModal] = useState(false);
+  const [spawnResult, setSpawnResult] = useState<any>(null);
+  const [hordeUnits, setHordeUnits] = useState<HordeUnit[]>([]);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
@@ -147,6 +154,13 @@ function BattleTrackerInner() {
       setLocalCurrentPhase(battle.currentPhase);
     }
   }, [battle?.currentPhase]);
+  
+  // Sync hordeUnits from battle data
+  useEffect(() => {
+    if (battle?.hordeUnits && Array.isArray(battle.hordeUnits)) {
+      setHordeUnits(battle.hordeUnits as HordeUnit[]);
+    }
+  }, [battle?.hordeUnits]);
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -225,12 +239,9 @@ function BattleTrackerInner() {
 
   const spawnHordeMutation = trpc.horde.spawn.useMutation({
     onSuccess: (data: any) => {
-      const unitCount = data?.units?.length || 0;
-      const totalPower = data?.totalPower || 0;
-      const roll = data?.roll || 0;
-      toast.success(`Horda spawned! Roll: ${roll} | ${unitCount} unidades (${totalPower} pontos)`);
+      setSpawnResult(data);
+      setShowSpawnModal(true);
       setIsSpawningHorde(false);
-      // TODO: Add spawned units to battle participants
     },
     onError: (error: any) => {
       toast.error(`Failed to spawn horde: ${error.message}`);
@@ -250,6 +261,66 @@ function BattleTrackerInner() {
       battleRound: battle?.battleRound || 1,
       additionalModifiers: 0,
     });
+  };
+  
+  // Add spawned unit to battle
+  const handleConfirmSpawn = (unitName: string) => {
+    const newUnit: HordeUnit = {
+      id: `horde-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: unitName,
+      spawnedRound: battle?.battleRound || 1,
+      status: "active",
+      bracket: spawnResult?.bracket || "5-6",
+    };
+    
+    const updatedUnits = [...hordeUnits, newUnit];
+    setHordeUnits(updatedUnits);
+    
+    // Save to database
+    if (battleId) {
+      updateBattleMutation.mutate({
+        id: battleId,
+        hordeUnits: updatedUnits,
+      });
+    }
+    
+    setShowSpawnModal(false);
+    setSpawnResult(null);
+    toast.success(`${unitName} adicionada à batalha!`);
+  };
+  
+  // Handle destroying a horde unit
+  const handleDestroyHordeUnit = (unitId: string, destroyedBy?: string) => {
+    const updatedUnits = hordeUnits.map(unit => 
+      unit.id === unitId 
+        ? { ...unit, status: "destroyed" as const, destroyedBy } 
+        : unit
+    );
+    setHordeUnits(updatedUnits);
+    
+    // Save to database
+    if (battleId) {
+      updateBattleMutation.mutate({
+        id: battleId,
+        hordeUnits: updatedUnits,
+      });
+    }
+    
+    // Award SP to player who destroyed the unit
+    if (destroyedBy) {
+      const participant = participants?.find(p => {
+        const player = players?.find(pl => pl.id === p.playerId);
+        return player?.name === destroyedBy;
+      });
+      
+      if (participant) {
+        awardSPMutation.mutate({
+          participantId: participant.id,
+          amount: 1,
+        });
+        toast.success(`+1 SP para ${destroyedBy} por destruir unidade da Horda!`);
+      }
+    }
   };
 
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
@@ -491,11 +562,19 @@ function BattleTrackerInner() {
           </div>
 
           {/* Unit Tracker */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-4">
             <UnitTrackerPanel 
               units={unitStatuses}
               onMarkDestroyed={handleMarkDestroyed}
               onAddKill={handleAddKill}
+            />
+            
+            {/* Horde Units Panel */}
+            <HordeUnitsPanel
+              units={hordeUnits}
+              faction={campaign?.hordeFaction || "Horda"}
+              onDestroyUnit={handleDestroyHordeUnit}
+              playerNames={players?.map(p => p.name || "Unknown") || []}
             />
           </div>
 
@@ -597,6 +676,19 @@ function BattleTrackerInner() {
           battleRound={battle?.battleRound || 1}
         />
       )}
+      
+      {/* Horde Spawn Modal */}
+      <HordeSpawnModal
+        isOpen={showSpawnModal}
+        onClose={() => {
+          setShowSpawnModal(false);
+          setSpawnResult(null);
+        }}
+        spawnResult={spawnResult}
+        faction={campaign?.hordeFaction || "Horda"}
+        battleRound={battle?.battleRound || 1}
+        onConfirm={handleConfirmSpawn}
+      />
     </div>
   );
 }
