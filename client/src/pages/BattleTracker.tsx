@@ -255,22 +255,31 @@ function BattleTrackerInner() {
       return;
     }
 
+    // Get max supply limit from players to determine number of zones
+    const maxSupplyLimit = players?.reduce((max, p) => Math.max(max, p.supplyLimit || 1000), 1000) || 1000;
+    
     setIsSpawningHorde(true);
     spawnHordeMutation.mutate({
       faction: campaign.hordeFaction,
       battleRound: battle?.battleRound || 1,
+      pointsLimit: maxSupplyLimit, // For zone assignment based on player supply limits
       additionalModifiers: 0,
     });
   };
   
+  // Calculate number of zones based on player supply limits (1000pts = 2 zones, 2000pts = 4 zones)
+  const maxSupplyLimit = players?.reduce((max, p) => Math.max(max, p.supplyLimit || 1000), 1000) || 1000;
+  const numberOfZones = maxSupplyLimit <= 1000 ? 2 : 4;
+  
   // Add spawned unit to battle
-  const handleConfirmSpawn = (unitName: string) => {
+  const handleConfirmSpawn = (unitName: string, zone: number) => {
     const newUnit: HordeUnit = {
       id: `horde-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: unitName,
       spawnedRound: battle?.battleRound || 1,
       status: "active",
       bracket: spawnResult?.bracket || "5-6",
+      spawnZone: zone,
     };
     
     const updatedUnits = [...hordeUnits, newUnit];
@@ -573,6 +582,7 @@ function BattleTrackerInner() {
             <HordeUnitsPanel
               units={hordeUnits}
               faction={campaign?.hordeFaction || "Horda"}
+              numberOfZones={numberOfZones}
               onDestroyUnit={handleDestroyHordeUnit}
               playerNames={players?.map(p => p.name || "Unknown") || []}
             />
@@ -687,6 +697,7 @@ function BattleTrackerInner() {
         spawnResult={spawnResult}
         faction={campaign?.hordeFaction || "Horda"}
         battleRound={battle?.battleRound || 1}
+        numberOfZones={numberOfZones}
         onConfirm={handleConfirmSpawn}
       />
     </div>

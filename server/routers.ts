@@ -747,13 +747,16 @@ export const appRouter = router({
       .input(z.object({
         faction: z.string(),
         battleRound: z.number(),
+        pointsLimit: z.number().optional(), // For zone assignment
         additionalModifiers: z.number().default(0),
       }))
       .mutation(({ input }) => {
+        const numberOfZones = input.pointsLimit ? hordeSpawn.getNumberOfSpawningZones(input.pointsLimit) : undefined;
         return hordeSpawn.performSpawnRoll(
           input.faction,
           input.battleRound,
-          input.additionalModifiers
+          input.additionalModifiers,
+          numberOfZones
         );
       }),
 

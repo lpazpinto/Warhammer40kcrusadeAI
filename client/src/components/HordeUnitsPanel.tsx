@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skull, Trash2, Target, Shield, Swords } from "lucide-react";
+import { Skull, Trash2, Target, Shield, Swords, MapPin } from "lucide-react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -20,12 +20,14 @@ export interface HordeUnit {
   spawnedRound: number;
   status: "active" | "destroyed";
   bracket: string;
+  spawnZone?: number; // Zone where unit spawned (1-based index)
   destroyedBy?: string; // Player name who destroyed it
 }
 
 interface HordeUnitsPanelProps {
   units: HordeUnit[];
   faction: string;
+  numberOfZones: number;
   onDestroyUnit: (unitId: string, destroyedBy?: string) => void;
   playerNames?: string[];
 }
@@ -33,6 +35,7 @@ interface HordeUnitsPanelProps {
 export default function HordeUnitsPanel({
   units,
   faction,
+  numberOfZones,
   onDestroyUnit,
   playerNames = [],
 }: HordeUnitsPanelProps) {
@@ -112,6 +115,12 @@ export default function HordeUnitsPanel({
                     <p className="font-medium text-sm">{unit.name}</p>
                     <p className="text-xs text-muted-foreground">
                       Spawnou no turno {unit.spawnedRound} • Bracket {unit.bracket}
+                      {unit.spawnZone && (
+                        <span className="inline-flex items-center gap-1 ml-2">
+                          <MapPin className="h-3 w-3 text-yellow-500" />
+                          Zona {unit.spawnZone}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <Button

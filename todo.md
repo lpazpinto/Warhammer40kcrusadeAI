@@ -666,3 +666,11 @@
 - [x] Create HordeSpawnModal to show spawn results (roll, bracket, selected unit)
 - [x] Implement unit destruction tracking with SP reward for killing player
 - [x] Test spawn with different factions (86 tests passing)
+
+
+## Spawn Zone System
+- [x] Update Horde spawn logic to include zone assignment (2 zones for 1000pts, 4 zones for 2000pts)
+- [x] Roll random zone when spawning a unit
+- [x] Update HordeSpawnModal to display assigned spawn zone
+- [x] Update HordeUnitsPanel to show spawn zone for each unit
+- [x] Test spawn zone system (86 tests passing)

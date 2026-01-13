@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skull, Dice6, Target, Plus, X } from "lucide-react";
+import { Skull, Dice6, Target, Plus, X, MapPin } from "lucide-react";
 
 interface SpawnResult {
   roll: number;
@@ -10,6 +10,7 @@ interface SpawnResult {
   bracket: string;
   availableUnits: string[];
   selectedUnit: string | null;
+  spawnZone?: number;
 }
 
 interface HordeSpawnModalProps {
@@ -18,7 +19,8 @@ interface HordeSpawnModalProps {
   spawnResult: SpawnResult | null;
   faction: string;
   battleRound: number;
-  onConfirm: (unit: string) => void;
+  numberOfZones: number;
+  onConfirm: (unit: string, zone: number) => void;
   isLoading?: boolean;
 }
 
@@ -28,6 +30,7 @@ export default function HordeSpawnModal({
   spawnResult,
   faction,
   battleRound,
+  numberOfZones,
   onConfirm,
   isLoading = false,
 }: HordeSpawnModalProps) {
@@ -114,6 +117,19 @@ export default function HordeSpawnModal({
                   <span className="text-sm font-medium text-red-400">Unidade Spawnada:</span>
                 </div>
                 <p className="text-lg font-bold text-center">{spawnResult.selectedUnit}</p>
+                
+                {/* Spawn Zone */}
+                {spawnResult.spawnZone && (
+                  <div className="mt-3 pt-3 border-t border-red-500/30">
+                    <div className="flex items-center justify-center gap-2">
+                      <MapPin className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm text-muted-foreground">Zona de Spawn:</span>
+                      <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
+                        Zona {spawnResult.spawnZone} de {numberOfZones}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -154,12 +170,12 @@ export default function HordeSpawnModal({
             </Button>
           ) : (
             <Button 
-              onClick={() => spawnResult.selectedUnit && onConfirm(spawnResult.selectedUnit)}
-              disabled={isLoading}
+              onClick={() => spawnResult.selectedUnit && spawnResult.spawnZone && onConfirm(spawnResult.selectedUnit, spawnResult.spawnZone)}
+              disabled={isLoading || !spawnResult.spawnZone}
               className="w-full gap-2 bg-red-600 hover:bg-red-700"
             >
               <Plus className="h-4 w-4" />
-              {isLoading ? "Adicionando..." : "Adicionar à Batalha"}
+              {isLoading ? "Adicionando..." : `Adicionar à Zona ${spawnResult.spawnZone}`}
             </Button>
           )}
         </DialogFooter>

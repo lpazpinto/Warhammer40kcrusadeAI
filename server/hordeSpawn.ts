@@ -22,6 +22,7 @@ export interface SpawnResult {
   bracket: string;
   availableUnits: string[];
   selectedUnit: string | null;
+  spawnZone?: number; // Zone where unit spawns (1-based index)
 }
 
 /**
@@ -69,12 +70,20 @@ export function getAvailableFactions(): string[] {
 }
 
 /**
+ * Roll a random spawn zone
+ */
+export function rollSpawnZone(numberOfZones: number): number {
+  return Math.floor(Math.random() * numberOfZones) + 1;
+}
+
+/**
  * Perform a spawn roll and get available units
  */
 export function performSpawnRoll(
   faction: string,
   battleRound: number,
-  additionalModifiers: number = 0
+  additionalModifiers: number = 0,
+  numberOfZones?: number
 ): SpawnResult {
   const spawnTable = getSpawnTable(faction);
   
@@ -99,12 +108,16 @@ export function performSpawnRoll(
     selectedUnit = availableUnits[randomIndex];
   }
 
+  // Assign spawn zone if numberOfZones is provided and a unit was selected
+  const spawnZone = numberOfZones && selectedUnit ? rollSpawnZone(numberOfZones) : undefined;
+
   return {
     roll: baseRoll,
     modifiedRoll,
     bracket,
     availableUnits,
-    selectedUnit
+    selectedUnit,
+    spawnZone
   };
 }
 
