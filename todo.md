@@ -652,3 +652,8 @@
 - [x] CRITICAL BUG: Command Phase steps panel still showing in Movement Phase - fixed by correcting handleNextPhase to pass new phase index instead of old one
 
 - [x] PERSISTENT BUG: Phase display still showing Command Phase content in Movement Phase - fixed by using localCurrentPhase state that updates immediately on phase change
+
+
+## Turn Order Adjustments
+- [x] Change initial turn to Horde (opponent) instead of Player
+- [x] Make Spawn Horde button only visible during Horde turn

@@ -28,7 +28,7 @@ export default function BattlePhaseTracker({
   battleId,
   initialPhase = "command",
   initialRound = 1,
-  initialPlayerTurn = "player",
+  initialPlayerTurn = "opponent",  // Horde always plays first
   onPhaseChange,
   onSpawnHorde,
   isSpawningHorde = false,
@@ -164,8 +164,8 @@ export default function BattlePhaseTracker({
           </div>
         </div>
 
-        {/* Spawn Horde Button (Command Phase only) */}
-        {currentPhase.id === "command" && playerTurn === "player" && onSpawnHorde && (
+        {/* Spawn Horde Button - Only visible during Horde (opponent) turn in Command Phase */}
+        {currentPhase.id === "command" && playerTurn === "opponent" && onSpawnHorde && (
           <Button
             variant="destructive"
             onClick={onSpawnHorde}
@@ -183,7 +183,7 @@ export default function BattlePhaseTracker({
           <Button
             variant="outline"
             onClick={handlePreviousPhase}
-            disabled={currentRound === 1 && currentPhaseIndex === 0 && playerTurn === "player"}
+            disabled={currentRound === 1 && currentPhaseIndex === 0 && playerTurn === "opponent"}  // Can't go back before first phase of first round
             className="flex-1 gap-2"
           >
             <ChevronLeft className="h-4 w-4" />

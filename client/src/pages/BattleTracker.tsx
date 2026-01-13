@@ -396,7 +396,7 @@ function BattleTrackerInner() {
               battleId={battleId}
               initialPhase={battle?.currentPhase || "command"}
               initialRound={battle?.battleRound || 1}
-              initialPlayerTurn={(battle as any)?.playerTurn || "player"}
+              initialPlayerTurn={(battle as any)?.playerTurn || "opponent"}  // Horde always plays first
               onPhaseChange={handlePhaseChange}
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
