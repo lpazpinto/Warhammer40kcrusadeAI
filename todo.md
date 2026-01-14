@@ -675,25 +675,16 @@
 - [x] Update HordeUnitsPanel to show spawn zone for each unit
 - [x] Test spawn zone system (86 tests passing)
 
-
-## Bug Fixes
-- [ ] Battle still starting on player turn instead of Horde turn - need to fix initial turn setting
-
-
-## Bug Fixes - January 2026
-- [x] Fix new battles not starting with Horde turn - added explicit playerTurn: "opponent" in createBattle call in battle.ts router
-
-
-## Display Active Units in Battle UI
-- [ ] Show player's selected units in Battle Tracker (units chosen during battle setup)
-- [ ] Show Horde units panel with active/destroyed status
-- [ ] Display unit stats (name, power, wounds, etc.)
-- [ ] Allow marking units as destroyed during battle
-
-
 ## Bug Fixes - January 2026
 - [x] Fix new battles not starting with Horde turn - added explicit playerTurn: "opponent" in createBattle call
 - [x] Fix units not appearing in Battle Tracker - implemented auto-selection of all Order of Battle units when none manually selected during battle setup
+
+
+## Display Active Units in Battle UI
+- [x] Show player's selected units in Battle Tracker (units chosen during battle setup)
+- [x] Show Horde units panel with active/destroyed status
+- [x] Display unit stats (name, power, wounds, etc.)
+- [x] Allow marking units as destroyed during battle
 
 
 ## Improve Horde Unit Tracking in Battle Tracker

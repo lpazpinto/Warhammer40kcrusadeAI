@@ -79,6 +79,14 @@ export default function BattleSetup() {
     { enabled: selectedPlayerId !== null && selectedPlayerId > 0 }
   );
 
+  // Query all units for all players to enable auto-selection
+  // Must be called before any early returns to respect React Hooks rules
+  const allPlayersUnitsQueries = trpc.useQueries((t) => 
+    (players || []).map(player => 
+      t.crusadeUnit.list({ playerId: player.id })
+    )
+  );
+
   if (campaignLoading || playersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -141,13 +149,6 @@ export default function BattleSetup() {
   const handleBack = () => {
     setStep(step - 1);
   };
-
-  // Query all units for all players to enable auto-selection
-  const allPlayersUnitsQueries = trpc.useQueries((t) => 
-    (players || []).map(player => 
-      t.crusadeUnit.list({ playerId: player.id })
-    )
-  );
 
   const handleStartBattle = async () => {
     try {
