@@ -1,0 +1,98 @@
+name: Manus Autopilot (checks)
+
+on:
+  workflow_run:
+    workflows: ["CI", "CodeQL"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  autopilot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Manus on failure / clear busy on success
+        uses: actions/github-script@v7
+        env:
+          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+          MANUS_PROJECT_ID: ${{ secrets.MANUS_PROJECT_ID }}
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+
+            const prs = run.pull_requests || [];
+            if (prs.length === 0) return;
+
+            const prNumber = prs[0].number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+            const labels = pr.data.labels.map(l => l.name);
+
+            if (!labels.includes("manus-managed")) return;
+
+            const busyLabel = "manus-busy";
+
+            if (run.conclusion === "success") {
+              if (labels.includes(busyLabel)) {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number: prNumber, name: busyLabel }).catch(() => {});
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `✅ Checks passaram (${run.name}). Autopilot liberado.`
+                });
+              }
+              return;
+            }
+
+            if (labels.includes(busyLabel)) return;
+
+            await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: [busyLabel] });
+
+            const prompt =
+`Você é o agente Manus trabalhando no repositório ${owner}/${repo}.
+
+Contexto:
+- Pull Request: ${pr.data.html_url}
+- Branch do PR: ${pr.data.head.ref}
+- Workflow que falhou: ${run.name}
+- Link do run: ${run.html_url}
+- SHA: ${run.head_sha}
+
+Tarefa:
+1) Abrir o PR e identificar por que o check falhou (CI/CodeQL).
+2) Corrigir com o MENOR patch possível.
+3) Fazer push NA MESMA BRANCH do PR (${pr.data.head.ref}).
+4) NÃO fazer merge.
+5) Repetir até ficar verde.
+6) Comentar no PR: causa raiz + mudanças + como testar.`;
+
+            const body = {
+              prompt,
+              agentProfile: "manus-1.6",
+              taskMode: "agent",
+              interactiveMode: false
+            };
+
+            if (process.env.MANUS_PROJECT_ID) body.projectId = process.env.MANUS_PROJECT_ID;
+
+            const res = await fetch("https://api.manus.ai/v1/tasks", {
+              method: "POST",
+              headers: {
+                "API_KEY": process.env.MANUS_API_KEY,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(body)
+            });
+
+            if (!res.ok) throw new Error(`Manus API error: ${res.status} ${await res.text()}`);
+
+            const data = await res.json();
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: prNumber,
+              body: `🤖 Manus Autopilot acionado: **${run.name}** falhou.\nTask: ${data.task_url}\nRun: ${run.html_url}`
+            });
