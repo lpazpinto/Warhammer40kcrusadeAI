@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skull, Trash2, Target, Shield, Swords, MapPin } from "lucide-react";
+import { Skull, Trash2, Target, Swords, MapPin } from "lucide-react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface HordeUnit {
   id: string;
@@ -21,15 +22,24 @@ export interface HordeUnit {
   status: "active" | "destroyed";
   bracket: string;
   spawnZone?: number; // Zone where unit spawned (1-based index)
-  destroyedBy?: string; // Player name who destroyed it
+  destroyedByUnitId?: number; // Unit ID that destroyed this horde unit
+  destroyedByUnitName?: string; // Unit name that destroyed this horde unit
+}
+
+export interface PlayerUnit {
+  id: number;
+  name: string;
+  crusadeName?: string;
+  playerName: string;
+  status: "active" | "destroyed" | "out_of_action";
 }
 
 interface HordeUnitsPanelProps {
   units: HordeUnit[];
   faction: string;
   numberOfZones: number;
-  onDestroyUnit: (unitId: string, destroyedBy?: string) => void;
-  playerNames?: string[];
+  onDestroyUnit: (unitId: string, destroyedByUnitId?: number, destroyedByUnitName?: string) => void;
+  playerUnits?: PlayerUnit[];
 }
 
 export default function HordeUnitsPanel({
@@ -37,13 +47,16 @@ export default function HordeUnitsPanel({
   faction,
   numberOfZones,
   onDestroyUnit,
-  playerNames = [],
+  playerUnits = [],
 }: HordeUnitsPanelProps) {
   const [unitToDestroy, setUnitToDestroy] = useState<HordeUnit | null>(null);
-  const [selectedDestroyer, setSelectedDestroyer] = useState<string>("");
+  const [selectedDestroyerUnitId, setSelectedDestroyerUnitId] = useState<number | null>(null);
 
   const activeUnits = units.filter(u => u.status === "active");
   const destroyedUnits = units.filter(u => u.status === "destroyed");
+  
+  // Only show active player units as options for kill attribution
+  const activePlayerUnits = playerUnits.filter(u => u.status === "active");
 
   const getBracketColor = (bracket: string) => {
     switch (bracket) {
@@ -57,9 +70,11 @@ export default function HordeUnitsPanel({
 
   const handleConfirmDestroy = () => {
     if (unitToDestroy) {
-      onDestroyUnit(unitToDestroy.id, selectedDestroyer || undefined);
+      const selectedUnit = activePlayerUnits.find(u => u.id === selectedDestroyerUnitId);
+      const unitName = selectedUnit ? (selectedUnit.crusadeName || selectedUnit.name) : undefined;
+      onDestroyUnit(unitToDestroy.id, selectedDestroyerUnitId || undefined, unitName);
       setUnitToDestroy(null);
-      setSelectedDestroyer("");
+      setSelectedDestroyerUnitId(null);
     }
   };
 
@@ -99,68 +114,75 @@ export default function HordeUnitsPanel({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Active Units */}
-          {activeUnits.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Swords className="h-4 w-4" />
-                <span>Ativas ({activeUnits.length})</span>
-              </div>
-              {activeUnits.map((unit) => (
-                <div
-                  key={unit.id}
-                  className={`flex items-center justify-between p-2 rounded-md border ${getBracketColor(unit.bracket)}`}
-                >
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{unit.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Spawnou no turno {unit.spawnedRound} • Bracket {unit.bracket}
-                      {unit.spawnZone && (
-                        <span className="inline-flex items-center gap-1 ml-2">
-                          <MapPin className="h-3 w-3 text-yellow-500" />
-                          Zona {unit.spawnZone}
-                        </span>
-                      )}
-                    </p>
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-3 pr-2">
+              {/* Active Units */}
+              {activeUnits.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Swords className="h-4 w-4" />
+                    <span>Ativas ({activeUnits.length})</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-950/50"
-                    onClick={() => setUnitToDestroy(unit)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {activeUnits.map((unit) => (
+                    <div
+                      key={unit.id}
+                      className={`flex items-center justify-between p-2 rounded-md border ${getBracketColor(unit.bracket)}`}
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{unit.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Spawnou no turno {unit.spawnedRound} • Bracket {unit.bracket}
+                          {unit.spawnZone && (
+                            <span className="inline-flex items-center gap-1 ml-2">
+                              <MapPin className="h-3 w-3 text-yellow-500" />
+                              Zona {unit.spawnZone}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-950/50"
+                        onClick={() => setUnitToDestroy(unit)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Destruir
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Destroyed Units */}
-          {destroyedUnits.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Target className="h-4 w-4" />
-                <span>Destruídas ({destroyedUnits.length})</span>
-              </div>
-              {destroyedUnits.map((unit) => (
-                <div
-                  key={unit.id}
-                  className="flex items-center justify-between p-2 rounded-md border border-gray-700/50 bg-gray-900/30 opacity-60"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium text-sm line-through">{unit.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {unit.destroyedBy ? `Destruída por ${unit.destroyedBy}` : "Destruída"}
-                    </p>
+              {/* Destroyed Units */}
+              {destroyedUnits.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Target className="h-4 w-4" />
+                    <span>Destruídas ({destroyedUnits.length})</span>
                   </div>
-                  <Badge variant="outline" className="text-gray-500 border-gray-600">
-                    ☠️
-                  </Badge>
+                  {destroyedUnits.map((unit) => (
+                    <div
+                      key={unit.id}
+                      className="flex items-center justify-between p-2 rounded-md border border-gray-700/50 bg-gray-900/30 opacity-60"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm line-through">{unit.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {unit.destroyedByUnitName 
+                            ? `Destruída por: ${unit.destroyedByUnitName}` 
+                            : "Destruída"}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-gray-500 border-gray-600">
+                        ☠️
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </ScrollArea>
 
           {/* Summary */}
           <div className="flex items-center justify-between pt-2 border-t border-red-500/20 text-sm">
@@ -177,30 +199,62 @@ export default function HordeUnitsPanel({
         </CardContent>
       </Card>
 
-      {/* Destroy Confirmation Dialog */}
-      <AlertDialog open={!!unitToDestroy} onOpenChange={() => setUnitToDestroy(null)}>
-        <AlertDialogContent>
+      {/* Destroy Confirmation Dialog with Unit Selection */}
+      <AlertDialog open={!!unitToDestroy} onOpenChange={() => {
+        setUnitToDestroy(null);
+        setSelectedDestroyerUnitId(null);
+      }}>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Destruir Unidade da Horda</AlertDialogTitle>
-            <AlertDialogDescription>
-              Marcar "{unitToDestroy?.name}" como destruída?
-              {playerNames.length > 0 && (
-                <div className="mt-4">
-                  <label className="text-sm font-medium text-foreground">
-                    Quem destruiu esta unidade? (opcional - ganha +1 SP)
-                  </label>
-                  <select
-                    className="w-full mt-2 p-2 rounded-md border bg-background"
-                    value={selectedDestroyer}
-                    onChange={(e) => setSelectedDestroyer(e.target.value)}
-                  >
-                    <option value="">Não especificado</option>
-                    {playerNames.map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Skull className="h-5 w-5 text-red-500" />
+              Destruir Unidade da Horda
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Marcar "<strong>{unitToDestroy?.name}</strong>" como destruída?
+                </p>
+                
+                {activePlayerUnits.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground block">
+                      Qual unidade fez a kill?
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      A unidade selecionada receberá +1 em "Unidades Inimigas Destruídas"
+                    </p>
+                    <ScrollArea className="h-[200px] border rounded-md p-2">
+                      <div className="space-y-2">
+                        {activePlayerUnits.map((unit) => (
+                          <div
+                            key={unit.id}
+                            className={`p-2 rounded-md border cursor-pointer transition-colors ${
+                              selectedDestroyerUnitId === unit.id
+                                ? "bg-primary/20 border-primary"
+                                : "hover:bg-muted/50 border-border"
+                            }`}
+                            onClick={() => setSelectedDestroyerUnitId(unit.id)}
+                          >
+                            <p className="font-medium text-sm">
+                              {unit.crusadeName || unit.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {unit.playerName}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+                
+                {activePlayerUnits.length === 0 && (
+                  <p className="text-sm text-yellow-500">
+                    ⚠️ Nenhuma unidade ativa disponível para atribuir a kill.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -208,8 +262,9 @@ export default function HordeUnitsPanel({
             <AlertDialogAction
               onClick={handleConfirmDestroy}
               className="bg-red-600 hover:bg-red-700"
+              disabled={activePlayerUnits.length > 0 && !selectedDestroyerUnitId}
             >
-              Confirmar Destruição
+              {selectedDestroyerUnitId ? "Confirmar Kill" : "Destruir sem Atribuição"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

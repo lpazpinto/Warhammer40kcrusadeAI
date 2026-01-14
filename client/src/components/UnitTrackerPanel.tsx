@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skull, Heart, AlertTriangle, Swords } from "lucide-react";
+import { Skull, Heart, AlertTriangle, Shield } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import UnitDetailsPopover from "@/components/UnitDetailsPopover";
 
@@ -28,10 +28,9 @@ interface UnitStatus {
 interface UnitTrackerPanelProps {
   units: UnitStatus[];
   onMarkDestroyed?: (unitId: number, participantId: number) => void;
-  onAddKill?: (participantId: number) => void;
 }
 
-export default function UnitTrackerPanel({ units, onMarkDestroyed, onAddKill }: UnitTrackerPanelProps) {
+export default function UnitTrackerPanel({ units, onMarkDestroyed }: UnitTrackerPanelProps) {
   const activeUnits = units.filter(u => u.status === "active");
   const destroyedUnits = units.filter(u => u.status === "destroyed");
   const outOfActionUnits = units.filter(u => u.status === "out_of_action");
@@ -125,31 +124,28 @@ export default function UnitTrackerPanel({ units, onMarkDestroyed, onAddKill }: 
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {unit.playerName} • PR {unit.powerRating}
+                        {unit.enemyUnitsDestroyed && unit.enemyUnitsDestroyed > 0 && (
+                          <span className="ml-2 text-red-600 font-medium">
+                            • {unit.enemyUnitsDestroyed} kills
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
-                {unit.status === "active" && unit.participantId && (
-                  <div className="flex gap-2">
+                  {unit.status === "active" && unit.participantId && (
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="flex-1 h-7 text-xs"
-                      onClick={() => onMarkDestroyed?.(unit.id, unit.participantId!)}
+                      className="w-full h-7 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMarkDestroyed?.(unit.id, unit.participantId!);
+                      }}
                     >
                       <Skull className="h-3 w-3 mr-1" />
-                      Mark Destroyed
+                      Marcar Destruída
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-7 text-xs"
-                      onClick={() => onAddKill?.(unit.participantId!)}
-                    >
-                      <Swords className="h-3 w-3 mr-1" />
-                      Add Kill
-                    </Button>
-                  </div>
-                )}
+                  )}
                 </div>
               </div>
             </UnitDetailsPopover>
@@ -160,15 +156,20 @@ export default function UnitTrackerPanel({ units, onMarkDestroyed, onAddKill }: 
   );
 
   return (
-    <Card className="h-full">
+    <Card className="h-full border-blue-500/30 bg-blue-950/10">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Rastreador de Unidades</span>
-          <Badge variant="outline">{units.length} Total</Badge>
+          <span className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-500" />
+            Unidades dos Jogadores
+          </span>
+          <Badge variant="outline" className="text-blue-400 border-blue-500/50">
+            {units.length} Total
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px] pr-4">
+        <ScrollArea className="h-[500px] pr-4">
           <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-3 gap-2">

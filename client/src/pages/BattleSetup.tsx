@@ -132,6 +132,13 @@ export default function BattleSetup() {
     setStep(step - 1);
   };
 
+  // Query all units for all players to enable auto-selection
+  const allPlayersUnitsQueries = trpc.useQueries((t) => 
+    (players || []).map(player => 
+      t.crusadeUnit.list({ playerId: player.id })
+    )
+  );
+
   const handleStartBattle = async () => {
     try {
       // Create battle with selected configuration
@@ -149,15 +156,24 @@ export default function BattleSetup() {
       }
 
       // Create battle participants for each player with selected units
-      for (const player of players || []) {
-        const selectedUnits = config.playerUnits[player.id] || [];
-        if (selectedUnits.length > 0) {
-          await createParticipant.mutateAsync({
-            battleId: battle.id,
-            playerId: player.id,
-            unitsDeployed: selectedUnits,
-          });
+      // If no units were manually selected, auto-include all units from Order of Battle
+      for (let i = 0; i < (players || []).length; i++) {
+        const player = players![i];
+        let selectedUnits = config.playerUnits[player.id] || [];
+        
+        // If no units selected, auto-include all units from Order of Battle
+        if (selectedUnits.length === 0) {
+          const playerUnitsData = allPlayersUnitsQueries[i]?.data || [];
+          selectedUnits = playerUnitsData.map(unit => unit.id);
+          console.log(`Auto-selecting all ${selectedUnits.length} units for player ${player.name}`);
         }
+        
+        // Always create participant, even with empty units array
+        await createParticipant.mutateAsync({
+          battleId: battle.id,
+          playerId: player.id,
+          unitsDeployed: selectedUnits,
+        });
       }
 
       toast.success('Batalha criada com sucesso!');

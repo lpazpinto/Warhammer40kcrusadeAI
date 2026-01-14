@@ -682,3 +682,25 @@
 
 ## Bug Fixes - January 2026
 - [x] Fix new battles not starting with Horde turn - added explicit playerTurn: "opponent" in createBattle call in battle.ts router
+
+
+## Display Active Units in Battle UI
+- [ ] Show player's selected units in Battle Tracker (units chosen during battle setup)
+- [ ] Show Horde units panel with active/destroyed status
+- [ ] Display unit stats (name, power, wounds, etc.)
+- [ ] Allow marking units as destroyed during battle
+
+
+## Bug Fixes - January 2026
+- [x] Fix new battles not starting with Horde turn - added explicit playerTurn: "opponent" in createBattle call
+- [x] Fix units not appearing in Battle Tracker - implemented auto-selection of all Order of Battle units when none manually selected during battle setup
+
+
+## Improve Horde Unit Tracking in Battle Tracker
+- [x] Create separate Horde Units panel in Battle Tracker UI
+- [x] Add "Destruir" button to each Horde unit
+- [x] Create modal to select which player unit made the kill when destroying Horde unit
+- [x] Automatically add kill count to selected player unit (enemyUnitsDestroyed in crusadeUnits table)
+- [x] Remove "Add Kill" button from player units (kills tracked via Horde destruction)
+- [x] Update UI layout to clearly separate Player vs Horde units (blue panel for players, red panel for Horde)
+- [x] Show kill count on player units in Battle Tracker (e.g., "• 1 kills")
