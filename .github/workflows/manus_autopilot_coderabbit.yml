@@ -43,13 +43,20 @@ jobs:
             // Ajuste aqui se o login do bot for diferente no seu repo
             const login = (author || "").toLowerCase();
             const allowed = new Set(["coderabbitai", "coderabbitai[bot]"]);
+            const login = (author || "").toLowerCase();
+            const allowed = new Set(["coderabbitai", "coderabbitai[bot]"]);
             const isCodeRabbit = allowed.has(login) || login.includes("coderabbit");
             if (!isCodeRabbit) return;
 
-            const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
-            const labels = pr.data.labels.map(l => l.name);
 
-            if (!labels.includes("manus-managed")) return;
+            const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+            const headRef = pr.data.head.ref || "";
+            const isManusBranch = headRef.startsWith("manus/");
+            if (!isManusBranch) {
+              core.info(`Not a manus branch (${headRef}). Exiting.`);
+              return;
+            }
+
 
             const busyLabel = "manus-busy";
             if (labels.includes(busyLabel)) return;
