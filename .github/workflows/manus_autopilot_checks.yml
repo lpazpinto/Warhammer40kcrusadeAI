@@ -31,9 +31,13 @@ jobs:
             const repo = context.repo.repo;
 
             const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
-            const labels = pr.data.labels.map(l => l.name);
+            const headRef = pr.data.head.ref || "";
+            const isManusBranch = headRef.startsWith("manus/");
+            if (!isManusBranch) {
+              core.info(`Not a manus branch (${headRef}). Exiting.`);
+              return;
+            }
 
-            if (!labels.includes("manus-managed")) return;
 
             const busyLabel = "manus-busy";
 
