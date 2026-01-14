@@ -3,6 +3,8 @@ name: Manus Autopilot (coderabbit)
 on:
   pull_request_review:
     types: [submitted]
+  pull_request_review_comment:
+    types: [created]
   issue_comment:
     types: [created]
 
@@ -28,55 +30,95 @@ jobs:
             let prNumber = null;
             let feedbackUrl = null;
             let author = null;
+            let feedbackText = "";
+            let reviewState = "";
 
             if (context.eventName === "pull_request_review") {
               prNumber = context.payload.pull_request.number;
               feedbackUrl = context.payload.review.html_url;
               author = context.payload.review.user?.login;
+              feedbackText = (context.payload.review.body || "").trim();
+              reviewState = (context.payload.review.state || "").toLowerCase();
+
+              // Ajuste 2: não disparar em APPROVED sem texto
+              if (reviewState === "approved" && !feedbackText) {
+                core.info("Approved review without text; skipping.");
+                return;
+              }
+            } else if (context.eventName === "pull_request_review_comment") {
+              prNumber = context.payload.pull_request.number;
+              feedbackUrl = context.payload.comment.html_url;
+              author = context.payload.comment.user?.login;
+              feedbackText = (context.payload.comment.body || "").trim();
             } else if (context.eventName === "issue_comment") {
-              if (!context.payload.issue.pull_request) return;
+              if (!context.payload.issue.pull_request) return; // não é PR
               prNumber = context.payload.issue.number;
               feedbackUrl = context.payload.comment.html_url;
               author = context.payload.comment.user?.login;
-            } else return;
+              feedbackText = (context.payload.comment.body || "").trim();
+            } else {
+              return;
+            }
 
-            // Ajuste aqui se o login do bot for diferente no seu repo
-            const login = (author || "").toLowerCase();
-            const allowed = new Set(["coderabbitai", "coderabbitai[bot]"]);
+            // Ajuste 1: se não tem texto (e não é review), não dispara
+            if (!feedbackText && context.eventName !== "pull_request_review") {
+              core.info("No feedback text found; skipping.");
+              return;
+            }
+
+            // Filtro do CodeRabbit
             const login = (author || "").toLowerCase();
             const allowed = new Set(["coderabbitai", "coderabbitai[bot]"]);
             const isCodeRabbit = allowed.has(login) || login.includes("coderabbit");
             if (!isCodeRabbit) return;
 
-
+            // Carrega PR
             const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+
+            // Filtro por branch manus/*
             const headRef = pr.data.head.ref || "";
-            const isManusBranch = headRef.startsWith("manus/");
-            if (!isManusBranch) {
+            if (!headRef.startsWith("manus/")) {
               core.info(`Not a manus branch (${headRef}). Exiting.`);
               return;
             }
 
-
+            // Busy lock
+            const labels = pr.data.labels.map(l => l.name);
             const busyLabel = "manus-busy";
             if (labels.includes(busyLabel)) return;
 
             await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: [busyLabel] });
 
-            const prompt =
-`Você é o agente Manus trabalhando no repositório ${owner}/${repo}.
+            // Monta prompt (inclui corpo se existir)
+            const promptLines = [
+              "Você é o agente Manus trabalhando neste repositório e há novo feedback do CodeRabbit.",
+              "",
+              `Repositório: ${owner}/${repo}`,
+              `PR: ${pr.data.html_url}`,
+              `Branch: ${headRef}`,
+              `Feedback link: ${feedbackUrl}`,
+            ];
 
-Novo feedback do CodeRabbit:
-- PR: ${pr.data.html_url}
-- Feedback: ${feedbackUrl}
-- Branch: ${pr.data.head.ref}
+            if (feedbackText) {
+              promptLines.push("", "Conteúdo do feedback (texto):", "```", feedbackText, "```");
+            }
 
-Tarefa:
-1) Ler TODO o feedback do CodeRabbit (threads inclusive).
-2) Aplicar correções/melhorias sugeridas que fizerem sentido.
-3) Fazer push NA MESMA BRANCH (${pr.data.head.ref}).
-4) Garantir CI/CodeQL verdes (se quebrar, conserte).
-5) NÃO fazer merge.`;
+            promptLines.push(
+              "",
+              "Tarefa:",
+              "1) Ler o feedback completo do CodeRabbit no PR (threads inclusive).",
+              "2) Aplicar correções/melhorias sugeridas que fizerem sentido.",
+              `3) Fazer push na MESMA branch do PR (${headRef}).`,
+              "4) Garantir CI/CodeQL verdes (se quebrar, conserte).",
+              "5) NÃO fazer merge.",
+              "",
+              "Ao finalizar, comentar no PR:",
+              "- o que foi feito",
+              "- por que foi feito",
+              "- como validar."
+            );
+
+            const prompt = promptLines.join("\n");
 
             const body = {
               prompt,
@@ -87,20 +129,30 @@ Tarefa:
 
             if (process.env.MANUS_PROJECT_ID) body.projectId = process.env.MANUS_PROJECT_ID;
 
-            const res = await fetch("https://api.manus.ai/v1/tasks", {
-              method: "POST",
-              headers: {
-                "API_KEY": process.env.MANUS_API_KEY,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify(body)
-            });
+            // Ajuste 3: se falhar ao criar task no Manus, remove manus-busy
+            let data;
+            try {
+              const res = await fetch("https://api.manus.ai/v1/tasks", {
+                method: "POST",
+                headers: {
+                  "API_KEY": process.env.MANUS_API_KEY,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+              });
 
-            if (!res.ok) throw new Error(`Manus API error: ${res.status} ${await res.text()}`);
+              if (!res.ok) {
+                throw new Error(`Manus API error: ${res.status} ${await res.text()}`);
+              }
 
-            const data = await res.json();
+              data = await res.json();
+            } catch (err) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number: prNumber, name: busyLabel }).catch(() => {});
+              throw err;
+            }
 
+            // Ajuste 4: incluir o tipo de evento no comentário (debug)
             await github.rest.issues.createComment({
               owner, repo, issue_number: prNumber,
-              body: `🤖 Manus Autopilot acionado por feedback do CodeRabbit.\nTask: ${data.task_url}`
+              body: `🤖 Manus Autopilot acionado por feedback do CodeRabbit (${context.eventName}).\nTask: ${data.task_url}`
             });
