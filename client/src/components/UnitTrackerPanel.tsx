@@ -30,6 +30,13 @@ interface UnitTrackerPanelProps {
   onMarkDestroyed?: (unitId: number, participantId: number) => void;
 }
 
+/**
+ * Painel que exibe as unidades dos jogadores, agrupando-as em Ativas, Fora de Ação e Destruídas, e apresentando estatísticas resumidas.
+ *
+ * @param units - Lista de unidades a serem exibidas no painel
+ * @param onMarkDestroyed - Callback opcional chamado quando uma unidade ativa é marcada como destruída; recebe `unitId` e `participantId`
+ * @returns O elemento React do painel que mostra listas de unidades categorizadas, detalhes por unidade em popover e controles de ação (por ex., marcar como destruída)
+ */
 export default function UnitTrackerPanel({ units, onMarkDestroyed }: UnitTrackerPanelProps) {
   const activeUnits = units.filter(u => u.status === "active");
   const destroyedUnits = units.filter(u => u.status === "destroyed");

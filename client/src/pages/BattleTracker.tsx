@@ -37,6 +37,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
+/**
+ * Componente que fornece a interface e a lógica do rastreador de batalha, incluindo estado local, carregamento de dados, mutações e controles de fluxo (fases, unidades, horda, distribuição de XP e modais).
+ *
+ * Gerencia consultas e mutações relacionadas à batalha, participantes e unidades; mantém estados de fase, logs e listas de unidades; e orquestra ações do usuário como marcar unidades destruídas, gerar e confirmar hordas, avançar fases e distribuir XP.
+ *
+ * @returns O JSX da interface do rastreador de batalha, ou `null` quando a rota/ID da batalha for inválida. 
+ */
 function BattleTrackerInner() {
   const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;

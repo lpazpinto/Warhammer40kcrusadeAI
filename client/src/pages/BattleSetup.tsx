@@ -23,6 +23,16 @@ interface BattleConfig {
   playerUnits: Record<number, number[]>; // playerId -> unitIds[]
 }
 
+/**
+ * Interface para configurar e iniciar uma batalha de campanha.
+ *
+ * Renderiza um assistente em cinco passos para selecionar missão, definir pontos,
+ * gastar requisições, selecionar unidades e confirmar, além de criar a batalha
+ * e os participantes no backend quando confirmado. Se nenhuma unidade for selecionada
+ * por um jogador, inclui automaticamente todas as unidades do Order of Battle desse jogador.
+ *
+ * @returns Elemento React que renderiza a tela de configuração de batalha.
+ */
 export default function BattleSetup() {
   const { campaignId } = useParams<{ campaignId: string }>();
   const id = parseInt(campaignId || '0');
