@@ -53,27 +53,47 @@ jobs:
               return;
             }
 
+            if (["cancelled", "skipped"].includes(run.conclusion)) {
+              core.info(`Run conclusion is ${run.conclusion}. Not triggering Manus task.`);
+              return;
+            }
+
+
             if (labels.includes(busyLabel)) return;
 
             await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: [busyLabel] });
 
-            const prompt =
-`Você é o agente Manus trabalhando no repositório ${owner}/${repo}.
+            const prompt = [
+            "Você é o agente Manus responsável por corrigir falhas de CI/CodeQL neste repositório.",
+            "",
+            `Repositório: ${owner}/${repo}`,
+            `Pull Request: ${pr.data.html_url}`,
+            `Branch do PR: ${pr.data.head.ref}`,
+            "",
+            "Falha detectada:",
+            `- Workflow: ${run.name}`,
+            `- Conclusão: ${run.conclusion}`,
+            `- Run: ${run.html_url}`,
+            `- SHA: ${run.head_sha}`,
+            "",
+            "Objetivo:",
+            "1) Abrir o link do Run e identificar o PRIMEIRO step que falhou (mensagem de erro e arquivo/linha se houver).",
+            "2) Corrigir com o MENOR patch possível.",
+            `3) Fazer push de commits na MESMA branch do PR: ${pr.data.head.ref}`,
+            "4) Não fazer merge.",
+            "5) Repetir até ficar tudo verde (CI + CodeQL).",
+            "",
+            "Regra:",
+            "Se o erro for de dependência/ambiente (ex.: missing env var/serviço externo), NÃO invente.",
+            "Comente no PR qual variável/serviço falta e pare.",
+            "",
+            "Ao finalizar, comentar no PR:",
+            "- causa raiz (1–2 linhas)",
+            "- arquivos alterados",
+            "- como validar (comandos)."
+            ].join("\n");
 
-Contexto:
-- Pull Request: ${pr.data.html_url}
-- Branch do PR: ${pr.data.head.ref}
-- Workflow que falhou: ${run.name}
-- Link do run: ${run.html_url}
-- SHA: ${run.head_sha}
 
-Tarefa:
-1) Abrir o PR e identificar por que o check falhou (CI/CodeQL).
-2) Corrigir com o MENOR patch possível.
-3) Fazer push NA MESMA BRANCH do PR (${pr.data.head.ref}).
-4) NÃO fazer merge.
-5) Repetir até ficar verde.
-6) Comentar no PR: causa raiz + mudanças + como testar.`;
 
             const body = {
               prompt,
