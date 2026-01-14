@@ -704,3 +704,20 @@
 - [x] Remove "Add Kill" button from player units (kills tracked via Horde destruction)
 - [x] Update UI layout to clearly separate Player vs Horde units (blue panel for players, red panel for Horde)
 - [x] Show kill count on player units in Battle Tracker (e.g., "• 1 kills")
+
+
+## Shooting Phase Sub-Steps - January 2026
+- [x] Create ShootingPhaseSteps.tsx component (9 steps total)
+- [x] Implement Step 3.1: Start of Shooting Phase (buffs, stratagems)
+- [x] Implement Step 3.2: Select Unit to Shoot
+- [x] Implement Step 3.2a: Select Targets (range and visibility rules)
+- [x] Implement Step 3.2b: Hit Rolls (BS, modifiers, critical hits)
+- [x] Implement Step 3.2c: Wound Rolls (S vs T comparison table)
+- [x] Implement Step 3.2d: Saving Throws (AP modifiers, invulnerable saves)
+- [x] Implement Step 3.2e: Apply Damage and Remove Models (damage allocation)
+- [x] Implement Step 3.2f: Next Unit (repeat for remaining units)
+- [x] Implement Step 3.3: End of Shooting Phase
+- [x] Add note about Overwatch being out-of-phase
+- [x] Integrate ShootingPhaseSteps into BattleTracker
+- [x] Fix direct phase button clicks not updating localCurrentPhase
+- [x] Add shooting phase completion blocking for phase advancement
