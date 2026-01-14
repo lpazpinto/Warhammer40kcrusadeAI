@@ -37,6 +37,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
+/**
+ * Componente que fornece a interface e a lógica do rastreador de batalha, incluindo estado local, carregamento de dados, mutações e controles de fluxo (fases, unidades, horda, distribuição de XP e modais).
+ *
+ * Gerencia consultas e mutações relacionadas à batalha, participantes e unidades; mantém estados de fase, logs e listas de unidades; e orquestra ações do usuário como marcar unidades destruídas, gerar e confirmar hordas, avançar fases e distribuir XP.
+ *
+ * @returns O JSX da interface do rastreador de batalha, ou `null` quando a rota/ID da batalha for inválida. 
+ */
 function BattleTrackerInner() {
   const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
@@ -212,23 +219,6 @@ function BattleTrackerInner() {
     );
   };
 
-  const handleAddKill = (participantId: number) => {
-    const participant = participants?.find(p => p.id === participantId);
-    if (!participant) return;
-
-    updateParticipantMutation.mutate(
-      {
-        id: participantId,
-        enemyUnitsKilled: (participant.enemyUnitsKilled || 0) + 1,
-      },
-      {
-        onSuccess: () => {
-          utils.battleParticipant.list.invalidate({ battleId: battleId! });
-        },
-      }
-    );
-  };
-
   const [isSpawningHorde, setIsSpawningHorde] = useState(false);
   
   // Get campaign to know horde faction
@@ -298,11 +288,18 @@ function BattleTrackerInner() {
     toast.success(`${unitName} adicionada à batalha!`);
   };
   
+  // Update crusade unit mutation for incrementing kills
+  const updateCrusadeUnitMutation = trpc.crusadeUnit.update.useMutation({
+    onSuccess: () => {
+      utils.crusadeUnit.getByIds.invalidate({ ids: allUnitIds });
+    },
+  });
+
   // Handle destroying a horde unit
-  const handleDestroyHordeUnit = (unitId: string, destroyedBy?: string) => {
+  const handleDestroyHordeUnit = (unitId: string, destroyedByUnitId?: number, destroyedByUnitName?: string) => {
     const updatedUnits = hordeUnits.map(unit => 
       unit.id === unitId 
-        ? { ...unit, status: "destroyed" as const, destroyedBy } 
+        ? { ...unit, status: "destroyed" as const, destroyedByUnitId, destroyedByUnitName } 
         : unit
     );
     setHordeUnits(updatedUnits);
@@ -315,11 +312,21 @@ function BattleTrackerInner() {
       });
     }
     
-    // Award SP to player who destroyed the unit
-    if (destroyedBy) {
+    // Increment enemyUnitsDestroyed for the unit that made the kill
+    if (destroyedByUnitId) {
+      const killerUnit = crusadeUnits?.find(u => u.id === destroyedByUnitId);
+      if (killerUnit) {
+        updateCrusadeUnitMutation.mutate({
+          id: destroyedByUnitId,
+          enemyUnitsDestroyed: (killerUnit.enemyUnitsDestroyed || 0) + 1,
+        });
+        toast.success(`+1 Kill para ${destroyedByUnitName || killerUnit.unitName}!`);
+      }
+      
+      // Also award SP to the player
       const participant = participants?.find(p => {
-        const player = players?.find(pl => pl.id === p.playerId);
-        return player?.name === destroyedBy;
+        const deployedUnits = p.unitsDeployed || [];
+        return deployedUnits.includes(destroyedByUnitId);
       });
       
       if (participant) {
@@ -327,7 +334,6 @@ function BattleTrackerInner() {
           participantId: participant.id,
           amount: 1,
         });
-        toast.success(`+1 SP para ${destroyedBy} por destruir unidade da Horda!`);
       }
     }
   };
@@ -575,7 +581,6 @@ function BattleTrackerInner() {
             <UnitTrackerPanel 
               units={unitStatuses}
               onMarkDestroyed={handleMarkDestroyed}
-              onAddKill={handleAddKill}
             />
             
             {/* Horde Units Panel */}
@@ -584,7 +589,13 @@ function BattleTrackerInner() {
               faction={campaign?.hordeFaction || "Horda"}
               numberOfZones={numberOfZones}
               onDestroyUnit={handleDestroyHordeUnit}
-              playerNames={players?.map(p => p.name || "Unknown") || []}
+              playerUnits={unitStatuses.map(u => ({
+                id: u.id,
+                name: u.name,
+                crusadeName: u.crusadeName,
+                playerName: u.playerName,
+                status: u.status,
+              }))}
             />
           </div>
 
