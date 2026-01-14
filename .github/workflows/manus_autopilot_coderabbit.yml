@@ -1,0 +1,97 @@
+name: Manus Autopilot (coderabbit)
+
+on:
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  autopilot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Manus when CodeRabbit leaves feedback
+        uses: actions/github-script@v7
+        env:
+          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+          MANUS_PROJECT_ID: ${{ secrets.MANUS_PROJECT_ID }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            let prNumber = null;
+            let feedbackUrl = null;
+            let author = null;
+
+            if (context.eventName === "pull_request_review") {
+              prNumber = context.payload.pull_request.number;
+              feedbackUrl = context.payload.review.html_url;
+              author = context.payload.review.user?.login;
+            } else if (context.eventName === "issue_comment") {
+              if (!context.payload.issue.pull_request) return;
+              prNumber = context.payload.issue.number;
+              feedbackUrl = context.payload.comment.html_url;
+              author = context.payload.comment.user?.login;
+            } else return;
+
+            // Ajuste aqui se o login do bot for diferente no seu repo
+            const isCodeRabbit = (author || "").toLowerCase().includes("coderabbit");
+            if (!isCodeRabbit) return;
+
+            const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+            const labels = pr.data.labels.map(l => l.name);
+
+            if (!labels.includes("manus-managed")) return;
+
+            const busyLabel = "manus-busy";
+            if (labels.includes(busyLabel)) return;
+
+            await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: [busyLabel] });
+
+            const prompt =
+`Você é o agente Manus trabalhando no repositório ${owner}/${repo}.
+
+Novo feedback do CodeRabbit:
+- PR: ${pr.data.html_url}
+- Feedback: ${feedbackUrl}
+- Branch: ${pr.data.head.ref}
+
+Tarefa:
+1) Ler TODO o feedback do CodeRabbit (threads inclusive).
+2) Aplicar correções/melhorias sugeridas que fizerem sentido.
+3) Fazer push NA MESMA BRANCH (${pr.data.head.ref}).
+4) Garantir CI/CodeQL verdes (se quebrar, conserte).
+5) NÃO fazer merge.`;
+
+            const body = {
+              prompt,
+              agentProfile: "manus-1.6",
+              taskMode: "agent",
+              interactiveMode: false
+            };
+
+            if (process.env.MANUS_PROJECT_ID) body.projectId = process.env.MANUS_PROJECT_ID;
+
+            const res = await fetch("https://api.manus.ai/v1/tasks", {
+              method: "POST",
+              headers: {
+                "API_KEY": process.env.MANUS_API_KEY,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(body)
+            });
+
+            if (!res.ok) throw new Error(`Manus API error: ${res.status} ${await res.text()}`);
+
+            const data = await res.json();
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: prNumber,
+              body: `🤖 Manus Autopilot acionado por feedback do CodeRabbit.\nTask: ${data.task_url}`
+            });
