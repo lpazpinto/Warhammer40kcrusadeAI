@@ -41,7 +41,9 @@ jobs:
             } else return;
 
             // Ajuste aqui se o login do bot for diferente no seu repo
-            const isCodeRabbit = (author || "").toLowerCase().includes("coderabbit");
+            const login = (author || "").toLowerCase();
+            const allowed = new Set(["coderabbitai", "coderabbitai[bot]"]);
+            const isCodeRabbit = allowed.has(login) || login.includes("coderabbit");
             if (!isCodeRabbit) return;
 
             const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
