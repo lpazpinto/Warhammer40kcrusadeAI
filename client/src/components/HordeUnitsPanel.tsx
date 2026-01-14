@@ -42,6 +42,13 @@ interface HordeUnitsPanelProps {
   playerUnits?: PlayerUnit[];
 }
 
+/**
+ * Painel que exibe as unidades da Horda, permite marcar unidades como destruídas e atribuir a kill a uma unidade de jogador ativa.
+ *
+ * @param onDestroyUnit - Callback chamado quando uma unidade da Horda é destruída. Recebe `unitId`, `destroyedByUnitId` (opcional) e `destroyedByUnitName` (opcional) para indicar a unidade responsável pela kill.
+ * @param playerUnits - Lista opcional de unidades de jogadores usada para selecionar a unidade que realizou a kill (somente unidades com status "active" são oferecidas).
+ * @returns O elemento JSX do painel de unidades da Horda, incluindo diálogo de confirmação para destruição e seleção de atribuição de kill.
+ */
 export default function HordeUnitsPanel({
   units,
   faction,
