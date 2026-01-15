@@ -7,106 +7,131 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
   issues: write
 
 jobs:
   enable:
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto-merge (squash) when checks are green
+      - name: Auto-merge Manus PRs when checks are green (squash)
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GH_PAT }}
           script: |
             const run = context.payload.workflow_run;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // Só age em runs que vieram de PR (evita push/schedule)
-            if (run.event !== "pull_request") {
-              core.info(`Ignorando workflow_run (event=${run.event}).`);
-              return;
-            }
-
-            // Só quando terminou verde
             if (run.conclusion !== "success") {
-              core.info(`Workflow ${run.name} terminou com ${run.conclusion}. Nada a fazer.`);
+              core.info(`Workflow ${run.name} concluiu como ${run.conclusion}. Não tentando merge.`);
               return;
             }
 
             async function getAssociatedPRNumbers() {
-              // 1) tenta pelo payload
               const prs = run.pull_requests || [];
               if (prs.length > 0) return prs.map(p => p.number);
 
-              // 2) fallback por SHA
               const sha = run.head_sha;
               if (!sha) return [];
 
-              const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                owner,
-                repo,
-                commit_sha: sha,
-                mediaType: { previews: ["groot"] }
-              });
-
-              return (data || []).map(pr => pr.number);
+              try {
+                const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  owner,
+                  repo,
+                  commit_sha: sha,
+                  mediaType: { previews: ["groot"] }
+                });
+                return (data || []).map(pr => pr.number);
+              } catch (e) {
+                core.warning(`Falha ao buscar PR por SHA (${sha}): ${String(e?.message || e)}`);
+                return [];
+              }
             }
 
             const prNumbers = await getAssociatedPRNumbers();
-
             if (prNumbers.length === 0) {
               core.info("Nenhum PR associado a este workflow_run (nem por SHA).");
               return;
             }
 
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            const maxAttempts = 12;
+            const waitMs = 5000;
+
             for (const prNumber of prNumbers) {
-              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              let pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
 
               const headRef = pr.data.head.ref || "";
-              const state = pr.data.state;
-              const draft = pr.data.draft;
-
-              // só PRs do Manus
               if (!headRef.startsWith("manus/")) {
                 core.info(`PR #${prNumber} não é manus/* (${headRef}). Ignorando.`);
                 continue;
               }
 
-              if (state !== "open" || draft) {
-                core.info(`PR #${prNumber} não está aberto ou está draft. Ignorando.`);
+              if (pr.data.state !== "open" || pr.data.draft) {
+                core.info(`PR #${prNumber} não está pronto (state=${pr.data.state}, draft=${pr.data.draft}).`);
                 continue;
               }
 
+              if (pr.data.merged) {
+                core.info(`PR #${prNumber} já está merged.`);
+                continue;
+              }
+
+              // Espera GitHub calcular mergeable_state corretamente
+              let ready = false;
+
+              for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+
+                const mergeableState = pr.data.mergeable_state; // clean/blocked/dirty/unknown/unstable
+                const mergeable = pr.data.mergeable;
+
+                core.info(`PR #${prNumber} attempt ${attempt}/${maxAttempts}: mergeable=${mergeable}, state=${mergeableState}`);
+
+                if (mergeableState === "clean" && mergeable === true) {
+                  ready = true;
+                  break;
+                }
+
+                if (mergeableState === "dirty") {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: prNumber,
+                    body: `❌ Auto-merge NÃO realizado: PR com conflitos (mergeable_state=dirty).`
+                  }).catch(() => {});
+                  break;
+                }
+
+                // blocked/unknown/unstable => ainda calculando ou esperando checks
+                await sleep(waitMs);
+              }
+
+              if (!ready) {
+                core.info(`PR #${prNumber} ainda não está pronto para merge (ou ficou bloqueado).`);
+                continue;
+              }
+
+              // Faz merge squash
               try {
-                await github.graphql(`
-                  mutation($pullRequestId: ID!) {
-                    enablePullRequestAutoMerge(input: {
-                      pullRequestId: $pullRequestId,
-                      mergeMethod: SQUASH
-                    }) {
-                      pullRequest { number }
-                    }
-                  }
-                `, { pullRequestId: pr.data.node_id });
+                await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  merge_method: "squash",
+                  sha: pr.data.head.sha
+                });
 
                 await github.rest.issues.createComment({
                   owner, repo, issue_number: prNumber,
-                  body: `✅ Auto-merge (SQUASH) habilitado automaticamente após **${run.name}** ficar verde.\nRun: ${run.html_url}`
-                });
+                  body: `✅ Auto-merge executado (squash) após checks verdes.\nTriggered by: **${run.name}**\nRun: ${run.html_url}`
+                }).catch(() => {});
 
-                core.info(`✅ Auto-merge habilitado no PR #${prNumber}`);
+                core.info(`Merged PR #${prNumber} (squash).`);
+              } catch (e) {
+                const msg = String(e?.message || e);
+                core.warning(`Falha ao fazer merge do PR #${prNumber}: ${msg}`);
 
-              } catch (err) {
-                const msg = String(err?.message || err);
-
-                // se já estava habilitado, não falha o job
-                if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("enabled")) {
-                  core.info(`ℹ️ Auto-merge já estava habilitado no PR #${prNumber}`);
-                  continue;
-                }
-
-                throw err;
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `❌ Tentei fazer auto-merge (squash), mas falhou.\nErro: \`${msg}\`\nSe estiver tudo verde, você pode dar merge manualmente.`
+                }).catch(() => {});
               }
-            }
