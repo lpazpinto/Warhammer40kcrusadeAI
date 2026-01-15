@@ -752,3 +752,96 @@
 - [x] Implement Step 5.4: End of Fight Phase
 - [x] Integrate FightPhaseSteps into BattleTracker
 - [x] Add fight phase completion blocking for phase advancement
+
+
+## Battle Round System & Horde Mode Rules - January 2026
+
+### Battle Round vs Turn System
+- [ ] Change "Turno de Batalha" to "Battle Round" in UI
+- [ ] Add "Turno" indicator within Battle Round (Horde Turn / Player Turn)
+- [ ] Update BattlePhaseTracker to show "Battle Round X - Turno da Horda/Jogador"
+- [ ] Update database schema to track battleRound and currentTurn separately
+- [ ] Update phase log/history to include Battle Round and Turn info
+
+### CP Rules
+- [ ] Players start with 2CP (not generated in Command Phase)
+- [ ] Remove CP generation from Command Phase steps
+- [ ] No cap on CP generation per turn
+
+### Horde Turn Restrictions
+- [ ] Disable Resupply Shop button during Horde turn
+- [ ] Don't ask about objectives controlled during Horde turn
+- [ ] Horde doesn't use Stratagems, gain CP, or benefit from Army/Detachment rules
+- [ ] Horde units in Spawning Zone have Benefit of Cover (display indicator)
+
+### Battle Round Start Sequence
+- [ ] Create BattleRoundStartModal component
+- [ ] Step 1: Discard any active Misery cards
+- [ ] Step 2: Reveal Misery cards based on round (0 for R1, 1 for R2, 1 for R3-4, 3 for R5+)
+- [ ] Step 3: Reveal new Secondary Mission for the round
+- [ ] Step 4: Resolve mission rewards/punishments from previous round
+- [ ] Step 5: Spawn the Horde (with modifiers: +1 for R3-4, +2 for R5+)
+- [ ] Step 6: Resolve start-of-round effects
+
+### Misery Deck System
+- [ ] Create miseryCards table in database schema
+- [ ] Create MiseryDeck data with all 32 cards
+- [ ] Create MiseryCardModal component to display revealed cards
+- [ ] Track active Misery cards per battle
+- [ ] Implement card effects (some are automatic, some need tracking)
+
+### Secondary Missions System
+- [ ] Create secondaryMissions table in database schema
+- [ ] Create SecondaryMissions data with all 20 missions
+- [ ] Create SecondaryMissionModal component to display current mission
+- [ ] Track mission progress during battle round
+- [ ] Implement mission success/failure detection
+- [ ] Apply rewards and punishments at end of round
+
+### Battle Round End Sequence
+- [ ] Create BattleRoundEndModal component
+- [ ] Resolve all Secondary Missions (success/failure)
+- [ ] Apply rewards for successful missions
+- [ ] Apply punishments for failed missions
+- [ ] Queue Misery cards and Spawn Roll modifiers for next round
+
+### Horde Primary Faction Rules
+- [ ] Create hordeFactionRules data with all faction rules
+- [ ] Display active faction rule in Battle Tracker
+- [ ] Some rules need tracking (e.g., Leagues of Votann marking)
+
+### Deep Strike Rules (Rounds 2-4)
+- [ ] Track units with Deep Strike ability
+- [ ] Put Deep Strike units into Horde Reserves instead of Spawning Zone
+- [ ] Implement Deep Strike placement rules during Horde Movement Phase
+
+
+## Battle Round System & Horde Mode Rules - Phase 1 (January 2026)
+- [x] Add `currentTurn` field to battles table schema (enum: 'horde' | 'player')
+- [x] Update UI to show "Battle Round X - Turno da Horda/Jogador" in Informações da Batalha section
+- [x] Disable Resupply Shop during Horde turn - modal no longer opens automatically
+- [x] Hide objectives controlled input during Horde turn - step auto-completes
+- [x] Add Spawn Roll modifiers based on battle round:
+  - Round 3-4: +1 to spawn roll
+  - Round 5+: +2 to spawn roll
+- [x] Update Spawn Horda button text to show modifier (e.g., "Spawn Horda (2D6+1)")
+- [x] Fix CommandPhaseSteps to skip SP distribution during Horde turn
+
+## Battle Round System & Horde Mode Rules - Phase 2 (Future)
+- [ ] Create Misery Cards system (32 cards from PDF)
+- [ ] Create Secondary Missions system (20 missions from PDF)
+- [ ] Implement Battle Round start sequence:
+  - [ ] Discard active Misery cards
+  - [ ] Reveal new Misery cards (1 at R2, 1 at R3-4, 3 at R5+)
+  - [ ] Reveal new Secondary Mission
+  - [ ] Resolve mission rewards/punishments
+  - [ ] Spawn Horde with modifiers
+- [ ] Implement Battle Round end sequence:
+  - [ ] Resolve Secondary Missions (success/failure)
+  - [ ] Apply rewards or punishments
+
+## Battle Round System & Horde Mode Rules - Phase 3 (Future)
+- [ ] Implement Horde Primary Faction Rules (22 factions from PDF)
+- [ ] Implement Deep Strike rules for Horde units
+- [ ] Implement automatic Misery card effects
+- [ ] Players start with 2CP (no natural CP generation)

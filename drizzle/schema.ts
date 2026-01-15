@@ -120,10 +120,11 @@ export const battles = mysqlTable("battles", {
   battleNumber: int("battleNumber").notNull(), // Sequential battle number in campaign
   deployment: varchar("deployment", { length: 100 }), // e.g., "Dawn of War"
   missionPack: varchar("missionPack", { length: 100 }), // e.g., "Leviathan"
-  battleRound: int("battleRound").default(1).notNull(), // Current round (1-5 or more)
+  battleRound: int("battleRound").default(1).notNull(), // Current battle round (1-5 or more)
+  currentTurn: mysqlEnum("currentTurn", ["horde", "player"]).default("horde"), // Current turn within battle round
   currentPhase: varchar("currentPhase", { length: 50 }).default("command"), // Current battle phase
   currentPhaseStep: varchar("currentPhaseStep", { length: 100 }).default("start"), // Current sub-step within phase
-  playerTurn: mysqlEnum("playerTurn", ["player", "opponent"]).default("opponent"), // Horde always plays first
+  playerTurn: mysqlEnum("playerTurn", ["player", "opponent"]).default("opponent"), // DEPRECATED: use currentTurn instead
   objectivesControlled: int("objectivesControlled").default(0).notNull(), // Number of objectives currently controlled
   status: mysqlEnum("status", ["setup", "in_progress", "completed"]).default("setup").notNull(),
   victors: text("victors"), // JSON string of player IDs who won

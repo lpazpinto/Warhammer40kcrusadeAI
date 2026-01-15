@@ -8,6 +8,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ObjectivesInputModal from "@/components/ObjectivesInputModal";
 import { toast } from "sonner";
 
+/**
+ * Command Phase steps for Warhammer 40K Horde Mode
+ * Each step represents a sequential action during the Command Phase
+ */
 const COMMAND_PHASE_STEPS = [
   {
     id: "start",
@@ -43,21 +47,42 @@ const COMMAND_PHASE_STEPS = [
   },
 ];
 
+/**
+ * Props for the CommandPhaseSteps component
+ * Manages the multi-step Command Phase workflow
+ */
 interface CommandPhaseStepsProps {
   battleId: number;
   onComplete: () => void;
   onOpenResupply: () => void;
   playerCount: number;
   isSoloMode: boolean;
+  isHordeTurn?: boolean; // Disable objectives input during Horde turn
   onDistributeSP: (objectivesCount: number) => void;
 }
 
+/**
+ * CommandPhaseSteps Component
+ * 
+ * Guides the player through the Command Phase with detailed step-by-step instructions.
+ * Handles SP distribution during player turns and auto-completes during Horde turns.
+ * 
+ * Features:
+ * - Multi-step workflow (Start, Battle Shock, Resupply)
+ * - Objectives input modal for SP distribution
+ * - Horde turn restrictions (no SP distribution, no resupply shop)
+ * - Step progress tracking
+ * - Navigation between steps
+ * 
+ * @component
+ */
 export default function CommandPhaseSteps({ 
   battleId, 
   onComplete,
   onOpenResupply,
   playerCount,
   isSoloMode,
+  isHordeTurn = false,
   onDistributeSP
 }: CommandPhaseStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -65,21 +90,34 @@ export default function CommandPhaseSteps({
   const [showObjectivesModal, setShowObjectivesModal] = useState(false);
   const [spDistributed, setSpDistributed] = useState(false);
 
-  // Auto-open objectives modal when entering Step 3 (Reabastecimento)
+  // Auto-open objectives modal when entering Step 3 (Reabastecimento) - but not during Horde turn
   React.useEffect(() => {
-    if (currentStep === 2 && !spDistributed) {
+    if (currentStep === 2 && !spDistributed && !isHordeTurn) {
       // Step 3 is index 2 (0-indexed)
       setShowObjectivesModal(true);
     }
-  }, [currentStep, spDistributed]);
+  }, [currentStep, spDistributed, isHordeTurn]);
 
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
+  /**
+   * Handles advancement to the next step or completion of the Command Phase
+   * Prevents resupply step from advancing until SP is distributed (unless Horde turn)
+   * Auto-completes resupply step during Horde turns
+   */
   const handleNextStep = () => {
-    // If on resupply step and SP not distributed yet, show modal first
-    if (step.id === "resupply" && !spDistributed) {
+    // If on resupply step and SP not distributed yet, show modal first (but not during Horde turn)
+    if (step.id === "resupply" && !spDistributed && !isHordeTurn) {
       setShowObjectivesModal(true);
+      return;
+    }
+    
+    // During Horde turn, skip SP distribution and just advance
+    if (step.id === "resupply" && isHordeTurn) {
+      // Auto-complete resupply step during Horde turn
+      setCompletedSteps(prev => new Set([...Array.from(prev), currentStep]));
+      setCurrentStep(currentStep + 1);
       return;
     }
 
@@ -95,12 +133,23 @@ export default function CommandPhaseSteps({
     }
   };
 
+  /**
+   * Handles SP distribution based on objectives controlled
+   * Calculates SP for each player and displays a success message
+   * 
+   * @param objectivesCount - Number of objectives controlled by the player
+   */
   const handleDistributeSP = (objectivesCount: number) => {
     onDistributeSP(objectivesCount);
     setSpDistributed(true);
     toast.success(`SP distribuídos! Cada jogador recebeu ${isSoloMode ? objectivesCount * 2 : objectivesCount} SP de objetivos.`);
   };
 
+  /**
+   * Allows jumping to a specific step in the Command Phase
+   * 
+   * @param index - Index of the step to navigate to
+   */
   const handleStepClick = (index: number) => {
     // Allow jumping to any step
     setCurrentStep(index);
@@ -165,8 +214,8 @@ export default function CommandPhaseSteps({
             </AlertDescription>
           </Alert>
 
-          {/* Resupply Actions (only on step 3) */}
-          {step.id === "resupply" && (
+          {/* Resupply Actions (only on step 3 and not Horde turn) */}
+          {step.id === "resupply" && !isHordeTurn && (
             <div className="space-y-3">
               {!spDistributed && (
                 <Alert className="bg-yellow-50 border-yellow-200">
@@ -185,6 +234,15 @@ export default function CommandPhaseSteps({
                 Abrir Loja de Reabastecimento
               </Button>
             </div>
+          )}
+          
+          {/* Horde turn message */}
+          {step.id === "resupply" && isHordeTurn && (
+            <Alert className="bg-gray-50 border-gray-200">
+              <AlertDescription className="text-gray-700">
+                ℹ️ Durante o turno da Horda, não há distribuição de SP ou acesso à Loja de Reabastecimento.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
 

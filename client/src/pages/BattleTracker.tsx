@@ -40,6 +40,22 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
+/**
+ * BattleTrackerInner Component
+ * 
+ * Main battle tracking interface for Warhammer 40K Horde Mode.
+ * Manages all battle phases, unit tracking, Horde spawning, and resupply mechanics.
+ * 
+ * Features:
+ * - Battle phase progression (Command, Movement, Shooting, Charge, Fight)
+ * - Unit tracking for player forces and Horde enemies
+ * - Horde spawn mechanics with round-based modifiers
+ * - Resupply shop for purchasing reinforcements
+ * - Battle summary and completion
+ * - SP (Supply Points) distribution and management
+ * 
+ * @component
+ */
 function BattleTrackerInner() {
   const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
@@ -241,6 +257,11 @@ function BattleTrackerInner() {
     },
   });
 
+  /**
+   * Handles the Horde spawn roll and unit generation
+   * Calculates round modifiers (+1 for rounds 3-4, +2 for round 5+)
+   * Triggers the spawn modal to display generated units
+   */
   const handleSpawnHorde = () => {
     if (!campaign?.hordeFaction) {
       toast.error("Horde faction not configured");
@@ -250,12 +271,21 @@ function BattleTrackerInner() {
     // Get max supply limit from players to determine number of zones
     const maxSupplyLimit = players?.reduce((max, p) => Math.max(max, p.supplyLimit || 1000), 1000) || 1000;
     
+    // Calculate battle round modifiers
+    const currentRound = battle?.battleRound || 1;
+    let roundModifier = 0;
+    if (currentRound >= 5) {
+      roundModifier = 2; // +2 for round 5+
+    } else if (currentRound >= 3) {
+      roundModifier = 1; // +1 for rounds 3-4
+    }
+    
     setIsSpawningHorde(true);
     spawnHordeMutation.mutate({
       faction: campaign.hordeFaction,
-      battleRound: battle?.battleRound || 1,
+      battleRound: currentRound,
       pointsLimit: maxSupplyLimit, // For zone assignment based on player supply limits
-      additionalModifiers: 0,
+      additionalModifiers: roundModifier,
     });
   };
   
@@ -264,6 +294,12 @@ function BattleTrackerInner() {
   const numberOfZones = maxSupplyLimit <= 1000 ? 2 : 4;
   
   // Add spawned unit to battle
+  /**
+   * Confirms and adds a spawned Horde unit to the battle
+   * 
+   * @param unitName - Name of the spawned unit
+   * @param zone - Zone where the unit is deployed (1-4)
+   */
   const handleConfirmSpawn = (unitName: string, zone: number) => {
     const newUnit: HordeUnit = {
       id: `horde-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -500,6 +536,7 @@ function BattleTrackerInner() {
               onPhaseChange={handlePhaseChange}
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
+              battleRound={battle?.battleRound || 1}
               canAdvancePhase={
                 (localCurrentPhase !== "command" || commandPhaseCompleted) &&
                 (localCurrentPhase !== "movement" || movementPhaseCompleted) &&
@@ -515,12 +552,18 @@ function BattleTrackerInner() {
                 battleId={battleId}
                 playerCount={participants?.length || 1}
                 isSoloMode={participants?.length === 1}
+                isHordeTurn={(battle as any)?.currentTurn === 'horde'}
                 onComplete={() => {
                   setShowCommandSteps(false);
                   setCommandPhaseCompleted(true);
                   toast.success("Fase de Comando concluída! Agora você pode avançar para a próxima fase.");
                 }}
                 onOpenResupply={() => {
+                  // Disable shop during Horde turn
+                  if ((battle as any)?.currentTurn === 'horde') {
+                    toast.error("A loja de reabastecimento não está disponível durante o turno da Horda.");
+                    return;
+                  }
                   // Open resupply shop for first participant (player)
                   const playerParticipant = participants?.[0];
                   if (playerParticipant) {
@@ -720,8 +763,10 @@ function BattleTrackerInner() {
                     <p className="font-medium capitalize">{battle.status}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Turno Atual</p>
-                    <p className="font-medium">{battle.battleRound || 1}</p>
+                    <p className="text-sm text-muted-foreground">Battle Round</p>
+                    <p className="font-medium">
+                      Round {battle.battleRound || 1} - {(battle as any).currentTurn === 'horde' ? 'Turno da Horda' : 'Turno do Jogador'}
+                    </p>
                   </div>
                   {battle.deployment && (
                     <div>
