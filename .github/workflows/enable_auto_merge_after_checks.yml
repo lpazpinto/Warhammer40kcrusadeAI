@@ -1,0 +1,101 @@
+name: Enable auto-merge after checks (Manus)
+
+on:
+  workflow_run:
+    workflows: ["CI", "CodeQL"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge (squash) when checks are green
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const run = context.payload.workflow_run;
+
+            // Só age quando o workflow terminou com sucesso
+            if (run.conclusion !== "success") {
+              core.info(`Workflow ${run.name} terminou com ${run.conclusion}. Nada a fazer.`);
+              return;
+            }
+
+            const prs = run.pull_requests || [];
+            if (prs.length === 0) {
+              core.info("Nenhum PR associado a este workflow_run.");
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            for (const prInfo of prs) {
+              const prNumber = prInfo.number;
+
+              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+
+              const headRef = pr.data.head.ref || "";
+              const state = pr.data.state;
+              const draft = pr.data.draft;
+              const mergeableState = pr.data.mergeable_state; // clean/unstable/dirty/blocked/unknown
+
+              // Só para PRs do Manus
+              if (!headRef.startsWith("manus/")) {
+                core.info(`PR #${prNumber} não é manus/* (${headRef}). Ignorando.`);
+                continue;
+              }
+
+              if (state !== "open" || draft) {
+                core.info(`PR #${prNumber} não está open ou está draft. Ignorando.`);
+                continue;
+              }
+
+              // Se tiver conflito, não adianta tentar auto-merge
+              if (mergeableState === "dirty") {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `⚠️ Não foi possível habilitar auto-merge: PR com conflito (mergeable_state=dirty).`
+                });
+                continue;
+              }
+
+              // Tenta habilitar auto-merge
+              try {
+                await github.graphql(`
+                  mutation($pullRequestId: ID!) {
+                    enablePullRequestAutoMerge(input: {
+                      pullRequestId: $pullRequestId,
+                      mergeMethod: SQUASH
+                    }) {
+                      pullRequest { number }
+                    }
+                  }
+                `, { pullRequestId: pr.data.node_id });
+
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `✅ Auto-merge (SQUASH) habilitado automaticamente após ${run.name} ficar verde.`
+                });
+
+                core.info(`Auto-merge habilitado no PR #${prNumber}`);
+
+              } catch (err) {
+                const msg = String(err?.message || err);
+
+                // Se ainda estiver instável, não falha o job.
+                // Quando o outro workflow terminar, ele vai tentar de novo automaticamente.
+                if (msg.includes("unstable status")) {
+                  core.warning(`PR #${prNumber} ainda instável. Vou deixar para a próxima execução.`);
+                  continue;
+                }
+
+                throw err;
+              }
+            }
