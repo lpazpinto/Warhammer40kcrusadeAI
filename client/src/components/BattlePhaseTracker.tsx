@@ -220,7 +220,7 @@ export default function BattlePhaseTracker({
             </Button>
             {battleRound >= 3 && (
               <p className="text-xs text-center text-muted-foreground">
-                {battleRound >= 5 ? '⚠️ Round 5+: +2 ao resultado do Spawn Roll' : '⚠️ Rounds 3-4: +1 ao resultado do Spawn Roll'}
+                {battleRound >= 5 ? '⚠️ Rodada 5+: +2 ao resultado da rolagem de Spawn' : '⚠️ Rodadas 3–4: +1 ao resultado da rolagem de Spawn'}
               </p>
             )}
           </div>
