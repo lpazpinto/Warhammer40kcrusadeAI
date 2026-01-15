@@ -1,4 +1,4 @@
-name: Enable auto-merge after checks (Manus)
+name: Auto-merge Manus PRs when checks are green (squash)
 
 on:
   workflow_run:
@@ -6,12 +6,12 @@ on:
     types: [completed]
 
 permissions:
-  pull-requests: write
   contents: write
+  pull-requests: write
   issues: write
 
 jobs:
-  enable:
+  auto_merge:
     runs-on: ubuntu-latest
     steps:
       - name: Auto-merge Manus PRs when checks are green (squash)
@@ -22,15 +22,18 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
+            // Só tenta merge quando o workflow terminou com sucesso
             if (run.conclusion !== "success") {
               core.info(`Workflow ${run.name} concluiu como ${run.conclusion}. Não tentando merge.`);
               return;
             }
 
             async function getAssociatedPRNumbers() {
+              // 1) Caso o payload já venha com PRs
               const prs = run.pull_requests || [];
               if (prs.length > 0) return prs.map(p => p.number);
 
+              // 2) Fallback por SHA
               const sha = run.head_sha;
               if (!sha) return [];
 
@@ -39,8 +42,9 @@ jobs:
                   owner,
                   repo,
                   commit_sha: sha,
-                  mediaType: { previews: ["groot"] }
+                  mediaType: { previews: ["groot"] },
                 });
+
                 return (data || []).map(pr => pr.number);
               } catch (e) {
                 core.warning(`Falha ao buscar PR por SHA (${sha}): ${String(e?.message || e)}`);
@@ -54,59 +58,63 @@ jobs:
               return;
             }
 
-            const sleep = ms => new Promise(r => setTimeout(r, ms));
-            const maxAttempts = 12;
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+            const maxAttempts = 36;   // ~3 minutos
             const waitMs = 5000;
 
             for (const prNumber of prNumbers) {
-              let pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              // Carrega PR
+              const { data: prInitial } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
 
-              const headRef = pr.data.head.ref || "";
+              const headRef = prInitial.head?.ref || "";
               if (!headRef.startsWith("manus/")) {
                 core.info(`PR #${prNumber} não é manus/* (${headRef}). Ignorando.`);
                 continue;
               }
 
-              if (pr.data.state !== "open" || pr.data.draft) {
-                core.info(`PR #${prNumber} não está pronto (state=${pr.data.state}, draft=${pr.data.draft}).`);
+              if (prInitial.state !== "open" || prInitial.draft) {
+                core.info(`PR #${prNumber} não está pronto (state=${prInitial.state}, draft=${prInitial.draft}).`);
                 continue;
               }
 
-              if (pr.data.merged) {
+              if (prInitial.merged) {
                 core.info(`PR #${prNumber} já está merged.`);
                 continue;
               }
 
-              // Espera GitHub calcular mergeable_state corretamente
+              // Espera o GitHub calcular mergeable_state corretamente
               let ready = false;
+              let latestPR = prInitial;
 
               for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+                const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+                latestPR = pr;
 
-                const mergeableState = pr.data.mergeable_state; // clean/blocked/dirty/unknown/unstable
-                const mergeable = pr.data.mergeable;
+                const mergeableState = pr.mergeable_state; // clean/blocked/dirty/unknown/unstable
+                const mergeable = pr.mergeable;
 
-                core.info(`PR #${prNumber} attempt ${attempt}/${maxAttempts}: mergeable=${mergeable}, state=${mergeableState}`);
+                core.info(`PR #${prNumber} tentativa ${attempt}/${maxAttempts}: mergeable=${mergeable}, state=${mergeableState}`);
 
-                if (mergeableState === "clean" && mergeable === true) {
+                if (mergeable === true && mergeableState === "clean") {
                   ready = true;
                   break;
                 }
 
                 if (mergeableState === "dirty") {
                   await github.rest.issues.createComment({
-                    owner, repo, issue_number: prNumber,
-                    body: `❌ Auto-merge NÃO realizado: PR com conflitos (mergeable_state=dirty).`
+                    owner,
+                    repo,
+                    issue_number: prNumber,
+                    body: "❌ Auto-merge NÃO realizado: PR com conflitos (mergeable_state=dirty)."
                   }).catch(() => {});
                   break;
                 }
 
-                // blocked/unknown/unstable => ainda calculando ou esperando checks
                 await sleep(waitMs);
               }
 
               if (!ready) {
-                core.info(`PR #${prNumber} ainda não está pronto para merge (ou ficou bloqueado).`);
+                core.info(`PR #${prNumber} ainda não está pronto para merge.`);
                 continue;
               }
 
@@ -117,12 +125,14 @@ jobs:
                   repo,
                   pull_number: prNumber,
                   merge_method: "squash",
-                  sha: pr.data.head.sha
+                  sha: latestPR.head.sha
                 });
 
                 await github.rest.issues.createComment({
-                  owner, repo, issue_number: prNumber,
-                  body: `✅ Auto-merge executado (squash) após checks verdes.\nTriggered by: **${run.name}**\nRun: ${run.html_url}`
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: `✅ Auto-merge executado (SQUASH) após checks verdes.\nWorkflow: **${run.name}**\nRun: ${run.html_url}`
                 }).catch(() => {});
 
                 core.info(`Merged PR #${prNumber} (squash).`);
@@ -131,7 +141,9 @@ jobs:
                 core.warning(`Falha ao fazer merge do PR #${prNumber}: ${msg}`);
 
                 await github.rest.issues.createComment({
-                  owner, repo, issue_number: prNumber,
+                  owner,
+                  repo,
+                  issue_number: prNumber,
                   body: `❌ Tentei fazer auto-merge (squash), mas falhou.\nErro: \`${msg}\`\nSe estiver tudo verde, você pode dar merge manualmente.`
                 }).catch(() => {});
               }
