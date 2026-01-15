@@ -27,6 +27,7 @@ import { trpc } from "@/lib/trpc";
 import BattlePhaseTracker from "@/components/BattlePhaseTracker";
 import CommandPhaseSteps from "@/components/CommandPhaseSteps";
 import MovementPhaseSteps from "@/components/MovementPhaseSteps";
+import ShootingPhaseSteps from "@/components/ShootingPhaseSteps";
 import ResupplyShop from "@/components/ResupplyShop";
 import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
@@ -37,13 +38,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
-/**
- * Componente que fornece a interface e a lógica do rastreador de batalha, incluindo estado local, carregamento de dados, mutações e controles de fluxo (fases, unidades, horda, distribuição de XP e modais).
- *
- * Gerencia consultas e mutações relacionadas à batalha, participantes e unidades; mantém estados de fase, logs e listas de unidades; e orquestra ações do usuário como marcar unidades destruídas, gerar e confirmar hordas, avançar fases e distribuir XP.
- *
- * @returns O JSX da interface do rastreador de batalha, ou `null` quando a rota/ID da batalha for inválida. 
- */
 function BattleTrackerInner() {
   const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
@@ -55,6 +49,8 @@ function BattleTrackerInner() {
   const [commandPhaseCompleted, setCommandPhaseCompleted] = useState(false);
   const [showMovementSteps, setShowMovementSteps] = useState(false);
   const [movementPhaseCompleted, setMovementPhaseCompleted] = useState(false);
+  const [showShootingSteps, setShowShootingSteps] = useState(false);
+  const [shootingPhaseCompleted, setShootingPhaseCompleted] = useState(false);
   
   // Horde spawn state
   const [showSpawnModal, setShowSpawnModal] = useState(false);
@@ -347,6 +343,7 @@ function BattleTrackerInner() {
     // Close any open phase step panels
     setShowCommandSteps(false);
     setShowMovementSteps(false);
+    setShowShootingSteps(false);
     
     // Reset phase completion when entering phases again
     if (phase === "command") {
@@ -354,6 +351,9 @@ function BattleTrackerInner() {
     }
     if (phase === "movement") {
       setMovementPhaseCompleted(false);
+    }
+    if (phase === "shooting") {
+      setShootingPhaseCompleted(false);
     }
     
     // Auto-save to database
@@ -488,7 +488,8 @@ function BattleTrackerInner() {
               isSpawningHorde={isSpawningHorde}
               canAdvancePhase={
                 (localCurrentPhase !== "command" || commandPhaseCompleted) &&
-                (localCurrentPhase !== "movement" || movementPhaseCompleted)
+                (localCurrentPhase !== "movement" || movementPhaseCompleted) &&
+                (localCurrentPhase !== "shooting" || shootingPhaseCompleted)
               }
             />
             
@@ -571,6 +572,36 @@ function BattleTrackerInner() {
                   className="w-full"
                 >
                   Mostrar Passos Detalhados da Fase de Movimento
+                </Button>
+              </div>
+            )}
+
+            {/* Shooting Phase Detailed Steps */}
+            {localCurrentPhase === "shooting" && showShootingSteps && (
+              <ShootingPhaseSteps
+                battleId={battleId}
+                onComplete={() => {
+                  setShowShootingSteps(false);
+                  setShootingPhaseCompleted(true);
+                  toast.success("Fase de Tiro concluída! Agora você pode avançar para a próxima fase.");
+                }}
+              />
+            )}
+
+            {/* Button to show Shooting Phase steps */}
+            {localCurrentPhase === "shooting" && !showShootingSteps && (
+              <div className="space-y-3">
+                {!shootingPhaseCompleted && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    ⚠️ <strong>Fase de Tiro Incompleta:</strong> Você precisa completar todos os passos da Fase de Tiro antes de avançar para a próxima fase.
+                  </div>
+                )}
+                <Button
+                  onClick={() => setShowShootingSteps(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Mostrar Passos Detalhados da Fase de Tiro
                 </Button>
               </div>
             )}

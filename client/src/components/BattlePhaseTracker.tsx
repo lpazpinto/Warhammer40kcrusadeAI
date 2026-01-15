@@ -151,7 +151,10 @@ export default function BattlePhaseTracker({
             {BATTLE_PHASES.map((phase, index) => (
               <button
                 key={phase.id}
-                onClick={() => setCurrentPhaseIndex(index)}
+                onClick={() => {
+                  setCurrentPhaseIndex(index);
+                  onPhaseChange?.(phase.id, currentRound, playerTurn);
+                }}
                 className={`p-3 rounded-lg text-sm font-medium transition-all ${
                   index === currentPhaseIndex
                     ? `${phase.color} text-white shadow-lg scale-105`
