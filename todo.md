@@ -735,3 +735,20 @@
 - [x] Implement Step 4.5: End of Charge Phase
 - [x] Integrate ChargePhaseSteps into BattleTracker
 - [x] Add charge phase completion blocking for phase advancement
+
+
+## Fight Phase Sub-Steps - January 2026
+- [x] Create FightPhaseSteps.tsx component (11 steps total)
+- [x] Implement Step 5.1: Start of Fight Phase (buffs, stratagems)
+- [x] Implement Step 5.2: Fights First (charged units + Fights First ability)
+- [x] Implement Step 5.3: Remaining Combats (alternate remaining eligible units)
+- [x] Implement Step 5.2a: Pile In (move 3" closer to enemy)
+- [x] Implement Step 5.2b: Select Targets (engagement range rules)
+- [x] Implement Step 5.2c: Hit Rolls (WS, modifiers, critical hits)
+- [x] Implement Step 5.2d: Wound Rolls (S vs T comparison table)
+- [x] Implement Step 5.2e: Saving Throws (AP modifiers, invulnerable saves)
+- [x] Implement Step 5.2f: Apply Damage and Remove Models
+- [x] Implement Step 5.2g: Consolidate (move 3" after attacks)
+- [x] Implement Step 5.4: End of Fight Phase
+- [x] Integrate FightPhaseSteps into BattleTracker
+- [x] Add fight phase completion blocking for phase advancement
