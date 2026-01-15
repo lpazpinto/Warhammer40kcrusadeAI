@@ -29,6 +29,7 @@ import CommandPhaseSteps from "@/components/CommandPhaseSteps";
 import MovementPhaseSteps from "@/components/MovementPhaseSteps";
 import ShootingPhaseSteps from "@/components/ShootingPhaseSteps";
 import ChargePhaseSteps from "@/components/ChargePhaseSteps";
+import FightPhaseSteps from "@/components/FightPhaseSteps";
 import ResupplyShop from "@/components/ResupplyShop";
 import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
@@ -54,6 +55,8 @@ function BattleTrackerInner() {
   const [shootingPhaseCompleted, setShootingPhaseCompleted] = useState(false);
   const [showChargeSteps, setShowChargeSteps] = useState(false);
   const [chargePhaseCompleted, setChargePhaseCompleted] = useState(false);
+  const [showFightSteps, setShowFightSteps] = useState(false);
+  const [fightPhaseCompleted, setFightPhaseCompleted] = useState(false);
   
   // Horde spawn state
   const [showSpawnModal, setShowSpawnModal] = useState(false);
@@ -348,6 +351,7 @@ function BattleTrackerInner() {
     setShowMovementSteps(false);
     setShowShootingSteps(false);
     setShowChargeSteps(false);
+    setShowFightSteps(false);
     
     // Reset phase completion when entering phases again
     if (phase === "command") {
@@ -361,6 +365,9 @@ function BattleTrackerInner() {
     }
     if (phase === "charge") {
       setChargePhaseCompleted(false);
+    }
+    if (phase === "fight") {
+      setFightPhaseCompleted(false);
     }
     
     // Auto-save to database
@@ -497,7 +504,8 @@ function BattleTrackerInner() {
                 (localCurrentPhase !== "command" || commandPhaseCompleted) &&
                 (localCurrentPhase !== "movement" || movementPhaseCompleted) &&
                 (localCurrentPhase !== "shooting" || shootingPhaseCompleted) &&
-                (localCurrentPhase !== "charge" || chargePhaseCompleted)
+                (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
+                (localCurrentPhase !== "fight" || fightPhaseCompleted)
               }
             />
             
@@ -640,6 +648,36 @@ function BattleTrackerInner() {
                   className="w-full"
                 >
                   Mostrar Passos Detalhados da Fase de Carga
+                </Button>
+              </div>
+            )}
+
+            {/* Fight Phase Detailed Steps */}
+            {localCurrentPhase === "fight" && showFightSteps && (
+              <FightPhaseSteps
+                battleId={battleId}
+                onComplete={() => {
+                  setShowFightSteps(false);
+                  setFightPhaseCompleted(true);
+                  toast.success("Fase de Combate concluída! Agora você pode avançar para a Fase de Moral.");
+                }}
+              />
+            )}
+
+            {/* Button to show Fight Phase steps */}
+            {localCurrentPhase === "fight" && !showFightSteps && (
+              <div className="space-y-3">
+                {!fightPhaseCompleted && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    ⚠️ <strong>Fase de Combate Incompleta:</strong> Você precisa completar todos os passos da Fase de Combate antes de avançar para a próxima fase.
+                  </div>
+                )}
+                <Button
+                  onClick={() => setShowFightSteps(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Mostrar Passos Detalhados da Fase de Combate
                 </Button>
               </div>
             )}
