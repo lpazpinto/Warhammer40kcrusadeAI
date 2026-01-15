@@ -20,53 +20,65 @@ jobs:
           github-token: ${{ secrets.GH_PAT }}
           script: |
             const run = context.payload.workflow_run;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
 
-            // Só age quando o workflow terminou com sucesso
+            // Só age em runs que vieram de PR (evita push/schedule)
+            if (run.event !== "pull_request") {
+              core.info(`Ignorando workflow_run (event=${run.event}).`);
+              return;
+            }
+
+            // Só quando terminou verde
             if (run.conclusion !== "success") {
               core.info(`Workflow ${run.name} terminou com ${run.conclusion}. Nada a fazer.`);
               return;
             }
 
-            const prs = run.pull_requests || [];
-            if (prs.length === 0) {
-              core.info("Nenhum PR associado a este workflow_run.");
+            async function getAssociatedPRNumbers() {
+              // 1) tenta pelo payload
+              const prs = run.pull_requests || [];
+              if (prs.length > 0) return prs.map(p => p.number);
+
+              // 2) fallback por SHA
+              const sha = run.head_sha;
+              if (!sha) return [];
+
+              const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner,
+                repo,
+                commit_sha: sha,
+                mediaType: { previews: ["groot"] }
+              });
+
+              return (data || []).map(pr => pr.number);
+            }
+
+            const prNumbers = await getAssociatedPRNumbers();
+
+            if (prNumbers.length === 0) {
+              core.info("Nenhum PR associado a este workflow_run (nem por SHA).");
               return;
             }
 
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-
-            for (const prInfo of prs) {
-              const prNumber = prInfo.number;
-
+            for (const prNumber of prNumbers) {
               const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
 
               const headRef = pr.data.head.ref || "";
               const state = pr.data.state;
               const draft = pr.data.draft;
-              const mergeableState = pr.data.mergeable_state; // clean/unstable/dirty/blocked/unknown
 
-              // Só para PRs do Manus
+              // só PRs do Manus
               if (!headRef.startsWith("manus/")) {
                 core.info(`PR #${prNumber} não é manus/* (${headRef}). Ignorando.`);
                 continue;
               }
 
               if (state !== "open" || draft) {
-                core.info(`PR #${prNumber} não está open ou está draft. Ignorando.`);
+                core.info(`PR #${prNumber} não está aberto ou está draft. Ignorando.`);
                 continue;
               }
 
-              // Se tiver conflito, não adianta tentar auto-merge
-              if (mergeableState === "dirty") {
-                await github.rest.issues.createComment({
-                  owner, repo, issue_number: prNumber,
-                  body: `⚠️ Não foi possível habilitar auto-merge: PR com conflito (mergeable_state=dirty).`
-                });
-                continue;
-              }
-
-              // Tenta habilitar auto-merge
               try {
                 await github.graphql(`
                   mutation($pullRequestId: ID!) {
@@ -81,18 +93,17 @@ jobs:
 
                 await github.rest.issues.createComment({
                   owner, repo, issue_number: prNumber,
-                  body: `✅ Auto-merge (SQUASH) habilitado automaticamente após ${run.name} ficar verde.`
+                  body: `✅ Auto-merge (SQUASH) habilitado automaticamente após **${run.name}** ficar verde.\nRun: ${run.html_url}`
                 });
 
-                core.info(`Auto-merge habilitado no PR #${prNumber}`);
+                core.info(`✅ Auto-merge habilitado no PR #${prNumber}`);
 
               } catch (err) {
                 const msg = String(err?.message || err);
 
-                // Se ainda estiver instável, não falha o job.
-                // Quando o outro workflow terminar, ele vai tentar de novo automaticamente.
-                if (msg.includes("unstable status")) {
-                  core.warning(`PR #${prNumber} ainda instável. Vou deixar para a próxima execução.`);
+                // se já estava habilitado, não falha o job
+                if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("enabled")) {
+                  core.info(`ℹ️ Auto-merge já estava habilitado no PR #${prNumber}`);
                   continue;
                 }
 
