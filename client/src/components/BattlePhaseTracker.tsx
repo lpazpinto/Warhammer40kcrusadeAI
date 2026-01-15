@@ -22,6 +22,7 @@ interface BattlePhaseTrackerProps {
   onSpawnHorde?: () => void;
   isSpawningHorde?: boolean;
   canAdvancePhase?: boolean; // Block phase advancement when in sub-steps
+  battleRound?: number; // Current battle round for spawn modifiers
 }
 
 export default function BattlePhaseTracker({ 
@@ -32,7 +33,8 @@ export default function BattlePhaseTracker({
   onPhaseChange,
   onSpawnHorde,
   isSpawningHorde = false,
-  canAdvancePhase = true
+  canAdvancePhase = true,
+  battleRound = 1
 }: BattlePhaseTrackerProps) {
   // Find initial phase index
   const initialPhaseIndex = BATTLE_PHASES.findIndex(p => p.id === initialPhase);
@@ -169,16 +171,23 @@ export default function BattlePhaseTracker({
 
         {/* Spawn Horde Button - Only visible during Horde (opponent) turn in Command Phase */}
         {currentPhase.id === "command" && playerTurn === "opponent" && onSpawnHorde && (
-          <Button
-            variant="destructive"
-            onClick={onSpawnHorde}
-            disabled={isSpawningHorde}
-            className="w-full gap-2"
-            size="lg"
-          >
-            <Skull className="h-5 w-5" />
-            {isSpawningHorde ? "Spawnando Horda..." : "Spawn Horda (2D6)"}
-          </Button>
+          <div className="space-y-2">
+            <Button
+              variant="destructive"
+              onClick={onSpawnHorde}
+              disabled={isSpawningHorde}
+              className="w-full gap-2"
+              size="lg"
+            >
+              <Skull className="h-5 w-5" />
+              {isSpawningHorde ? "Spawnando Horda..." : `Spawn Horda (2D6${battleRound >= 5 ? '+2' : battleRound >= 3 ? '+1' : ''})`}
+            </Button>
+            {battleRound >= 3 && (
+              <p className="text-xs text-center text-muted-foreground">
+                {battleRound >= 5 ? '⚠️ Round 5+: +2 ao resultado do Spawn Roll' : '⚠️ Rounds 3-4: +1 ao resultado do Spawn Roll'}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Navigation Buttons */}

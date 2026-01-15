@@ -250,12 +250,21 @@ function BattleTrackerInner() {
     // Get max supply limit from players to determine number of zones
     const maxSupplyLimit = players?.reduce((max, p) => Math.max(max, p.supplyLimit || 1000), 1000) || 1000;
     
+    // Calculate battle round modifiers
+    const currentRound = battle?.battleRound || 1;
+    let roundModifier = 0;
+    if (currentRound >= 5) {
+      roundModifier = 2; // +2 for round 5+
+    } else if (currentRound >= 3) {
+      roundModifier = 1; // +1 for rounds 3-4
+    }
+    
     setIsSpawningHorde(true);
     spawnHordeMutation.mutate({
       faction: campaign.hordeFaction,
-      battleRound: battle?.battleRound || 1,
+      battleRound: currentRound,
       pointsLimit: maxSupplyLimit, // For zone assignment based on player supply limits
-      additionalModifiers: 0,
+      additionalModifiers: roundModifier,
     });
   };
   
@@ -500,6 +509,7 @@ function BattleTrackerInner() {
               onPhaseChange={handlePhaseChange}
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
+              battleRound={battle?.battleRound || 1}
               canAdvancePhase={
                 (localCurrentPhase !== "command" || commandPhaseCompleted) &&
                 (localCurrentPhase !== "movement" || movementPhaseCompleted) &&
@@ -515,12 +525,18 @@ function BattleTrackerInner() {
                 battleId={battleId}
                 playerCount={participants?.length || 1}
                 isSoloMode={participants?.length === 1}
+                isHordeTurn={(battle as any)?.currentTurn === 'horde'}
                 onComplete={() => {
                   setShowCommandSteps(false);
                   setCommandPhaseCompleted(true);
                   toast.success("Fase de Comando concluída! Agora você pode avançar para a próxima fase.");
                 }}
                 onOpenResupply={() => {
+                  // Disable shop during Horde turn
+                  if ((battle as any)?.currentTurn === 'horde') {
+                    toast.error("A loja de reabastecimento não está disponível durante o turno da Horda.");
+                    return;
+                  }
                   // Open resupply shop for first participant (player)
                   const playerParticipant = participants?.[0];
                   if (playerParticipant) {
@@ -720,8 +736,10 @@ function BattleTrackerInner() {
                     <p className="font-medium capitalize">{battle.status}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Turno Atual</p>
-                    <p className="font-medium">{battle.battleRound || 1}</p>
+                    <p className="text-sm text-muted-foreground">Battle Round</p>
+                    <p className="font-medium">
+                      Round {battle.battleRound || 1} - {(battle as any).currentTurn === 'horde' ? 'Turno da Horda' : 'Turno do Jogador'}
+                    </p>
                   </div>
                   {battle.deployment && (
                     <div>
