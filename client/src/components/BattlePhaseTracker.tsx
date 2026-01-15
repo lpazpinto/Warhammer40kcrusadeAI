@@ -5,6 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, RotateCcw, Skull } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * Battle phases in order of execution during a turn
+ * Each phase represents a step in the Warhammer 40K Horde Mode battle sequence
+ */
 const BATTLE_PHASES = [
   { id: "command", name: "Comando", color: "bg-blue-500" },
   { id: "movement", name: "Movimento", color: "bg-green-500" },
@@ -13,6 +17,10 @@ const BATTLE_PHASES = [
   { id: "fight", name: "Combate", color: "bg-purple-500" },
 ] as const;
 
+/**
+ * Props for the BattlePhaseTracker component
+ * Manages the display and navigation of battle phases and rounds
+ */
 interface BattlePhaseTrackerProps {
   battleId?: number;
   initialPhase?: string;
@@ -25,6 +33,21 @@ interface BattlePhaseTrackerProps {
   battleRound?: number; // Current battle round for spawn modifiers
 }
 
+/**
+ * BattlePhaseTracker Component
+ * 
+ * Displays and manages the current battle phase, round, and turn within a Warhammer 40K Horde Mode battle.
+ * Handles phase progression, turn alternation between player and opponent (Horde), and round advancement.
+ * 
+ * Features:
+ * - Visual phase progression tracker
+ * - Round and turn management
+ * - Spawn Horde button with round modifiers (Round 3-4: +1, Round 5+: +2)
+ * - Phase navigation (next/previous)
+ * - Reset functionality
+ * 
+ * @component
+ */
 export default function BattlePhaseTracker({ 
   battleId,
   initialPhase = "command",
@@ -45,6 +68,11 @@ export default function BattlePhaseTracker({
 
   const currentPhase = BATTLE_PHASES[currentPhaseIndex];
 
+  /**
+   * Advances to the next phase or round
+   * Handles phase progression within a round and round advancement when all phases are complete
+   * Alternates between player and opponent (Horde) turns
+   */
   const handleNextPhase = () => {
     let nextPhaseIndex = currentPhaseIndex;
     let nextRound = currentRound;
@@ -74,6 +102,10 @@ export default function BattlePhaseTracker({
     onPhaseChange?.(BATTLE_PHASES[nextPhaseIndex].id, nextRound, nextPlayerTurn);
   };
 
+  /**
+   * Moves to the previous phase or round
+   * Handles backward navigation through phases and rounds
+   */
   const handlePreviousPhase = () => {
     if (currentPhaseIndex === 0) {
       if (playerTurn === "opponent") {
@@ -89,6 +121,10 @@ export default function BattlePhaseTracker({
     }
   };
 
+  /**
+   * Resets the battle tracker to the initial state
+   * Returns to Round 1, Command Phase, and Opponent turn
+   */
   const handleReset = () => {
     setCurrentPhaseIndex(0);
     setCurrentRound(1);
