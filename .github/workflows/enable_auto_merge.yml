@@ -13,22 +13,58 @@ jobs:
     if: startsWith(github.head_ref, 'manus/') && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto-merge (squash)
+      - name: Enable auto-merge (squash) with retry
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
           script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.pull_request.number;
             const prNodeId = context.payload.pull_request.node_id;
 
-            await github.graphql(`
-              mutation($pullRequestId: ID!) {
-                enablePullRequestAutoMerge(input: {
-                  pullRequestId: $pullRequestId,
-                  mergeMethod: SQUASH
-                }) {
-                  pullRequest { number }
-                }
-              }
-            `, { pullRequestId: prNodeId });
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-            core.info(`Auto-merge enabled for PR #${context.payload.pull_request.number}`);
+            const maxAttempts = 10;
+            const waitMs = 6000;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              try {
+                // Recarrega o PR para garantir que o estado está atualizado
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+
+                // Se for draft, não faz nada
+                if (pr.data.draft) {
+                  core.info(`PR #${prNumber} ainda é draft. Saindo.`);
+                  return;
+                }
+
+                await github.graphql(`
+                  mutation($pullRequestId: ID!) {
+                    enablePullRequestAutoMerge(input: {
+                      pullRequestId: $pullRequestId,
+                      mergeMethod: SQUASH
+                    }) {
+                      pullRequest { number }
+                    }
+                  }
+                `, { pullRequestId: prNodeId });
+
+                core.info(`✅ Auto-merge habilitado (SQUASH) para PR #${prNumber}`);
+                return;
+              } catch (err) {
+                const msg = String(err?.message || err);
+
+                // Caso "unstable status", aguarda e tenta novamente
+                if (msg.includes("unstable status")) {
+                  core.warning(`Tentativa ${attempt}/${maxAttempts}: PR em estado instável. Aguardando ${waitMs}ms e tentando de novo...`);
+                  await sleep(waitMs);
+                  continue;
+                }
+
+                // Outro erro: explode para ficar visível no Actions
+                throw err;
+              }
+            }
+
+            throw new Error(`Não foi possível habilitar auto-merge no PR #${prNumber} após ${maxAttempts} tentativas.`);
