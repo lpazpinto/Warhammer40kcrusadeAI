@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, CheckCircle2, Circle, Target, Crosshair, Shield, Skull, AlertTriangle } from "lucide-react";
+import { ChevronRight, CheckCircle2, Target, Crosshair, Shield, Skull, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const SHOOTING_PHASE_STEPS = [
@@ -133,6 +133,7 @@ const SHOOTING_PHASE_STEPS = [
 ];
 
 interface ShootingPhaseStepsProps {
+  /** Battle ID - included for consistency with other phase step components and future use */
   battleId: number;
   onComplete: () => void;
 }
