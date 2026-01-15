@@ -721,3 +721,17 @@
 - [x] Integrate ShootingPhaseSteps into BattleTracker
 - [x] Fix direct phase button clicks not updating localCurrentPhase
 - [x] Add shooting phase completion blocking for phase advancement
+
+
+## Charge Phase Sub-Steps - January 2026
+- [x] Create ChargePhaseSteps.tsx component (8 steps total)
+- [x] Implement Step 4.1: Start of Charge Phase (buffs, stratagems)
+- [x] Implement Step 4.2: Select Unit to Charge (eligibility rules)
+- [x] Implement Step 4.2a: Declare Charge Targets (multiple targets rules)
+- [x] Implement Step 4.2b: Fire Overwatch (opponent reaction, 1CP, hits on 6s)
+- [x] Implement Step 4.3: Charge Roll (2D6, success/failure rules)
+- [x] Implement Step 4.3a: Charge Move (movement rules, coherency)
+- [x] Implement Step 4.4: Heroic Interventions (3" move toward enemy)
+- [x] Implement Step 4.5: End of Charge Phase
+- [x] Integrate ChargePhaseSteps into BattleTracker
+- [x] Add charge phase completion blocking for phase advancement
