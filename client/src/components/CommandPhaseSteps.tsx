@@ -78,6 +78,12 @@ export default function CommandPhaseSteps({
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
+  // Safety check: if step is undefined, reset to first step
+  if (!step) {
+    setCurrentStep(0);
+    return null;
+  }
+
   const handleNextStep = () => {
     // If on resupply step and SP not distributed yet, show modal first (but not during Horde turn)
     if (step.id === "resupply" && !spDistributed && !isHordeTurn) {
