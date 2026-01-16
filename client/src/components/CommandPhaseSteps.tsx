@@ -52,12 +52,19 @@ const COMMAND_PHASE_STEPS = [
  * Manages the multi-step Command Phase workflow
  */
 interface CommandPhaseStepsProps {
+  /** Battle identifier */
   battleId: number;
+  /** Callback when Command Phase is completed */
   onComplete: () => void;
+  /** Callback to open resupply shop */
   onOpenResupply: () => void;
+  /** Total number of players in the battle */
   playerCount: number;
+  /** Whether the battle is in solo mode */
   isSoloMode: boolean;
-  isHordeTurn?: boolean; // Disable objectives input during Horde turn
+  /** Whether it's currently the Horde's turn (disables SP distribution) */
+  isHordeTurn?: boolean;
+  /** Callback to distribute Supply Points based on objectives */
   onDistributeSP: (objectivesCount: number) => void;
 }
 
@@ -73,8 +80,21 @@ interface CommandPhaseStepsProps {
  * - Horde turn restrictions (no SP distribution, no resupply shop)
  * - Step progress tracking
  * - Navigation between steps
+ * - Safety checks to prevent infinite loops when completing the phase
  * 
  * @component
+ * @example
+ * ```tsx
+ * <CommandPhaseSteps
+ *   battleId={1}
+ *   onComplete={() => console.log('Phase complete')}
+ *   onOpenResupply={() => console.log('Open shop')}
+ *   playerCount={2}
+ *   isSoloMode={false}
+ *   isHordeTurn={false}
+ *   onDistributeSP={(count) => console.log(`Distributed ${count} objectives`)}
+ * />
+ * ```
  */
 export default function CommandPhaseSteps({ 
   battleId, 
@@ -100,6 +120,20 @@ export default function CommandPhaseSteps({
 
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
+
+  /**
+   * Safety check: if step is undefined, close the panel
+   * This prevents infinite loops when completing the last substep
+   * 
+   * When currentStep >= COMMAND_PHASE_STEPS.length, the phase should be complete
+   * and the component should close naturally instead of attempting state updates during render
+   * 
+   * Since currentStep is controlled only by internal functions that maintain valid values (0 to 2),
+   * this condition should rarely occur, but provides a safety net for edge cases
+   */
+  if (!step) {
+    return null;
+  }
 
   /**
    * Handles advancement to the next step or completion of the Command Phase
