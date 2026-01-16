@@ -13,6 +13,7 @@ permissions:
 jobs:
   autopilot:
     runs-on: ubuntu-latest
+
     steps:
       - name: Trigger Manus on failure / clear busy on success (SHA fallback)
         uses: actions/github-script@v7
@@ -25,15 +26,13 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const busyLabel = "manus-busy";
-            const isSuccess = run.conclusion === "success";
-            const isFailureLike = ["failure", "cancelled", "timed_out", "action_required"].includes(run.conclusion);
-
-            if (!isSuccess && !isFailureLike) {
-              core.info(`Conclusão ${run.conclusion} não aciona autopilot.`);
+            // Segurança: só processa runs disparados por PR
+            if (run.event !== "pull_request") {
+              core.info(`Ignorando workflow_run (event=${run.event}).`);
               return;
             }
 
+            // Helper: tenta achar PR pelo payload e depois por SHA
             async function getAssociatedPRNumbers() {
               const prs = run.pull_requests || [];
               if (prs.length > 0) return prs.map(p => p.number);
@@ -57,32 +56,49 @@ jobs:
 
             const prNumbers = await getAssociatedPRNumbers();
 
-            if (prNumbers.length === 0) {
+            if (!prNumbers || prNumbers.length === 0) {
               core.info("Nenhum PR associado a este workflow_run (nem por SHA).");
               return;
             }
 
+            const busyLabel = "manus-busy";
+            const isSuccess = run.conclusion === "success";
+            const isFailureLike = ["failure", "cancelled", "timed_out", "action_required"].includes(run.conclusion);
+
+            // Não faz nada em casos neutros/skipped
+            if (!isSuccess && !isFailureLike) {
+              core.info(`Conclusão ${run.conclusion} não aciona autopilot.`);
+              return;
+            }
+
             for (const prNumber of prNumbers) {
-              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              // Carrega PR completo
+              const prResp = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              const pr = prResp.data;
 
-              const headRef = pr.data.head.ref || "";
-              const state = pr.data.state;
-              const draft = pr.data.draft;
+              const headRef = pr.head?.ref || "";
+              const state = pr.state;
+              const draft = pr.draft;
 
-              // Só PRs do Manus
+              // Só PRs manus/*
               if (!headRef.startsWith("manus/")) {
                 core.info(`PR #${prNumber} não é manus/* (${headRef}). Ignorando.`);
                 continue;
               }
 
-              if (state !== "open" || draft) {
-                core.info(`PR #${prNumber} não está pronto (state=${state}, draft=${draft}). Ignorando.`);
+              if (state !== "open") {
+                core.info(`PR #${prNumber} não está open (state=${state}). Ignorando.`);
                 continue;
               }
 
-              const labels = (pr.data.labels || []).map(l => l.name);
+              if (draft) {
+                core.info(`PR #${prNumber} está draft. Ignorando.`);
+                continue;
+              }
 
-              // ✅ Se ficou verde -> remove busy e comenta
+              const labels = (pr.labels || []).map(l => l.name);
+
+              // ✅ Se sucesso -> remove busy e comenta
               if (isSuccess) {
                 if (labels.includes(busyLabel)) {
                   await github.rest.issues.removeLabel({
@@ -96,92 +112,117 @@ jobs:
                     owner,
                     repo,
                     issue_number: prNumber,
-                    body: `✅ Checks passaram (**${run.name}**). Label **${busyLabel}** removida.\nRun: ${run.html_url}`
+                    body: `✅ Checks passaram (${run.name}). Label **${busyLabel}** removida. Autopilot liberado.\nRun: ${run.html_url}`
                   }).catch(() => {});
+                } else {
+                  core.info(`PR #${prNumber}: checks success, mas não estava busy.`);
                 }
                 continue;
               }
 
-              // ❌ Se falhou -> aciona Manus (se não estiver busy)
+              // ❌ Falhou -> se já está busy, não cria task de novo
               if (labels.includes(busyLabel)) {
                 core.info(`PR #${prNumber} já está busy (${busyLabel}). Não acionando outra task.`);
                 continue;
               }
 
+              // Se secrets não existem, comenta e sai (evita loop)
+              if (!process.env.MANUS_API_KEY) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: `⚠️ Manus Autopilot não pôde ser acionado porque **MANUS_API_KEY** não está configurada nos Secrets.`
+                }).catch(() => {});
+                continue;
+              }
+
+              // Marca busy antes de chamar Manus
               await github.rest.issues.addLabels({
                 owner,
                 repo,
                 issue_number: prNumber,
                 labels: [busyLabel]
-              });
+              }).catch(() => {});
 
-              const prompt = [
-                "Você é o agente Manus responsável por corrigir falhas de CI/CodeQL neste repositório.",
-                "",
-                `Repositório: ${owner}/${repo}`,
-                `Pull Request: ${pr.data.html_url}`,
-                `Branch do PR: ${headRef}`,
-                "",
-                "Falha detectada:",
-                `- Workflow: ${run.name}`,
-                `- Conclusão: ${run.conclusion}`,
-                `- Run: ${run.html_url}`,
-                `- SHA: ${run.head_sha}`,
-                "",
-                "Objetivo:",
-                "1) Abrir o link do Run e identificar o PRIMEIRO step que falhou (erro + arquivo/linha se houver).",
-                "2) Corrigir com o MENOR patch possível (sem refatorar sem necessidade).",
-                `3) Fazer push de commits na MESMA branch do PR: ${headRef}`,
-                "4) NÃO fazer merge.",
-                "5) Repetir até ficar tudo verde (CI + CodeQL).",
-                "",
-                "Regras:",
-                "- Se o erro for de dependência/ambiente (missing env var / serviço externo), NÃO invente.",
-                "  Comente no PR o que falta e pare.",
-                "- Se houver teste quebrando por depender de DB/serviço, ajuste para mock/local ou desabilite o teste com justificativa no PR.",
-                "",
-                "Ao finalizar, comentar no PR:",
-                "- causa raiz (1–2 linhas)",
-                "- arquivos alterados",
-                "- como validar (comandos)"
-              ].join("\n");
+              // Monta prompt para Manus
+              const prompt = `
+            Você é o agente Manus responsável por corrigir falhas de CI/CodeQL neste repositório.
 
-              const body = {
+            Repositório: ${owner}/${repo}
+            Pull Request: ${pr.html_url}
+            Branch do PR: ${headRef}
+
+            Falha detectada:
+            - Workflow: ${run.name}
+            - Conclusão: ${run.conclusion}
+            - Run: ${run.html_url}
+            - SHA: ${run.head_sha}
+
+            Objetivo:
+            1) Abrir o link do Run e identificar o PRIMEIRO step que falhou (mensagem de erro + arquivo/linha se houver).
+            2) Corrigir com o MENOR patch possível (não refatorar sem necessidade).
+            3) Fazer push de commits na MESMA branch do PR: ${headRef}
+            4) NÃO fazer merge.
+            5) Repetir até ficar tudo verde (CI + CodeQL).
+
+            Regras:
+            - Se o erro for de dependência/ambiente (ex.: missing env var / serviço externo), NÃO invente.
+              Comente no PR qual variável/serviço falta e pare.
+
+            Ao finalizar, comentar no PR:
+            - causa raiz (1–2 linhas)
+            - arquivos alterados
+            - como validar (comandos)
+              `.trim();
+
+              // ✅ Payload CORRETO (camelCase) + envia o objeto CERTO no JSON.stringify
+              const bodyPayload = {
                 prompt,
                 agentProfile: "manus-1.6",
                 taskMode: "agent",
                 interactiveMode: false
               };
 
-              if (process.env.MANUS_PROJECT_ID) body.projectId = process.env.MANUS_PROJECT_ID;
+              if (process.env.MANUS_PROJECT_ID) {
+                bodyPayload.projectId = process.env.MANUS_PROJECT_ID;
+              }
 
-              const res = await fetch("https://api.manus.ai/v1/tasks", {
-                method: "POST",
-                headers: {
-                  "API_KEY": process.env.MANUS_API_KEY,
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-              });
+              try {
+                const res = await fetch("https://api.manus.ai/v1/tasks", {
+                  method: "POST",
+                  headers: {
+                    "API_KEY": process.env.MANUS_API_KEY,
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify(bodyPayload)
+                });
 
-              if (!res.ok) {
-                const text = await res.text();
-                await github.rest.issues.removeLabel({
+                if (!res.ok) {
+                  const text = await res.text();
+                  // remove busy se falhar criar task
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: prNumber,
+                    name: busyLabel
+                  }).catch(() => {});
+                  throw new Error(`Manus API error: ${res.status} ${text}`);
+                }
+
+                const data = await res.json();
+
+                await github.rest.issues.createComment({
                   owner,
                   repo,
                   issue_number: prNumber,
-                  name: busyLabel
+                  body: `🤖 **Manus Autopilot acionado**: **${run.name}** falhou.\n- Task: ${data.task_url || "(task_url não retornado)"}\n- Run: ${run.html_url}\n\n(Label **${busyLabel}** adicionada para evitar tasks duplicadas.)`
                 }).catch(() => {});
-                throw new Error(`Manus API error: ${res.status} ${text}`);
+
+                core.info(`Manus task criada para PR #${prNumber}.`);
+
+              } catch (err) {
+                core.warning(`Erro ao acionar Manus para PR #${prNumber}: ${String(err?.message || err)}`);
+                throw err;
               }
-
-              const data = await res.json();
-              const taskUrl = data.task_url || data.taskUrl || data.url || "(url não retornada)";
-
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body: `🤖 **Manus Autopilot acionado**: **${run.name}** falhou.\n- Task: ${taskUrl}\n- Run: ${run.html_url}\n\n(Label **${busyLabel}** adicionada para evitar tasks duplicadas.)`
-              }).catch(() => {});
             }
