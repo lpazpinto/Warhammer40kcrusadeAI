@@ -78,8 +78,14 @@ export default function CommandPhaseSteps({
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
-  // Safety check: if step is undefined, reset to first step
+  // Safety check: if step is undefined and we're beyond the last step, close the panel
+  // This can happen during state transitions
   if (!step) {
+    // If we're past the last step, the phase should be complete - just close the panel
+    if (currentStep >= COMMAND_PHASE_STEPS.length) {
+      return null;
+    }
+    // Otherwise reset to first step
     setCurrentStep(0);
     return null;
   }

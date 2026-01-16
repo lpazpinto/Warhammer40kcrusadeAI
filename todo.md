@@ -845,3 +845,10 @@
 - [ ] Implement Deep Strike rules for Horde units
 - [ ] Implement automatic Misery card effects
 - [ ] Players start with 2CP (no natural CP generation)
+
+
+## Bug: CommandPhaseSteps loops back to first substep instead of advancing to next phase
+- [x] Investigate why completing last substep doesn't call onComplete() - safety check was resetting currentStep to 0
+- [x] Fix the handleNextStep logic to properly advance to next phase when on last substep
+- [x] Updated safety check to return null when currentStep >= COMMAND_PHASE_STEPS.length instead of resetting
+- [x] Test that completing all substeps advances to Movement phase - VERIFIED WORKING
