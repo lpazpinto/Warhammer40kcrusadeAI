@@ -8,10 +8,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ObjectivesInputModal from "@/components/ObjectivesInputModal";
 import { toast } from "sonner";
 
-/**
- * Command Phase steps for Warhammer 40K Horde Mode
- * Each step represents a sequential action during the Command Phase
- */
 const COMMAND_PHASE_STEPS = [
   {
     id: "start",
@@ -47,10 +43,6 @@ const COMMAND_PHASE_STEPS = [
   },
 ];
 
-/**
- * Props for the CommandPhaseSteps component
- * Manages the multi-step Command Phase workflow
- */
 interface CommandPhaseStepsProps {
   battleId: number;
   onComplete: () => void;
@@ -61,21 +53,6 @@ interface CommandPhaseStepsProps {
   onDistributeSP: (objectivesCount: number) => void;
 }
 
-/**
- * CommandPhaseSteps Component
- * 
- * Guides the player through the Command Phase with detailed step-by-step instructions.
- * Handles SP distribution during player turns and auto-completes during Horde turns.
- * 
- * Features:
- * - Multi-step workflow (Start, Battle Shock, Resupply)
- * - Objectives input modal for SP distribution
- * - Horde turn restrictions (no SP distribution, no resupply shop)
- * - Step progress tracking
- * - Navigation between steps
- * 
- * @component
- */
 export default function CommandPhaseSteps({ 
   battleId, 
   onComplete,
@@ -101,11 +78,18 @@ export default function CommandPhaseSteps({
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
-  /**
-   * Handles advancement to the next step or completion of the Command Phase
-   * Prevents resupply step from advancing until SP is distributed (unless Horde turn)
-   * Auto-completes resupply step during Horde turns
-   */
+  // Safety check: if step is undefined and we're beyond the last step, close the panel
+  // This can happen during state transitions
+  if (!step) {
+    // If we're past the last step, the phase should be complete - just close the panel
+    if (currentStep >= COMMAND_PHASE_STEPS.length) {
+      return null;
+    }
+    // Otherwise reset to first step
+    setCurrentStep(0);
+    return null;
+  }
+
   const handleNextStep = () => {
     // If on resupply step and SP not distributed yet, show modal first (but not during Horde turn)
     if (step.id === "resupply" && !spDistributed && !isHordeTurn) {
@@ -133,23 +117,12 @@ export default function CommandPhaseSteps({
     }
   };
 
-  /**
-   * Handles SP distribution based on objectives controlled
-   * Calculates SP for each player and displays a success message
-   * 
-   * @param objectivesCount - Number of objectives controlled by the player
-   */
   const handleDistributeSP = (objectivesCount: number) => {
     onDistributeSP(objectivesCount);
     setSpDistributed(true);
     toast.success(`SP distribuídos! Cada jogador recebeu ${isSoloMode ? objectivesCount * 2 : objectivesCount} SP de objetivos.`);
   };
 
-  /**
-   * Allows jumping to a specific step in the Command Phase
-   * 
-   * @param index - Index of the step to navigate to
-   */
   const handleStepClick = (index: number) => {
     // Allow jumping to any step
     setCurrentStep(index);
