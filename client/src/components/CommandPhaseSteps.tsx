@@ -122,19 +122,16 @@ export default function CommandPhaseSteps({
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
   /**
-   * Safety check: if step is undefined and we're beyond the last step, close the panel
+   * Safety check: if step is undefined, close the panel
    * This prevents infinite loops when completing the last substep
    * 
    * When currentStep >= COMMAND_PHASE_STEPS.length, the phase should be complete
-   * and the component should close naturally instead of resetting to step 0
+   * and the component should close naturally instead of attempting state updates during render
+   * 
+   * Since currentStep is controlled only by internal functions that maintain valid values (0 to 2),
+   * this condition should rarely occur, but provides a safety net for edge cases
    */
   if (!step) {
-    // If we're past the last step, the phase should be complete - just close the panel
-    if (currentStep >= COMMAND_PHASE_STEPS.length) {
-      return null;
-    }
-    // Otherwise reset to first step
-    setCurrentStep(0);
     return null;
   }
 
