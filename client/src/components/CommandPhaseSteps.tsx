@@ -122,13 +122,19 @@ export default function CommandPhaseSteps({
 
   // Safety check: if step is undefined and we're beyond the last step, close the panel
   // This can happen during state transitions
+  React.useEffect(() => {
+    if (!step && currentStep < COMMAND_PHASE_STEPS.length) {
+      // Reset to first step if step is falsy
+      setCurrentStep(0);
+    }
+  }, [step, currentStep]);
+
   if (!step) {
     // If we're past the last step, the phase should be complete - just close the panel
     if (currentStep >= COMMAND_PHASE_STEPS.length) {
       return null;
     }
-    // Otherwise reset to first step
-    setCurrentStep(0);
+    // Return null while waiting for useEffect to reset
     return null;
   }
 
@@ -290,6 +296,10 @@ export default function CommandPhaseSteps({
           <Button
             onClick={() => {
               if (isLastStep) {
+                if (step.id === "resupply" && !spDistributed && !isHordeTurn) {
+                  setShowObjectivesModal(true);
+                  return;
+                }
                 onComplete();
               } else {
                 handleNextStep();
