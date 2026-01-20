@@ -1,5 +1,4 @@
-import { useState } from "react";
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -70,10 +69,10 @@ interface CommandPhaseStepsProps {
 
 /**
  * CommandPhaseSteps Component
- * 
+ *
  * Guides the player through the Command Phase with detailed step-by-step instructions.
  * Handles SP distribution during player turns and auto-completes during Horde turns.
- * 
+ *
  * Features:
  * - Multi-step workflow (Start, Battle Shock, Resupply)
  * - Objectives input modal for SP distribution
@@ -81,7 +80,7 @@ interface CommandPhaseStepsProps {
  * - Step progress tracking
  * - Navigation between steps
  * - Safety checks to prevent infinite loops when completing the phase
- * 
+ *
  * @component
  * @example
  * ```tsx
@@ -121,17 +120,21 @@ export default function CommandPhaseSteps({
   const step = COMMAND_PHASE_STEPS[currentStep];
   const isLastStep = currentStep === COMMAND_PHASE_STEPS.length - 1;
 
-  /**
-   * Safety check: if step is undefined, close the panel
-   * This prevents infinite loops when completing the last substep
-   * 
-   * When currentStep >= COMMAND_PHASE_STEPS.length, the phase should be complete
-   * and the component should close naturally instead of attempting state updates during render
-   * 
-   * Since currentStep is controlled only by internal functions that maintain valid values (0 to 2),
-   * this condition should rarely occur, but provides a safety net for edge cases
-   */
+  // Safety check: if step is undefined and we're beyond the last step, close the panel
+  // This can happen during state transitions
+  React.useEffect(() => {
+    if (!step && currentStep < COMMAND_PHASE_STEPS.length) {
+      // Reset to first step if step is falsy
+      setCurrentStep(0);
+    }
+  }, [step, currentStep]);
+
   if (!step) {
+    // If we're past the last step, the phase should be complete - just close the panel
+    if (currentStep >= COMMAND_PHASE_STEPS.length) {
+      return null;
+    }
+    // Return null while waiting for useEffect to reset
     return null;
   }
 
@@ -170,7 +173,7 @@ export default function CommandPhaseSteps({
   /**
    * Handles SP distribution based on objectives controlled
    * Calculates SP for each player and displays a success message
-   * 
+   *
    * @param objectivesCount - Number of objectives controlled by the player
    */
   const handleDistributeSP = (objectivesCount: number) => {
@@ -181,7 +184,7 @@ export default function CommandPhaseSteps({
 
   /**
    * Allows jumping to a specific step in the Command Phase
-   * 
+   *
    * @param index - Index of the step to navigate to
    */
   const handleStepClick = (index: number) => {
@@ -291,7 +294,17 @@ export default function CommandPhaseSteps({
             Passo Anterior
           </Button>
           <Button
-            onClick={handleNextStep}
+            onClick={() => {
+              if (isLastStep) {
+                if (step.id === "resupply" && !spDistributed && !isHordeTurn) {
+                  setShowObjectivesModal(true);
+                  return;
+                }
+                onComplete();
+              } else {
+                handleNextStep();
+              }
+            }}
             className="flex-1 gap-2"
           >
             {isLastStep ? "Concluir Fase de Comando" : "Próximo Passo"}

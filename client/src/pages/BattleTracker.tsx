@@ -40,22 +40,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
-/**
- * BattleTrackerInner Component
- * 
- * Main battle tracking interface for Warhammer 40K Horde Mode.
- * Manages all battle phases, unit tracking, Horde spawning, and resupply mechanics.
- * 
- * Features:
- * - Battle phase progression (Command, Movement, Shooting, Charge, Fight)
- * - Unit tracking for player forces and Horde enemies
- * - Horde spawn mechanics with round-based modifiers
- * - Resupply shop for purchasing reinforcements
- * - Battle summary and completion
- * - SP (Supply Points) distribution and management
- * 
- * @component
- */
 function BattleTrackerInner() {
   const [match, params] = useRoute("/battle/tracker/:id");
   const battleId = params?.id ? parseInt(params.id) : undefined;
@@ -83,16 +67,16 @@ function BattleTrackerInner() {
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
   // DEBUG: Log component state
-  console.log('[BattleTracker] Component rendered:', {
-    match,
-    params,
-    battleId,
-    battleIdType: typeof battleId,
-    isValidBattleId,
-    currentPath: window.location.pathname,
-    willExecuteQuery: isValidBattleId,
-    queryInput: { id: battleId || 0 }
-  });
+  // console.log('[BattleTracker] Component rendered:', {
+  //   match,
+  //   params,
+  //   battleId,
+  //   battleIdType: typeof battleId,
+  //   isValidBattleId,
+  //   currentPath: window.location.pathname,
+  //   willExecuteQuery: isValidBattleId,
+  //   queryInput: { id: battleId || 0 }
+  // });
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId || 0 },
@@ -186,6 +170,29 @@ function BattleTrackerInner() {
       setHordeUnits(battle.hordeUnits as HordeUnit[]);
     }
   }, [battle?.hordeUnits]);
+  
+  // DEBUG: Log commandPhaseCompleted state changes
+  // useEffect(() => {
+  //   console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
+  // }, [commandPhaseCompleted]);
+  
+  // Calculate canAdvancePhase: require phase completion before advancing
+  const canAdvancePhase = (
+    (localCurrentPhase !== "command" || commandPhaseCompleted) &&
+    (localCurrentPhase !== "movement" || movementPhaseCompleted) &&
+    (localCurrentPhase !== "shooting" || shootingPhaseCompleted) &&
+    (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
+    (localCurrentPhase !== "fight" || fightPhaseCompleted)
+  );
+  // console.log('[BattleTracker] canAdvancePhase calculated:', {
+  //   localCurrentPhase,
+  //   commandPhaseCompleted,
+  //   movementPhaseCompleted,
+  //   shootingPhaseCompleted,
+  //   chargePhaseCompleted,
+  //   fightPhaseCompleted,
+  //   canAdvancePhase
+  // });
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -257,11 +264,6 @@ function BattleTrackerInner() {
     },
   });
 
-  /**
-   * Handles the Horde spawn roll and unit generation
-   * Calculates round modifiers (+1 for rounds 3-4, +2 for round 5+)
-   * Triggers the spawn modal to display generated units
-   */
   const handleSpawnHorde = () => {
     if (!campaign?.hordeFaction) {
       toast.error("Horde faction not configured");
@@ -294,12 +296,6 @@ function BattleTrackerInner() {
   const numberOfZones = maxSupplyLimit <= 1000 ? 2 : 4;
   
   // Add spawned unit to battle
-  /**
-   * Confirms and adds a spawned Horde unit to the battle
-   * 
-   * @param unitName - Name of the spawned unit
-   * @param zone - Zone where the unit is deployed (1-4)
-   */
   const handleConfirmSpawn = (unitName: string, zone: number) => {
     const newUnit: HordeUnit = {
       id: `horde-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -537,13 +533,7 @@ function BattleTrackerInner() {
               onSpawnHorde={handleSpawnHorde}
               isSpawningHorde={isSpawningHorde}
               battleRound={battle?.battleRound || 1}
-              canAdvancePhase={
-                (localCurrentPhase !== "command" || commandPhaseCompleted) &&
-                (localCurrentPhase !== "movement" || movementPhaseCompleted) &&
-                (localCurrentPhase !== "shooting" || shootingPhaseCompleted) &&
-                (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
-                (localCurrentPhase !== "fight" || fightPhaseCompleted)
-              }
+              canAdvancePhase={canAdvancePhase}
             />
             
             {/* Command Phase Detailed Steps */}
@@ -554,8 +544,10 @@ function BattleTrackerInner() {
                 isSoloMode={participants?.length === 1}
                 isHordeTurn={(battle as any)?.currentTurn === 'horde'}
                 onComplete={() => {
-                  setShowCommandSteps(false);
+                  // First set commandPhaseCompleted to true
                   setCommandPhaseCompleted(true);
+                  // Then close the steps panel
+                  setShowCommandSteps(false);
                   toast.success("Fase de Comando concluída! Agora você pode avançar para a próxima fase.");
                 }}
                 onOpenResupply={() => {
