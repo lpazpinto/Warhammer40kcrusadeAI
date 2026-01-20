@@ -35,6 +35,10 @@ import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
 import HordeSpawnModal from "@/components/HordeSpawnModal";
 import HordeUnitsPanel, { HordeUnit } from "@/components/HordeUnitsPanel";
+import MiseryCardsPanel from "@/components/MiseryCardsPanel";
+import SecondaryMissionsPanel from "@/components/SecondaryMissionsPanel";
+import BattleRoundIndicator from "@/components/BattleRoundIndicator";
+import BattleRoundEvents from "@/components/BattleRoundEvents";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -58,25 +62,38 @@ function BattleTrackerInner() {
   const [showFightSteps, setShowFightSteps] = useState(false);
   const [fightPhaseCompleted, setFightPhaseCompleted] = useState(false);
   
+  // Battle Round Events state
+  const [showStartOfRoundEvents, setShowStartOfRoundEvents] = useState(false);
+  const [showEndOfRoundEvents, setShowEndOfRoundEvents] = useState(false);
+  const [previousRound, setPreviousRound] = useState(1);
+  
   // Horde spawn state
   const [showSpawnModal, setShowSpawnModal] = useState(false);
   const [spawnResult, setSpawnResult] = useState<any>(null);
   const [hordeUnits, setHordeUnits] = useState<HordeUnit[]>([]);
+  
+  // Misery Cards and Secondary Missions state
+  const [activeMiseryCardIds, setActiveMiseryCardIds] = useState<number[]>([]);
+  const [activeSecondaryMissions, setActiveSecondaryMissions] = useState<{
+    missionId: number;
+    status: 'active' | 'completed' | 'failed';
+    progress?: string;
+  }[]>([]);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
   // DEBUG: Log component state
-  // console.log('[BattleTracker] Component rendered:', {
-  //   match,
-  //   params,
-  //   battleId,
-  //   battleIdType: typeof battleId,
-  //   isValidBattleId,
-  //   currentPath: window.location.pathname,
-  //   willExecuteQuery: isValidBattleId,
-  //   queryInput: { id: battleId || 0 }
-  // });
+  console.log('[BattleTracker] Component rendered:', {
+    match,
+    params,
+    battleId,
+    battleIdType: typeof battleId,
+    isValidBattleId,
+    currentPath: window.location.pathname,
+    willExecuteQuery: isValidBattleId,
+    queryInput: { id: battleId || 0 }
+  });
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId || 0 },
@@ -172,9 +189,9 @@ function BattleTrackerInner() {
   }, [battle?.hordeUnits]);
   
   // DEBUG: Log commandPhaseCompleted state changes
-  // useEffect(() => {
-  //   console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
-  // }, [commandPhaseCompleted]);
+  useEffect(() => {
+    console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
+  }, [commandPhaseCompleted]);
   
   // Calculate canAdvancePhase: require phase completion before advancing
   const canAdvancePhase = (
@@ -184,15 +201,15 @@ function BattleTrackerInner() {
     (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
     (localCurrentPhase !== "fight" || fightPhaseCompleted)
   );
-  // console.log('[BattleTracker] canAdvancePhase calculated:', {
-  //   localCurrentPhase,
-  //   commandPhaseCompleted,
-  //   movementPhaseCompleted,
-  //   shootingPhaseCompleted,
-  //   chargePhaseCompleted,
-  //   fightPhaseCompleted,
-  //   canAdvancePhase
-  // });
+  console.log('[BattleTracker] canAdvancePhase calculated:', {
+    localCurrentPhase,
+    commandPhaseCompleted,
+    movementPhaseCompleted,
+    shootingPhaseCompleted,
+    chargePhaseCompleted,
+    fightPhaseCompleted,
+    canAdvancePhase
+  });
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -375,6 +392,23 @@ function BattleTrackerInner() {
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
     setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
     
+    // Detect round change and show events
+    if (round !== previousRound) {
+      // End of previous round
+      if (round > previousRound) {
+        setShowEndOfRoundEvents(true);
+      }
+      setPreviousRound(round);
+    }
+    
+    // Show start of round events when entering Command phase at start of new round
+    if (phase === "command" && playerTurn === "opponent" && round > 1) {
+      // Small delay to show start events after end events are dismissed
+      setTimeout(() => {
+        setShowStartOfRoundEvents(true);
+      }, 500);
+    }
+    
     // Update local phase state immediately for UI responsiveness
     setLocalCurrentPhase(phase);
     
@@ -521,6 +555,14 @@ function BattleTrackerInner() {
           </Link>
         </div>
 
+        {/* Battle Round Indicator - Prominent display */}
+        <BattleRoundIndicator
+          battleRound={battle?.battleRound || 1}
+          currentTurn={(battle as any)?.currentTurn === 'horde' ? 'horde' : 'player'}
+          currentPhase={localCurrentPhase}
+          maxRounds={5}
+        />
+
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Phase Tracker */}
           <div className="lg:col-span-3 space-y-6">
@@ -543,7 +585,7 @@ function BattleTrackerInner() {
                 playerCount={participants?.length || 1}
                 isSoloMode={participants?.length === 1}
                 isHordeTurn={(battle as any)?.currentTurn === 'horde'}
-                onComplete={() => {
+                 onComplete={() => {
                   // First set commandPhaseCompleted to true
                   setCommandPhaseCompleted(true);
                   // Then close the steps panel
@@ -739,6 +781,45 @@ function BattleTrackerInner() {
                 status: u.status,
               }))}
             />
+            
+            {/* Misery Cards Panel */}
+            <MiseryCardsPanel
+              activeCardIds={activeMiseryCardIds}
+              battleRound={battle?.battleRound || 1}
+              onDrawCards={(cards) => {
+                setActiveMiseryCardIds(prev => [...prev, ...cards.map(c => c.id)]);
+                toast.info(`${cards.length} Carta(s) de Miséria comprada(s)!`);
+              }}
+              onDismissCard={(cardId) => {
+                setActiveMiseryCardIds(prev => prev.filter(id => id !== cardId));
+                toast.success('Carta de Miséria removida!');
+              }}
+            />
+            
+            {/* Secondary Missions Panel */}
+            <SecondaryMissionsPanel
+              activeMissions={activeSecondaryMissions}
+              battleRound={battle?.battleRound || 1}
+              onDrawMissions={(missions) => {
+                setActiveSecondaryMissions(prev => [
+                  ...prev,
+                  ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+                ]);
+                toast.info(`${missions.length} Missão(ões) Secundária(s) comprada(s)!`);
+              }}
+              onCompleteMission={(missionId) => {
+                setActiveSecondaryMissions(prev =>
+                  prev.map(m => m.missionId === missionId ? { ...m, status: 'completed' as const } : m)
+                );
+                toast.success('Missão Secundária concluída!');
+              }}
+              onFailMission={(missionId) => {
+                setActiveSecondaryMissions(prev =>
+                  prev.map(m => m.missionId === missionId ? { ...m, status: 'failed' as const } : m)
+                );
+                toast.error('Missão Secundária falhou!');
+              }}
+            />
           </div>
 
           {/* Battle Info & Log - moved to bottom or sidebar */}
@@ -854,6 +935,20 @@ function BattleTrackerInner() {
         battleRound={battle?.battleRound || 1}
         numberOfZones={numberOfZones}
         onConfirm={handleConfirmSpawn}
+      />
+      
+      {/* Battle Round Events Modal */}
+      <BattleRoundEvents
+        battleRound={battle?.battleRound || 1}
+        maxRounds={5}
+        isStartOfRound={showStartOfRoundEvents}
+        isEndOfRound={showEndOfRoundEvents}
+        onDismiss={() => {
+          setShowStartOfRoundEvents(false);
+          setShowEndOfRoundEvents(false);
+        }}
+        activeMiseryCards={activeMiseryCardIds}
+        activeSecondaryMissions={activeSecondaryMissions.map(m => m.missionId)}
       />
     </div>
   );
