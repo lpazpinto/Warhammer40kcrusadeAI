@@ -1,5 +1,4 @@
-import { useState } from "react";
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ObjectivesInputModal from "@/components/ObjectivesInputModal";
 import { toast } from "sonner";
 
+/**
+ * Command Phase steps for Warhammer 40K Horde Mode
+ * Each step represents a sequential action during the Command Phase
+ */
 const COMMAND_PHASE_STEPS = [
   {
     id: "start",
@@ -43,16 +46,55 @@ const COMMAND_PHASE_STEPS = [
   },
 ];
 
+/**
+ * Props for the CommandPhaseSteps component
+ * Manages the multi-step Command Phase workflow
+ */
 interface CommandPhaseStepsProps {
+  /** Battle identifier */
   battleId: number;
+  /** Callback when Command Phase is completed */
   onComplete: () => void;
+  /** Callback to open resupply shop */
   onOpenResupply: () => void;
+  /** Total number of players in the battle */
   playerCount: number;
+  /** Whether the battle is in solo mode */
   isSoloMode: boolean;
-  isHordeTurn?: boolean; // Disable objectives input during Horde turn
+  /** Whether it's currently the Horde's turn (disables SP distribution) */
+  isHordeTurn?: boolean;
+  /** Callback to distribute Supply Points based on objectives */
   onDistributeSP: (objectivesCount: number) => void;
 }
 
+/**
+ * CommandPhaseSteps Component
+ *
+ * Guides the player through the Command Phase with detailed step-by-step instructions.
+ * Handles SP distribution during player turns and auto-completes during Horde turns.
+ *
+ * Features:
+ * - Multi-step workflow (Start, Battle Shock, Resupply)
+ * - Objectives input modal for SP distribution
+ * - Horde turn restrictions (no SP distribution, no resupply shop)
+ * - Step progress tracking
+ * - Navigation between steps
+ * - Safety checks to prevent infinite loops when completing the phase
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <CommandPhaseSteps
+ *   battleId={1}
+ *   onComplete={() => console.log('Phase complete')}
+ *   onOpenResupply={() => console.log('Open shop')}
+ *   playerCount={2}
+ *   isSoloMode={false}
+ *   isHordeTurn={false}
+ *   onDistributeSP={(count) => console.log(`Distributed ${count} objectives`)}
+ * />
+ * ```
+ */
 export default function CommandPhaseSteps({ 
   battleId, 
   onComplete,
@@ -90,6 +132,11 @@ export default function CommandPhaseSteps({
     return null;
   }
 
+  /**
+   * Handles advancement to the next step or completion of the Command Phase
+   * Prevents resupply step from advancing until SP is distributed (unless Horde turn)
+   * Auto-completes resupply step during Horde turns
+   */
   const handleNextStep = () => {
     // If on resupply step and SP not distributed yet, show modal first (but not during Horde turn)
     if (step.id === "resupply" && !spDistributed && !isHordeTurn) {
@@ -117,12 +164,23 @@ export default function CommandPhaseSteps({
     }
   };
 
+  /**
+   * Handles SP distribution based on objectives controlled
+   * Calculates SP for each player and displays a success message
+   *
+   * @param objectivesCount - Number of objectives controlled by the player
+   */
   const handleDistributeSP = (objectivesCount: number) => {
     onDistributeSP(objectivesCount);
     setSpDistributed(true);
     toast.success(`SP distribuídos! Cada jogador recebeu ${isSoloMode ? objectivesCount * 2 : objectivesCount} SP de objetivos.`);
   };
 
+  /**
+   * Allows jumping to a specific step in the Command Phase
+   *
+   * @param index - Index of the step to navigate to
+   */
   const handleStepClick = (index: number) => {
     // Allow jumping to any step
     setCurrentStep(index);

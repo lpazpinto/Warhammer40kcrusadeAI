@@ -67,16 +67,16 @@ function BattleTrackerInner() {
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
   // DEBUG: Log component state
-  console.log('[BattleTracker] Component rendered:', {
-    match,
-    params,
-    battleId,
-    battleIdType: typeof battleId,
-    isValidBattleId,
-    currentPath: window.location.pathname,
-    willExecuteQuery: isValidBattleId,
-    queryInput: { id: battleId || 0 }
-  });
+  // console.log('[BattleTracker] Component rendered:', {
+  //   match,
+  //   params,
+  //   battleId,
+  //   battleIdType: typeof battleId,
+  //   isValidBattleId,
+  //   currentPath: window.location.pathname,
+  //   willExecuteQuery: isValidBattleId,
+  //   queryInput: { id: battleId || 0 }
+  // });
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId || 0 },
@@ -172,9 +172,9 @@ function BattleTrackerInner() {
   }, [battle?.hordeUnits]);
   
   // DEBUG: Log commandPhaseCompleted state changes
-  useEffect(() => {
-    console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
-  }, [commandPhaseCompleted]);
+  // useEffect(() => {
+  //   console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
+  // }, [commandPhaseCompleted]);
   
   // Calculate canAdvancePhase: require phase completion before advancing
   const canAdvancePhase = (
@@ -184,15 +184,15 @@ function BattleTrackerInner() {
     (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
     (localCurrentPhase !== "fight" || fightPhaseCompleted)
   );
-  console.log('[BattleTracker] canAdvancePhase calculated:', {
-    localCurrentPhase,
-    commandPhaseCompleted,
-    movementPhaseCompleted,
-    shootingPhaseCompleted,
-    chargePhaseCompleted,
-    fightPhaseCompleted,
-    canAdvancePhase
-  });
+  // console.log('[BattleTracker] canAdvancePhase calculated:', {
+  //   localCurrentPhase,
+  //   commandPhaseCompleted,
+  //   movementPhaseCompleted,
+  //   shootingPhaseCompleted,
+  //   chargePhaseCompleted,
+  //   fightPhaseCompleted,
+  //   canAdvancePhase
+  // });
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -543,8 +543,7 @@ function BattleTrackerInner() {
                 playerCount={participants?.length || 1}
                 isSoloMode={participants?.length === 1}
                 isHordeTurn={(battle as any)?.currentTurn === 'horde'}
-                 onComplete={() => {
-                  alert('onComplete() was called!');
+                onComplete={() => {
                   // First set commandPhaseCompleted to true
                   setCommandPhaseCompleted(true);
                   // Then close the steps panel
