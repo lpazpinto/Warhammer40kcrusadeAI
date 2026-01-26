@@ -1,4 +1,4 @@
-name: Manus Autopilot (coderabbit)
+name: Manus Autopilot (coderabbit - debounced 15m)
 
 on:
   pull_request_review:
@@ -14,11 +14,67 @@ permissions:
   contents: read
 
 jobs:
-  autopilot:
+  debounce_and_trigger:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # ✅ Debounce por PR (cancela o job anterior se chegar outro evento)
+    concurrency:
+      group: coderabbit-debounce-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
 
     steps:
-      - name: Trigger Manus when CodeRabbit leaves feedback
+      - name: Decide if this event should start the 15m debounce timer
+        id: meta
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            let prNumber = null;
+            let author = null;
+
+            if (context.eventName === "pull_request_review") {
+              prNumber = context.payload.pull_request?.number;
+              author = context.payload.review?.user?.login;
+            } else if (context.eventName === "pull_request_review_comment") {
+              prNumber = context.payload.pull_request?.number;
+              author = context.payload.comment?.user?.login;
+            } else if (context.eventName === "issue_comment") {
+              // Só age se for comentário em PR
+              if (!context.payload.issue?.pull_request) {
+                core.setOutput("should_run", "false");
+                return;
+              }
+              prNumber = context.payload.issue?.number;
+              author = context.payload.comment?.user?.login;
+            } else {
+              core.setOutput("should_run", "false");
+              return;
+            }
+
+            const login = (author || "").toLowerCase();
+            const isCodeRabbit =
+              login === "coderabbitai" ||
+              login === "coderabbitai[bot]" ||
+              login.includes("coderabbit");
+
+            if (!isCodeRabbit || !prNumber) {
+              core.setOutput("should_run", "false");
+              return;
+            }
+
+            // Guarda PR number pra usar depois
+            core.setOutput("should_run", "true");
+            core.setOutput("pr_number", String(prNumber));
+
+      - name: Wait 15 minutes (debounce)
+        if: steps.meta.outputs.should_run == 'true'
+        run: sleep 900
+
+      - name: Trigger Manus only if actionable CodeRabbit feedback exists
+        if: steps.meta.outputs.should_run == 'true'
         uses: actions/github-script@v7
         env:
           MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
@@ -28,166 +84,154 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
+            const prNumber = Number("${{ steps.meta.outputs.pr_number }}");
             const busyLabel = "manus-busy";
-            const pendingLabel = "manus-pending";
 
-            let prNumber = null;
-            let feedbackUrl = null;
-            let author = null;
-            let feedbackText = "";
-
-            // -------------------------------
-            // Helper: detect if it's REAL feedback (not "reviewing..." placeholder)
-            // -------------------------------
-            function isSubstantiveCodeRabbitFeedback(text) {
+            function isActionable(text) {
               if (!text) return false;
 
               const raw = String(text).trim();
-              if (raw.length < 120) return false; // muito curto costuma ser "estou revisando"
+              if (raw.length < 120) return false;
 
               const t = raw.toLowerCase();
 
-              // Marcadores típicos de review pronto do CodeRabbit
-              const strongMarkers = [
-                "walkthrough",
-                "pre-merge checks",
-                "finishing touches",
-                "recent review details",
-                "recent nitpick comments",
-                "review completed"
-              ];
-
-              const hasStrongMarker = strongMarkers.some(m => t.includes(m));
-
-              // Se for placeholder / "review em andamento"
-              const placeholderPatterns = [
+              // Placeholder/“reviewing…” → ignora
+              const placeholder = [
                 /review in progress/i,
                 /i['’]?m reviewing/i,
                 /starting (my )?review/i,
                 /generating review/i,
                 /analyzing/i,
-                /please wait/i
+                /please wait/i,
+                /working on it/i
+              ];
+              if (placeholder.some(re => re.test(raw))) return false;
+
+              // Marcadores típicos de review final do CodeRabbit
+              const strongMarkers = [
+                "walkthrough",
+                "pre-merge checks",
+                "finishing touches",
+                "recent review details",
+                "nitpick",
+                "suggestions",
+                "issues found",
+                "security",
+                "performance",
+                "recommended changes"
               ];
 
-              const looksPlaceholder = placeholderPatterns.some(re => re.test(raw));
+              const hasStrongMarker = strongMarkers.some(m => t.includes(m));
 
-              // Sinais adicionais que geralmente aparecem num review final
+              // Sinais “actionable” comuns
               const hasSignals =
                 raw.includes("✅") ||
                 raw.includes("❌") ||
-                t.includes("suggestion") ||
-                t.includes("nitpick") ||
-                t.includes("issue") ||
+                t.includes("suggest") ||
+                t.includes("fix") ||
+                t.includes("should") ||
+                t.includes("change") ||
+                t.includes("refactor") ||
                 t.includes("warning") ||
-                t.includes("error");
+                t.includes("error") ||
+                t.includes("vulnerability") ||
+                raw.includes("```");
 
-              // Regra final:
-              // - Aceita se tiver marker forte
-              // - ou se tiver sinais e for bem longo
-              // - rejeita se parece placeholder e não tem marker forte
-              if (looksPlaceholder && !hasStrongMarker) return false;
-
+              // Aceita se tiver marcador forte OU sinais+texto grande
               return hasStrongMarker || (hasSignals && raw.length >= 200);
             }
 
-            // -------------------------------
-            // Identify PR / feedback by event type
-            // -------------------------------
-            if (context.eventName === "pull_request_review") {
-              prNumber = context.payload.pull_request.number;
-              feedbackUrl = context.payload.review.html_url;
-              author = context.payload.review.user?.login;
-              feedbackText = (context.payload.review.body || "").trim();
-            } else if (context.eventName === "pull_request_review_comment") {
-              prNumber = context.payload.pull_request.number;
-              feedbackUrl = context.payload.comment.html_url;
-              author = context.payload.comment.user?.login;
-              feedbackText = (context.payload.comment.body || "").trim();
-            } else if (context.eventName === "issue_comment") {
-              if (!context.payload.issue.pull_request) {
-                core.info("issue_comment não é PR. Ignorando.");
-                return;
-              }
-              prNumber = context.payload.issue.number;
-              feedbackUrl = context.payload.comment.html_url;
-              author = context.payload.comment.user?.login;
-              feedbackText = (context.payload.comment.body || "").trim();
-            } else {
-              return;
-            }
-
-            // filtro do CodeRabbit
-            const login = (author || "").toLowerCase();
-            const isCodeRabbit =
-              login === "coderabbitai" ||
-              login === "coderabbitai[bot]" ||
-              login.includes("coderabbit");
-
-            if (!isCodeRabbit) {
-              core.info(`Ignorando autor: ${author}`);
-              return;
-            }
-
-            // ignora placeholder/preview de review
-            if (!isSubstantiveCodeRabbitFeedback(feedbackText)) {
-              core.info(
-                `Feedback do CodeRabbit detectado, mas parece placeholder/incompleto. Ignorando por enquanto. Event=${context.eventName}`
-              );
-              return;
-            }
-
-            // carrega PR
+            // 1) Carrega PR
             const prResp = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
             const pr = prResp.data;
 
-            // filtro por branch manus/*
             const headRef = pr.head?.ref || "";
             if (!headRef.startsWith("manus/")) {
-              core.info(`Not a manus branch (${headRef}). Exiting.`);
+              core.info(`PR #${prNumber} não é manus/* (${headRef}). Ignorando.`);
               return;
             }
 
-            // PR precisa estar aberto e não draft
             if (pr.state !== "open" || pr.draft) {
               core.info(`PR #${prNumber} não está pronto (state=${pr.state}, draft=${pr.draft}).`);
               return;
             }
 
+            // Se Manus já está trabalhando, não cria task nova
             const labels = (pr.labels || []).map(l => l.name);
-
-            // busy lock: se busy, marca pending (fila) e sai
             if (labels.includes(busyLabel)) {
-              if (!labels.includes(pendingLabel)) {
-                await github.rest.issues.addLabels({
-                  owner,
-                  repo,
-                  issue_number: prNumber,
-                  labels: [pendingLabel]
-                }).catch(() => {});
-              }
-
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body: `📌 Novo feedback do CodeRabbit chegou enquanto o Manus está **busy**.\nVou processar depois via label **${pendingLabel}**.\nLink: ${feedbackUrl}`
-              }).catch(() => {});
-
-              core.info(`PR #${prNumber} busy -> enfileirado com ${pendingLabel}.`);
+              core.info(`PR #${prNumber} está busy (${busyLabel}). Não criando task nova agora.`);
               return;
             }
 
             if (!process.env.MANUS_API_KEY) {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body: `⚠️ Manus Autopilot não pôde ser acionado porque **MANUS_API_KEY** não está configurada nos Secrets.`
-              }).catch(() => {});
+              core.warning("MANUS_API_KEY não configurada nos Secrets.");
               return;
             }
 
-            // marca busy
+            // 2) Agrega feedback do CodeRabbit (comments + review comments + reviews)
+            const isCodeRabbitLogin = (login) => {
+              const l = String(login || "").toLowerCase();
+              return l === "coderabbitai" || l === "coderabbitai[bot]" || l.includes("coderabbit");
+            };
+
+            // Issue comments do PR
+            const issueComments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: prNumber,
+              per_page: 100
+            });
+
+            const codeRabbitIssueComments = issueComments
+              .filter(c => isCodeRabbitLogin(c.user?.login))
+              .map(c => ({
+                url: c.html_url,
+                body: (c.body || "").trim()
+              }));
+
+            // Review thread comments
+            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
+              owner,
+              repo,
+              pull_number: prNumber,
+              per_page: 100
+            });
+
+            const codeRabbitReviewComments = reviewComments
+              .filter(c => isCodeRabbitLogin(c.user?.login))
+              .map(c => ({
+                url: c.html_url,
+                body: (c.body || "").trim()
+              }));
+
+            // Reviews (submitted)
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: prNumber,
+              per_page: 100
+            });
+
+            const codeRabbitReviews = reviews
+              .filter(r => isCodeRabbitLogin(r.user?.login))
+              .map(r => ({
+                url: r.html_url,
+                body: (r.body || "").trim()
+              }));
+
+            // Junta tudo
+            const all = [...codeRabbitIssueComments, ...codeRabbitReviewComments, ...codeRabbitReviews]
+              .filter(x => x.body);
+
+            // 3) Filtra actionable
+            const actionable = all.filter(x => isActionable(x.body));
+
+            if (actionable.length === 0) {
+              core.info("Nenhum feedback actionable do CodeRabbit encontrado após 15 minutos. Nada a fazer.");
+              return;
+            }
+
+            // 4) Marca busy
             await github.rest.issues.addLabels({
               owner,
               repo,
@@ -195,35 +239,39 @@ jobs:
               labels: [busyLabel]
             }).catch(() => {});
 
-            // monta prompt
-            const promptLines = [
-              "Você é o agente Manus trabalhando neste repositório e há novo feedback do CodeRabbit.",
+            // 5) Monta prompt (com amostra agregada)
+            const maxChars = 3500;
+            let combined = actionable
+              .slice(0, 5) // evita payload enorme
+              .map((x, i) => `### Feedback ${i + 1}\nLink: ${x.url}\n\n${x.body}`)
+              .join("\n\n---\n\n");
+
+            if (combined.length > maxChars) combined = combined.slice(0, maxChars) + "\n\n...(truncado)";
+
+            const prompt = [
+              "Você é o agente Manus e há feedback ACTIONABLE do CodeRabbit neste Pull Request.",
               "",
               `Repositório: ${owner}/${repo}`,
               `PR: ${pr.html_url}`,
               `Branch: ${headRef}`,
-              `Evento: ${context.eventName}`,
-              `Feedback link: ${feedbackUrl}`,
               "",
-              "Conteúdo do feedback (texto):",
+              "Resumo do feedback do CodeRabbit (agregado):",
               "```",
-              feedbackText,
+              combined,
               "```",
               "",
               "Tarefa:",
-              "1) Ler o feedback completo do CodeRabbit no PR (threads inclusive).",
-              "2) Aplicar correções/melhorias sugeridas que fizerem sentido.",
+              "1) Ler TODO o feedback do CodeRabbit no PR (todas as threads e comentários).",
+              "2) Implementar as mudanças necessárias com o MENOR patch possível.",
               `3) Fazer push na MESMA branch do PR (${headRef}).`,
-              "4) Garantir CI/CodeQL verdes (se quebrar, conserte).",
+              "4) Garantir CI/CodeQL verdes.",
               "5) NÃO fazer merge.",
               "",
               "Ao finalizar, comentar no PR:",
               "- o que foi feito",
               "- por que foi feito",
               "- como validar."
-            ];
-
-            const prompt = promptLines.join("\n");
+            ].join("\n");
 
             const bodyPayload = {
               prompt,
@@ -232,45 +280,41 @@ jobs:
               interactiveMode: false
             };
 
+            // ✅ CamelCase correto
             if (process.env.MANUS_PROJECT_ID) {
-              bodyPayload.projectId = process.env.MANUS_PROJECT_ID; // camelCase CORRETO
+              bodyPayload.projectId = process.env.MANUS_PROJECT_ID;
             }
 
-            try {
-              const res = await fetch("https://api.manus.ai/v1/tasks", {
-                method: "POST",
-                headers: {
-                  "API_KEY": process.env.MANUS_API_KEY,
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify(bodyPayload)
-              });
+            // 6) Chama Manus
+            const res = await fetch("https://api.manus.ai/v1/tasks", {
+              method: "POST",
+              headers: {
+                "API_KEY": process.env.MANUS_API_KEY,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(bodyPayload)
+            });
 
-              if (!res.ok) {
-                const text = await res.text();
+            if (!res.ok) {
+              const text = await res.text();
 
-                // remove busy se falhou criar task
-                await github.rest.issues.removeLabel({
-                  owner,
-                  repo,
-                  issue_number: prNumber,
-                  name: busyLabel
-                }).catch(() => {});
-
-                throw new Error(`Manus API error: ${res.status} ${text}`);
-              }
-
-              const data = await res.json();
-
-              await github.rest.issues.createComment({
+              // remove busy se falhou
+              await github.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number: prNumber,
-                body: `🤖 **Manus Autopilot acionado por feedback do CodeRabbit** (${context.eventName}).\nTask: ${data.task_url || "(task_url não retornado)"}\n(Label **${busyLabel}** ativa para evitar tasks duplicadas.)`
+                name: busyLabel
               }).catch(() => {});
 
-              core.info(`Manus task criada para PR #${prNumber} via CodeRabbit.`);
-            } catch (err) {
-              core.warning(`Erro ao acionar Manus no PR #${prNumber}: ${String(err?.message || err)}`);
-              throw err;
+              throw new Error(`Manus API error: ${res.status} ${text}`);
             }
+
+            const data = await res.json();
+
+            // 7) Comenta no PR
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: `🤖 **Manus Autopilot (debounced 15m)** acionado após feedback actionable do CodeRabbit.\nTask: ${data.task_url || "(task_url não retornado)"}\n(Label **${busyLabel}** ativa para evitar tasks duplicadas.)`
+            }).catch(() => {});
