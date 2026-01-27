@@ -923,3 +923,9 @@
 - [x] Atualizado `handlePhaseChange` para chamar `setLocalCurrentTurn(playerTurn)` (linha 419)
 - [x] Turno agora muda corretamente: Horda (5 fases) → Jogador (5 fases) → Round 2
 - [x] Testado e verificado funcionando corretamente
+
+
+### Bug 5: Painéis de Misery Cards e Secondary Missions sobrepostos a outros componentes
+- [x] Corrigir posicionamento dos painéis para não sobrepor Informações da Batalha, Histórico de Fases e botão Finalizar
+- [x] Ajustar layout para que os painéis fiquem em uma área dedicada sem overlap
+- [x] Reorganizado layout: Misery Cards e Secondary Missions agora em uma linha separada abaixo do grid principal
