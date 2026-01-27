@@ -1,6 +1,4 @@
-console.log('[BattleTracker MODULE] File loaded at:', new Date().toISOString(), 'Path:', window.location.pathname);
-
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 // Safe JSON parse helper
 function safeJSONParse<T>(value: any, fallback: T): T {
@@ -72,28 +70,21 @@ function BattleTrackerInner() {
   const [spawnResult, setSpawnResult] = useState<any>(null);
   const [hordeUnits, setHordeUnits] = useState<HordeUnit[]>([]);
   
-  // Misery Cards and Secondary Missions state
+   // Misery Cards and Secondary Missions state
   const [activeMiseryCardIds, setActiveMiseryCardIds] = useState<number[]>([]);
   const [activeSecondaryMissions, setActiveSecondaryMissions] = useState<{
     missionId: number;
     status: 'active' | 'completed' | 'failed';
     progress?: string;
-  }[]>([]);
+  }[]>();
+  
+  // Ref to store timeout ID for cleanup
+  const startRoundEventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);;
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
-  // DEBUG: Log component state
-  console.log('[BattleTracker] Component rendered:', {
-    match,
-    params,
-    battleId,
-    battleIdType: typeof battleId,
-    isValidBattleId,
-    currentPath: window.location.pathname,
-    willExecuteQuery: isValidBattleId,
-    queryInput: { id: battleId || 0 }
-  });
+  // DEBUG: Log component state (removed for production)
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId || 0 },
@@ -188,10 +179,16 @@ function BattleTrackerInner() {
     }
   }, [battle?.hordeUnits]);
   
-  // DEBUG: Log commandPhaseCompleted state changes
+  // Cleanup timeout on unmount
   useEffect(() => {
-    console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
-  }, [commandPhaseCompleted]);
+    return () => {
+      if (startRoundEventsTimeoutRef.current) {
+        clearTimeout(startRoundEventsTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // DEBUG: Log commandPhaseCompleted state changes (removed for production)
   
   // Calculate canAdvancePhase: require phase completion before advancing
   const canAdvancePhase = (
@@ -201,15 +198,7 @@ function BattleTrackerInner() {
     (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
     (localCurrentPhase !== "fight" || fightPhaseCompleted)
   );
-  console.log('[BattleTracker] canAdvancePhase calculated:', {
-    localCurrentPhase,
-    commandPhaseCompleted,
-    movementPhaseCompleted,
-    shootingPhaseCompleted,
-    chargePhaseCompleted,
-    fightPhaseCompleted,
-    canAdvancePhase
-  });
+  // DEBUG: canAdvancePhase calculated (removed for production)
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -405,8 +394,13 @@ function BattleTrackerInner() {
     // Show start of round events when entering Command phase at start of new round
     if (phase === "command" && playerTurn === "opponent" && round > 1) {
       // Small delay to show start events after end events are dismissed
-      setTimeout(() => {
+      // Clear any pending timeout first
+      if (startRoundEventsTimeoutRef.current) {
+        clearTimeout(startRoundEventsTimeoutRef.current);
+      }
+      startRoundEventsTimeoutRef.current = setTimeout(() => {
         setShowStartOfRoundEvents(true);
+        startRoundEventsTimeoutRef.current = null;
       }, 500);
     }
     
@@ -960,7 +954,7 @@ export default function BattleTracker() {
   
   // Don't render the component at all if route doesn't match
   if (!match) {
-    console.log('[BattleTracker] Route does not match, not rendering');
+    // DEBUG: Route does not match (removed for production)
     return null;
   }
   
