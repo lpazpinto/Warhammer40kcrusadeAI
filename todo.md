@@ -845,3 +845,81 @@
 - [ ] Implement Deep Strike rules for Horde units
 - [ ] Implement automatic Misery card effects
 - [ ] Players start with 2CP (no natural CP generation)
+
+
+## Bug: CommandPhaseSteps loops back to first substep instead of advancing to next phase
+- [x] Investigate why completing last substep doesn't call onComplete() - safety check was resetting currentStep to 0
+- [x] Fix the handleNextStep logic to properly advance to next phase when on last substep
+- [x] Updated safety check to return null when currentStep >= COMMAND_PHASE_STEPS.length instead of resetting
+- [x] Test that completing all substeps advances to Movement phase - VERIFIED WORKING
+
+
+## Bug: Command Phase completion doesn't enable "Próxima Fase" button
+- [ ] Investigate canAdvancePhase logic to see why commandPhaseComplete is not being detected
+- [ ] Check if onComplete callback is being called properly when closing CommandPhaseSteps
+- [ ] Verify that commandPhaseComplete state is being set to true after completion
+- [ ] Test that "Próxima Fase" button becomes enabled after completing Command Phase
+
+
+## Fase 2 - Sistema de Batalha Avançado ✅ COMPLETO (PR #15)
+### Sistema de Misery Cards (32 cartas)
+- [x] Criar estrutura de dados para as 32 Misery Cards (shared/miseryCards.ts)
+- [x] Criar componente MiseryCardsPanel.tsx com UI para exibir e gerenciar cartas
+- [x] Implementar lógica de compra de cartas (sorteio aleatório)
+- [x] Implementar modal "Ver Todas" com todas as 32 cartas
+- [x] Integrar painel no BattleTracker.tsx
+- [ ] Implementar tabela no banco de dados para armazenar cartas ativas por batalha
+- [ ] Implementar efeitos das cartas durante a batalha
+- [ ] Integrar com o sistema de Reabastecimento (Command Phase Step 3)
+
+### Sistema de Secondary Missions (20 missões)
+- [x] Criar estrutura de dados para as 20 Secondary Missions (shared/secondaryMissions.ts)
+- [x] Criar componente SecondaryMissionsPanel.tsx com UI para exibir missões ativas
+- [x] Implementar lógica de compra de missões (sorteio aleatório)
+- [x] Implementar modal "Ver Todas" com todas as 20 missões
+- [x] Implementar botões de "Concluída" e "Falhou" para cada missão
+- [x] Integrar painel no BattleTracker.tsx
+- [ ] Implementar seleção de missões secundárias no início da batalha
+- [ ] Implementar lógica de pontuação de missões secundárias
+- [ ] Integrar com o sistema de VP (Victory Points)
+
+### Sequência de Início/Fim de Battle Round
+- [x] Criar componente BattleRoundIndicator.tsx com indicador proeminente
+- [x] Mostrar Battle Round atual, rounds restantes e fase atual
+- [x] Adicionar barra de progresso visual para rounds
+- [x] Integrar indicador no BattleTracker.tsx
+- [ ] Implementar fase de início de Battle Round (Start of Battle Round)
+- [ ] Implementar fase de fim de Battle Round (End of Battle Round)
+- [ ] Criar UI para mostrar eventos de início/fim de round
+- [ ] Implementar lógica de efeitos que ocorrem no início/fim de round
+- [ ] Integrar com o rastreador de fases existente
+
+
+
+## Correções de UI - Fase 2 (Bugs Reportados) ✅ COMPLETO
+
+### Bug 1: Painéis de Misery Cards e Secondary Missions não visíveis
+- [x] Corrigir z-index dos painéis para ficarem acima de outros componentes
+- [x] Adicionado z-index: 20 aos wrappers dos painéis
+
+### Bug 2: Compra automática de cartas/missões por round
+- [x] Round 2: Revelar 1 Misery Card automaticamente
+- [x] Rounds 3-4: Revelar 1 Misery Card + aplicar +1 ao Spawn Roll
+- [x] Round 5+: Revelar 3 Misery Cards + aplicar +2 ao Spawn Roll
+- [x] Cada round: Revelar 1 Secondary Mission automaticamente
+- [x] Criado StartOfRoundModal.tsx para exibir cartas/missões reveladas
+- [ ] Fim do round: Resolver missões secundárias (recompensas/punições)
+- [ ] Implementar modal de início de round com cartas reveladas
+
+### Bug 3: Contagem incorreta de Battle Rounds
+- [ ] Corrigir lógica: 1 Battle Round = Turno da Horda + Turno dos Jogadores
+- [ ] Round só avança após AMBOS os turnos completarem todas as fases
+- [ ] Atualizar BattlePhaseTracker para refletir a lógica correta
+
+
+### Bug 4: Turno não muda de Horda para Jogador após completar todas as fases
+- [x] Identificado: BattleTracker não tinha estado local para rastrear mudanças de turno
+- [x] Adicionado `localCurrentTurn` state em BattleTracker.tsx (linha 171)
+- [x] Atualizado `handlePhaseChange` para chamar `setLocalCurrentTurn(playerTurn)` (linha 419)
+- [x] Turno agora muda corretamente: Horda (5 fases) → Jogador (5 fases) → Round 2
+- [x] Testado e verificado funcionando corretamente

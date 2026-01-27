@@ -1,6 +1,4 @@
-console.log('[BattleTracker MODULE] File loaded at:', new Date().toISOString(), 'Path:', window.location.pathname);
-
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 // Safe JSON parse helper
 function safeJSONParse<T>(value: any, fallback: T): T {
@@ -35,6 +33,11 @@ import UnitTrackerPanel from "@/components/UnitTrackerPanel";
 import BattleSummaryModal from "@/components/BattleSummaryModal";
 import HordeSpawnModal from "@/components/HordeSpawnModal";
 import HordeUnitsPanel, { HordeUnit } from "@/components/HordeUnitsPanel";
+import MiseryCardsPanel from "@/components/MiseryCardsPanel";
+import SecondaryMissionsPanel from "@/components/SecondaryMissionsPanel";
+import BattleRoundIndicator from "@/components/BattleRoundIndicator";
+import BattleRoundEvents from "@/components/BattleRoundEvents";
+import StartOfRoundModal from "@/components/StartOfRoundModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -58,25 +61,32 @@ function BattleTrackerInner() {
   const [showFightSteps, setShowFightSteps] = useState(false);
   const [fightPhaseCompleted, setFightPhaseCompleted] = useState(false);
   
+  // Battle Round Events state
+  const [showStartOfRoundEvents, setShowStartOfRoundEvents] = useState(false);
+  const [showEndOfRoundEvents, setShowEndOfRoundEvents] = useState(false);
+  const [showStartOfRoundModal, setShowStartOfRoundModal] = useState(false);
+  const [previousRound, setPreviousRound] = useState<number | null>(null);
+  
   // Horde spawn state
   const [showSpawnModal, setShowSpawnModal] = useState(false);
   const [spawnResult, setSpawnResult] = useState<any>(null);
   const [hordeUnits, setHordeUnits] = useState<HordeUnit[]>([]);
+  
+   // Misery Cards and Secondary Missions state
+  const [activeMiseryCardIds, setActiveMiseryCardIds] = useState<number[]>([]);
+  const [activeSecondaryMissions, setActiveSecondaryMissions] = useState<{
+    missionId: number;
+    status: 'active' | 'completed' | 'failed';
+    progress?: string;
+  }[]>([]);
+  
+  // Ref to store timeout ID for cleanup
+  const startRoundEventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
 
-  // DEBUG: Log component state
-  // console.log('[BattleTracker] Component rendered:', {
-  //   match,
-  //   params,
-  //   battleId,
-  //   battleIdType: typeof battleId,
-  //   isValidBattleId,
-  //   currentPath: window.location.pathname,
-  //   willExecuteQuery: isValidBattleId,
-  //   queryInput: { id: battleId || 0 }
-  // });
+  // DEBUG: Log component state (removed for production)
 
   const { data: battle, isLoading } = trpc.battle.get.useQuery(
     { id: battleId || 0 },
@@ -157,6 +167,12 @@ function BattleTrackerInner() {
   // This is used for conditional rendering instead of battle?.currentPhase which depends on database sync
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
+  // Local state for current turn - updates immediately on turn change
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'opponent');
+  
+  // Local state for current round - updates immediately on round change
+  const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
+  
   // Sync localCurrentPhase when battle data loads from database
   useEffect(() => {
     if (battle?.currentPhase) {
@@ -171,10 +187,16 @@ function BattleTrackerInner() {
     }
   }, [battle?.hordeUnits]);
   
-  // DEBUG: Log commandPhaseCompleted state changes
-  // useEffect(() => {
-  //   console.log('[BattleTracker] commandPhaseCompleted changed:', commandPhaseCompleted);
-  // }, [commandPhaseCompleted]);
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (startRoundEventsTimeoutRef.current) {
+        clearTimeout(startRoundEventsTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // DEBUG: Log commandPhaseCompleted state changes (removed for production)
   
   // Calculate canAdvancePhase: require phase completion before advancing
   const canAdvancePhase = (
@@ -184,15 +206,7 @@ function BattleTrackerInner() {
     (localCurrentPhase !== "charge" || chargePhaseCompleted) &&
     (localCurrentPhase !== "fight" || fightPhaseCompleted)
   );
-  // console.log('[BattleTracker] canAdvancePhase calculated:', {
-  //   localCurrentPhase,
-  //   commandPhaseCompleted,
-  //   movementPhaseCompleted,
-  //   shootingPhaseCompleted,
-  //   chargePhaseCompleted,
-  //   fightPhaseCompleted,
-  //   canAdvancePhase
-  // });
+  // DEBUG: canAdvancePhase calculated (removed for production)
 
   const updateBattleMutation = trpc.battle.update.useMutation({
     onSuccess: () => {
@@ -373,10 +387,37 @@ function BattleTrackerInner() {
   };
 
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
-    setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
+    setPhaseLog(prev => [...prev, { phase, round, timestamp: new Date() }]);
     
-    // Update local phase state immediately for UI responsiveness
+    // Detect round change and show events (skip on first load when previousRound is null)
+    if (previousRound !== null && round !== previousRound) {
+      // End of previous round
+      if (round > previousRound) {
+        setShowEndOfRoundEvents(true);
+      }
+    }
+    // Always update previousRound to current round
+    setPreviousRound(round);
+    
+    // Show start of round events when entering Command phase at start of new round
+    if (phase === "command" && playerTurn === "opponent" && round > 1) {
+      // Small delay to show start events after end events are dismissed
+      // Clear any pending timeout first
+      if (startRoundEventsTimeoutRef.current) {
+        clearTimeout(startRoundEventsTimeoutRef.current);
+      }
+      startRoundEventsTimeoutRef.current = setTimeout(() => {
+        setShowStartOfRoundEvents(true);
+        startRoundEventsTimeoutRef.current = null;
+        // Show automatic card/mission reveal modal for rounds 2+
+        setShowStartOfRoundModal(true);
+      }, 500);
+    }
+    
+    // Update local state immediately for UI responsiveness
     setLocalCurrentPhase(phase);
+    setLocalCurrentTurn(playerTurn);
+    setLocalCurrentRound(round);
     
     // Close any open phase step panels
     setShowCommandSteps(false);
@@ -521,9 +562,17 @@ function BattleTrackerInner() {
           </Link>
         </div>
 
+        {/* Battle Round Indicator - Prominent display */}
+        <BattleRoundIndicator
+          battleRound={localCurrentRound}
+          currentTurn={localCurrentTurn === 'opponent' ? 'horde' : 'player'}
+          currentPhase={localCurrentPhase}
+          maxRounds={5}
+        />
+
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Phase Tracker */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 space-y-6 relative z-10">
             <BattlePhaseTracker
               battleId={battleId}
               initialPhase={battle?.currentPhase || "command"}
@@ -542,8 +591,8 @@ function BattleTrackerInner() {
                 battleId={battleId}
                 playerCount={participants?.length || 1}
                 isSoloMode={participants?.length === 1}
-                isHordeTurn={(battle as any)?.currentTurn === 'horde'}
-                onComplete={() => {
+                isHordeTurn={localCurrentTurn === 'opponent'}
+                 onComplete={() => {
                   // First set commandPhaseCompleted to true
                   setCommandPhaseCompleted(true);
                   // Then close the steps panel
@@ -739,6 +788,49 @@ function BattleTrackerInner() {
                 status: u.status,
               }))}
             />
+            
+            {/* Misery Cards Panel */}
+            <div className="relative z-20">
+            <MiseryCardsPanel
+              activeCardIds={activeMiseryCardIds}
+              battleRound={battle?.battleRound || 1}
+              onDrawCards={(cards) => {
+                setActiveMiseryCardIds(prev => [...prev, ...cards.map(c => c.id)]);
+                toast.info(`${cards.length} Carta(s) de Miséria comprada(s)!`);
+              }}
+              onDismissCard={(cardId) => {
+                setActiveMiseryCardIds(prev => prev.filter(id => id !== cardId));
+                toast.success('Carta de Miséria removida!');
+              }}
+            />
+            </div>
+            
+            {/* Secondary Missions Panel */}
+            <div className="relative z-20">
+            <SecondaryMissionsPanel
+              activeMissions={activeSecondaryMissions}
+              battleRound={battle?.battleRound || 1}
+              onDrawMissions={(missions) => {
+                setActiveSecondaryMissions(prev => [
+                  ...prev,
+                  ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+                ]);
+                toast.info(`${missions.length} Missão(ões) Secundária(s) comprada(s)!`);
+              }}
+              onCompleteMission={(missionId) => {
+                setActiveSecondaryMissions(prev =>
+                  prev.map(m => m.missionId === missionId ? { ...m, status: 'completed' as const } : m)
+                );
+                toast.success('Missão Secundária concluída!');
+              }}
+              onFailMission={(missionId) => {
+                setActiveSecondaryMissions(prev =>
+                  prev.map(m => m.missionId === missionId ? { ...m, status: 'failed' as const } : m)
+                );
+                toast.error('Missão Secundária falhou!');
+              }}
+            />
+            </div>
           </div>
 
           {/* Battle Info & Log - moved to bottom or sidebar */}
@@ -855,6 +947,45 @@ function BattleTrackerInner() {
         numberOfZones={numberOfZones}
         onConfirm={handleConfirmSpawn}
       />
+      
+      {/* Battle Round Events Modal */}
+      <BattleRoundEvents
+        battleRound={battle?.battleRound || 1}
+        maxRounds={5}
+        isStartOfRound={showStartOfRoundEvents}
+        isEndOfRound={showEndOfRoundEvents}
+        onDismiss={() => {
+          setShowStartOfRoundEvents(false);
+          setShowEndOfRoundEvents(false);
+        }}
+        activeMiseryCards={activeMiseryCardIds}
+        activeSecondaryMissions={activeSecondaryMissions.map(m => m.missionId)}
+      />
+      
+      {/* Start of Round Modal - Automatic card/mission reveals */}
+      <StartOfRoundModal
+        battleRound={battle?.battleRound || 1}
+        isOpen={showStartOfRoundModal}
+        onClose={() => setShowStartOfRoundModal(false)}
+        onCardsRevealed={(cards) => {
+          // Clear previous round's cards and add new ones
+          setActiveMiseryCardIds(cards.map(c => c.id));
+          if (cards.length > 0) {
+            toast.info(`${cards.length} Carta(s) de Miséria revelada(s) para o Round ${battle?.battleRound || 1}!`);
+          }
+        }}
+        onMissionsRevealed={(missions) => {
+          setActiveSecondaryMissions(prev => [
+            ...prev,
+            ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+          ]);
+          if (missions.length > 0) {
+            toast.info(`Nova Missão Secundária revelada: ${missions[0].namePt}`);
+          }
+        }}
+        existingMiseryCardIds={activeMiseryCardIds}
+        existingMissionIds={activeSecondaryMissions.map(m => m.missionId)}
+      />
     </div>
   );
 }
@@ -865,7 +996,7 @@ export default function BattleTracker() {
   
   // Don't render the component at all if route doesn't match
   if (!match) {
-    console.log('[BattleTracker] Route does not match, not rendering');
+    // DEBUG: Route does not match (removed for production)
     return null;
   }
   
