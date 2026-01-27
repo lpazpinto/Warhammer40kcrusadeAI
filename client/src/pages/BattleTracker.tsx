@@ -196,6 +196,16 @@ function BattleTrackerInner() {
     };
   }, []);
   
+  // Show StartOfRoundModal for Round 1 when battle first loads (for initial Secondary Mission)
+  const [hasShownRound1Modal, setHasShownRound1Modal] = useState(false);
+  useEffect(() => {
+    if (battle && !hasShownRound1Modal && battle.battleRound === 1 && activeSecondaryMissions.length === 0) {
+      // Only show if no missions have been revealed yet
+      setShowStartOfRoundModal(true);
+      setHasShownRound1Modal(true);
+    }
+  }, [battle, hasShownRound1Modal, activeSecondaryMissions.length]);
+  
   // DEBUG: Log commandPhaseCompleted state changes (removed for production)
   
   // Calculate canAdvancePhase: require phase completion before advancing

@@ -83,7 +83,7 @@ export default function StartOfRoundModal({
 
       setHasRevealed(true);
     }
-  }, [isOpen, hasRevealed, miseryCardCount, battleRound, existingMiseryCardIds, existingMissionIds]);
+  }, [isOpen, hasRevealed, miseryCardCount, existingMiseryCardIds, existingMissionIds]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -104,10 +104,7 @@ export default function StartOfRoundModal({
     onClose();
   };
 
-  // Don't show modal for round 1
-  if (battleRound < 2) {
-    return null;
-  }
+  // Show modal for all rounds (Round 1 has Secondary Mission, Round 2+ has Misery Cards too)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleConfirm()}>
@@ -211,23 +208,32 @@ export default function StartOfRoundModal({
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
             <h4 className="font-semibold text-gray-800 mb-2">Regras do Round {battleRound}:</h4>
             <ul className="list-disc list-inside space-y-1">
+              {battleRound === 1 && (
+                <li>1 Missão Secundária revelada (primeira missão da batalha)</li>
+              )}
               {battleRound === 2 && (
-                <li>1 Carta de Miséria revelada</li>
+                <>
+                  <li>1 Carta de Miséria revelada</li>
+                  <li>1 Missão Secundária revelada</li>
+                  <li>Descarte as Cartas de Miséria ativas do round anterior</li>
+                </>
               )}
               {(battleRound === 3 || battleRound === 4) && (
                 <>
                   <li>1 Carta de Miséria revelada</li>
                   <li>+1 aos resultados de Spawn Roll</li>
+                  <li>1 Missão Secundária revelada</li>
+                  <li>Descarte as Cartas de Miséria ativas do round anterior</li>
                 </>
               )}
               {battleRound >= 5 && (
                 <>
                   <li>3 Cartas de Miséria reveladas</li>
                   <li>+2 aos resultados de Spawn Roll</li>
+                  <li>1 Missão Secundária revelada</li>
+                  <li>Descarte as Cartas de Miséria ativas do round anterior</li>
                 </>
               )}
-              <li>1 Missão Secundária revelada</li>
-              <li>Descarte as Cartas de Miséria ativas do round anterior</li>
             </ul>
           </div>
         </div>

@@ -941,3 +941,16 @@
 - [x] Corrigir lógica de detecção de turno na função onOpenResupply
 - [x] Usar localCurrentTurn ao invés de battle.currentTurn para verificar o turno atual
 - [x] Corrigido: agora usa localCurrentTurn === 'opponent' para verificar se é turno da Horda
+
+
+### Feature: Revelação Automática de Cartas por Battle Round
+- [x] Implementar lógica de revelação automática baseada nas regras:
+  - Round 1: 1 Secondary Mission revelada
+  - Round 2: 1 Misery Card revelada
+  - Rounds 3-4: 1 Misery Card revelada + bônus de +1 no spawn roll
+  - Round 5+: 3 Misery Cards reveladas + bônus de +2 no spawn roll
+- [x] Revelar cartas automaticamente no início de cada Battle Round
+- [x] Descartar Misery Cards ativas do round anterior (limpa ao revelar novas)
+- [x] Aplicar bônus de spawn roll baseado no round atual (exibido no modal)
+- [x] Modal aparece automaticamente no Round 1 para revelar primeira Secondary Mission
+- [x] Modal aparece automaticamente em Rounds 2+ no início do turno da Horda
