@@ -79,17 +79,21 @@ export default function BattlePhaseTracker({
     let nextPlayerTurn = playerTurn;
     
     if (currentPhaseIndex === BATTLE_PHASES.length - 1) {
-      // End of round - switch to opponent or next round
-      if (playerTurn === "player") {
-        nextPlayerTurn = "opponent";
-        nextPhaseIndex = 0;
-        setPlayerTurn("opponent");
-        setCurrentPhaseIndex(0);
-      } else {
+      // End of all phases for current turn
+      // Horde Mode: Horda plays first, then Players
+      // Round only advances after BOTH turns complete
+      if (playerTurn === "opponent") {
+        // Horde turn finished, now it's Player turn (same round)
         nextPlayerTurn = "player";
         nextPhaseIndex = 0;
-        nextRound = currentRound + 1;
         setPlayerTurn("player");
+        setCurrentPhaseIndex(0);
+      } else {
+        // Player turn finished, advance to next round and start with Horde
+        nextPlayerTurn = "opponent";
+        nextPhaseIndex = 0;
+        nextRound = currentRound + 1;
+        setPlayerTurn("opponent");
         setCurrentPhaseIndex(0);
         setCurrentRound(currentRound + 1);
       }
@@ -107,18 +111,34 @@ export default function BattlePhaseTracker({
    * Handles backward navigation through phases and rounds
    */
   const handlePreviousPhase = () => {
+    let nextPhaseIndex = currentPhaseIndex;
+    let nextRound = currentRound;
+    let nextPlayerTurn = playerTurn;
+
     if (currentPhaseIndex === 0) {
-      if (playerTurn === "opponent") {
-        setPlayerTurn("player");
+      // At start of phases, go back to previous turn
+      if (playerTurn === "player") {
+        // Player at start, go back to Horde's last phase (same round)
+        nextPlayerTurn = "opponent";
+        nextPhaseIndex = BATTLE_PHASES.length - 1;
+        setPlayerTurn("opponent");
         setCurrentPhaseIndex(BATTLE_PHASES.length - 1);
       } else if (currentRound > 1) {
-        setPlayerTurn("opponent");
+        // Horde at start, go back to Player's last phase (previous round)
+        nextPlayerTurn = "player";
+        nextPhaseIndex = BATTLE_PHASES.length - 1;
+        nextRound = currentRound - 1;
+        setPlayerTurn("player");
         setCurrentPhaseIndex(BATTLE_PHASES.length - 1);
         setCurrentRound(currentRound - 1);
       }
     } else {
+      nextPhaseIndex = currentPhaseIndex - 1;
       setCurrentPhaseIndex(currentPhaseIndex - 1);
     }
+
+    // Call onPhaseChange with the NEW phase
+    onPhaseChange?.(BATTLE_PHASES[nextPhaseIndex].id, nextRound, nextPlayerTurn);
   };
 
   /**
@@ -128,7 +148,7 @@ export default function BattlePhaseTracker({
   const handleReset = () => {
     setCurrentPhaseIndex(0);
     setCurrentRound(1);
-    setPlayerTurn("player");
+    setPlayerTurn("opponent"); // Horde always plays first
   };
 
   return (
