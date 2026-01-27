@@ -167,6 +167,12 @@ function BattleTrackerInner() {
   // This is used for conditional rendering instead of battle?.currentPhase which depends on database sync
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
+  // Local state for current turn - updates immediately on turn change
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'opponent');
+  
+  // Local state for current round - updates immediately on round change
+  const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
+  
   // Sync localCurrentPhase when battle data loads from database
   useEffect(() => {
     if (battle?.currentPhase) {
@@ -408,8 +414,10 @@ function BattleTrackerInner() {
       }, 500);
     }
     
-    // Update local phase state immediately for UI responsiveness
+    // Update local state immediately for UI responsiveness
     setLocalCurrentPhase(phase);
+    setLocalCurrentTurn(playerTurn);
+    setLocalCurrentRound(round);
     
     // Close any open phase step panels
     setShowCommandSteps(false);
@@ -556,8 +564,8 @@ function BattleTrackerInner() {
 
         {/* Battle Round Indicator - Prominent display */}
         <BattleRoundIndicator
-          battleRound={battle?.battleRound || 1}
-          currentTurn={(battle as any)?.currentTurn === 'horde' ? 'horde' : 'player'}
+          battleRound={localCurrentRound}
+          currentTurn={localCurrentTurn === 'opponent' ? 'horde' : 'player'}
           currentPhase={localCurrentPhase}
           maxRounds={5}
         />
@@ -583,7 +591,7 @@ function BattleTrackerInner() {
                 battleId={battleId}
                 playerCount={participants?.length || 1}
                 isSoloMode={participants?.length === 1}
-                isHordeTurn={(battle as any)?.currentTurn === 'horde'}
+                isHordeTurn={localCurrentTurn === 'opponent'}
                  onComplete={() => {
                   // First set commandPhaseCompleted to true
                   setCommandPhaseCompleted(true);
