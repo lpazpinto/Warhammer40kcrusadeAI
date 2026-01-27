@@ -168,7 +168,7 @@ function BattleTrackerInner() {
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
   // Local state for current turn - updates immediately on turn change
-  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'opponent');
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'player');
   
   // Local state for current round - updates immediately on round change
   const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
@@ -600,8 +600,8 @@ function BattleTrackerInner() {
                   toast.success("Fase de Comando concluída! Agora você pode avançar para a próxima fase.");
                 }}
                 onOpenResupply={() => {
-                  // Disable shop during Horde turn
-                  if ((battle as any)?.currentTurn === 'horde') {
+                  // Disable shop during Horde turn - use localCurrentTurn for real-time state
+                  if (localCurrentTurn === 'opponent') {
                     toast.error("A loja de reabastecimento não está disponível durante o turno da Horda.");
                     return;
                   }
