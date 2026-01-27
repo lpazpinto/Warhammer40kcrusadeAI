@@ -929,3 +929,15 @@
 - [x] Corrigir posicionamento dos painéis para não sobrepor Informações da Batalha, Histórico de Fases e botão Finalizar
 - [x] Ajustar layout para que os painéis fiquem em uma área dedicada sem overlap
 - [x] Reorganizado layout: Misery Cards e Secondary Missions agora em uma linha separada abaixo do grid principal
+
+
+### Bug 6: Painel de Unidades da Horda sobreposto ao painel de Missões Secundárias
+- [x] Corrigir posicionamento do painel de Unidades da Horda
+- [x] Reorganizar layout para que todos os painéis fiquem em posições corretas sem sobreposição
+- [x] Movido Horde Units Panel para uma linha dedicada de largura total abaixo do grid principal
+
+
+### Bug 7: Loja de Reabastecimento mostra mensagem de turno da Horda durante turno do Jogador
+- [x] Corrigir lógica de detecção de turno na função onOpenResupply
+- [x] Usar localCurrentTurn ao invés de battle.currentTurn para verificar o turno atual
+- [x] Corrigido: agora usa localCurrentTurn === 'opponent' para verificar se é turno da Horda

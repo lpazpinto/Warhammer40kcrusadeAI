@@ -600,8 +600,8 @@ function BattleTrackerInner() {
                   toast.success("Fase de Comando concluída! Agora você pode avançar para a próxima fase.");
                 }}
                 onOpenResupply={() => {
-                  // Disable shop during Horde turn
-                  if ((battle as any)?.currentTurn === 'horde') {
+                  // Disable shop during Horde turn - use localCurrentTurn for real-time state
+                  if (localCurrentTurn === 'opponent') {
                     toast.error("A loja de reabastecimento não está disponível durante o turno da Horda.");
                     return;
                   }
@@ -773,25 +773,25 @@ function BattleTrackerInner() {
               units={unitStatuses}
               onMarkDestroyed={handleMarkDestroyed}
             />
-            
-            {/* Horde Units Panel */}
-            <HordeUnitsPanel
-              units={hordeUnits}
-              faction={campaign?.hordeFaction || "Horda"}
-              numberOfZones={numberOfZones}
-              onDestroyUnit={handleDestroyHordeUnit}
-              playerUnits={unitStatuses.map(u => ({
-                id: u.id,
-                name: u.name,
-                crusadeName: u.crusadeName,
-                playerName: u.playerName,
-                status: u.status,
-              }))}
-            />
           </div>
         </div>
         
-        {/* Misery Cards and Secondary Missions - Full width row below main grid */}
+        {/* Horde Units Panel - Full width row */}
+        <HordeUnitsPanel
+          units={hordeUnits}
+          faction={campaign?.hordeFaction || "Horda"}
+          numberOfZones={numberOfZones}
+          onDestroyUnit={handleDestroyHordeUnit}
+          playerUnits={unitStatuses.map(u => ({
+            id: u.id,
+            name: u.name,
+            crusadeName: u.crusadeName,
+            playerName: u.playerName,
+            status: u.status,
+          }))}
+        />
+        
+        {/* Misery Cards and Secondary Missions - Full width row */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Misery Cards Panel */}
           <MiseryCardsPanel
