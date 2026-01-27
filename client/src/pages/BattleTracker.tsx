@@ -788,53 +788,53 @@ function BattleTrackerInner() {
                 status: u.status,
               }))}
             />
-            
-            {/* Misery Cards Panel */}
-            <div className="relative z-20">
-            <MiseryCardsPanel
-              activeCardIds={activeMiseryCardIds}
-              battleRound={battle?.battleRound || 1}
-              onDrawCards={(cards) => {
-                setActiveMiseryCardIds(prev => [...prev, ...cards.map(c => c.id)]);
-                toast.info(`${cards.length} Carta(s) de Miséria comprada(s)!`);
-              }}
-              onDismissCard={(cardId) => {
-                setActiveMiseryCardIds(prev => prev.filter(id => id !== cardId));
-                toast.success('Carta de Miséria removida!');
-              }}
-            />
-            </div>
-            
-            {/* Secondary Missions Panel */}
-            <div className="relative z-20">
-            <SecondaryMissionsPanel
-              activeMissions={activeSecondaryMissions}
-              battleRound={battle?.battleRound || 1}
-              onDrawMissions={(missions) => {
-                setActiveSecondaryMissions(prev => [
-                  ...prev,
-                  ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
-                ]);
-                toast.info(`${missions.length} Missão(ões) Secundária(s) comprada(s)!`);
-              }}
-              onCompleteMission={(missionId) => {
-                setActiveSecondaryMissions(prev =>
-                  prev.map(m => m.missionId === missionId ? { ...m, status: 'completed' as const } : m)
-                );
-                toast.success('Missão Secundária concluída!');
-              }}
-              onFailMission={(missionId) => {
-                setActiveSecondaryMissions(prev =>
-                  prev.map(m => m.missionId === missionId ? { ...m, status: 'failed' as const } : m)
-                );
-                toast.error('Missão Secundária falhou!');
-              }}
-            />
-            </div>
           </div>
+        </div>
+        
+        {/* Misery Cards and Secondary Missions - Full width row below main grid */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Misery Cards Panel */}
+          <MiseryCardsPanel
+            activeCardIds={activeMiseryCardIds}
+            battleRound={battle?.battleRound || 1}
+            onDrawCards={(cards) => {
+              setActiveMiseryCardIds(prev => [...prev, ...cards.map(c => c.id)]);
+              toast.info(`${cards.length} Carta(s) de Miséria comprada(s)!`);
+            }}
+            onDismissCard={(cardId) => {
+              setActiveMiseryCardIds(prev => prev.filter(id => id !== cardId));
+              toast.success('Carta de Miséria removida!');
+            }}
+          />
+          
+          {/* Secondary Missions Panel */}
+          <SecondaryMissionsPanel
+            activeMissions={activeSecondaryMissions}
+            battleRound={battle?.battleRound || 1}
+            onDrawMissions={(missions) => {
+              setActiveSecondaryMissions(prev => [
+                ...prev,
+                ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+              ]);
+              toast.info(`${missions.length} Missão(ões) Secundária(s) comprada(s)!`);
+            }}
+            onCompleteMission={(missionId) => {
+              setActiveSecondaryMissions(prev =>
+                prev.map(m => m.missionId === missionId ? { ...m, status: 'completed' as const } : m)
+              );
+              toast.success('Missão Secundária concluída!');
+            }}
+            onFailMission={(missionId) => {
+              setActiveSecondaryMissions(prev =>
+                prev.map(m => m.missionId === missionId ? { ...m, status: 'failed' as const } : m)
+              );
+              toast.error('Missão Secundária falhou!');
+            }}
+          />
+        </div>
 
-          {/* Battle Info & Log - moved to bottom or sidebar */}
-          <div className="lg:col-span-5 space-y-6">
+        {/* Battle Info & Log - Full width row */}
+        <div className="grid gap-6 lg:grid-cols-2">
             {/* Battle Info */}
             {battle && (
               <Card>
@@ -893,17 +893,17 @@ function BattleTrackerInner() {
               </CardContent>
             </Card>
 
-            {/* End Battle Button */}
-            <Button
-              variant="destructive"
-              size="lg"
-              className="w-full"
-              onClick={() => setShowSummary(true)}
-            >
-              Finalizar Batalha
-            </Button>
-          </div>
         </div>
+        
+        {/* End Battle Button */}
+        <Button
+          variant="destructive"
+          size="lg"
+          className="w-full"
+          onClick={() => setShowSummary(true)}
+        >
+          Finalizar Batalha
+        </Button>
       </div>
 
       {/* Battle Summary Modal */}
