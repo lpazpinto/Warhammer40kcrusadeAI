@@ -37,6 +37,7 @@ import MiseryCardsPanel from "@/components/MiseryCardsPanel";
 import SecondaryMissionsPanel from "@/components/SecondaryMissionsPanel";
 import BattleRoundIndicator from "@/components/BattleRoundIndicator";
 import BattleRoundEvents from "@/components/BattleRoundEvents";
+import StartOfRoundModal from "@/components/StartOfRoundModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -63,6 +64,7 @@ function BattleTrackerInner() {
   // Battle Round Events state
   const [showStartOfRoundEvents, setShowStartOfRoundEvents] = useState(false);
   const [showEndOfRoundEvents, setShowEndOfRoundEvents] = useState(false);
+  const [showStartOfRoundModal, setShowStartOfRoundModal] = useState(false);
   const [previousRound, setPreviousRound] = useState<number | null>(null);
   
   // Horde spawn state
@@ -401,6 +403,8 @@ function BattleTrackerInner() {
       startRoundEventsTimeoutRef.current = setTimeout(() => {
         setShowStartOfRoundEvents(true);
         startRoundEventsTimeoutRef.current = null;
+        // Show automatic card/mission reveal modal for rounds 2+
+        setShowStartOfRoundModal(true);
       }, 500);
     }
     
@@ -560,7 +564,7 @@ function BattleTrackerInner() {
 
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Phase Tracker */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 space-y-6 relative z-10">
             <BattlePhaseTracker
               battleId={battleId}
               initialPhase={battle?.currentPhase || "command"}
@@ -778,6 +782,7 @@ function BattleTrackerInner() {
             />
             
             {/* Misery Cards Panel */}
+            <div className="relative z-20">
             <MiseryCardsPanel
               activeCardIds={activeMiseryCardIds}
               onDrawCards={(cards) => {
@@ -789,8 +794,10 @@ function BattleTrackerInner() {
                 toast.success('Carta de Miséria removida!');
               }}
             />
+            </div>
             
             {/* Secondary Missions Panel */}
+            <div className="relative z-20">
             <SecondaryMissionsPanel
               activeMissions={activeSecondaryMissions}
               battleRound={battle?.battleRound || 1}
@@ -814,6 +821,7 @@ function BattleTrackerInner() {
                 toast.error('Missão Secundária falhou!');
               }}
             />
+            </div>
           </div>
 
           {/* Battle Info & Log - moved to bottom or sidebar */}
@@ -943,6 +951,31 @@ function BattleTrackerInner() {
         }}
         activeMiseryCards={activeMiseryCardIds}
         activeSecondaryMissions={activeSecondaryMissions.map(m => m.missionId)}
+      />
+      
+      {/* Start of Round Modal - Automatic card/mission reveals */}
+      <StartOfRoundModal
+        battleRound={battle?.battleRound || 1}
+        isOpen={showStartOfRoundModal}
+        onClose={() => setShowStartOfRoundModal(false)}
+        onCardsRevealed={(cards) => {
+          // Clear previous round's cards and add new ones
+          setActiveMiseryCardIds(cards.map(c => c.id));
+          if (cards.length > 0) {
+            toast.info(`${cards.length} Carta(s) de Miséria revelada(s) para o Round ${battle?.battleRound || 1}!`);
+          }
+        }}
+        onMissionsRevealed={(missions) => {
+          setActiveSecondaryMissions(prev => [
+            ...prev,
+            ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+          ]);
+          if (missions.length > 0) {
+            toast.info(`Nova Missão Secundária revelada: ${missions[0].namePt}`);
+          }
+        }}
+        existingMiseryCardIds={activeMiseryCardIds}
+        existingMissionIds={activeSecondaryMissions.map(m => m.missionId)}
       />
     </div>
   );
