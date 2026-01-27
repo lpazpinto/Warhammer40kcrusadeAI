@@ -79,7 +79,7 @@ function BattleTrackerInner() {
   }[]>([]);
   
   // Ref to store timeout ID for cleanup
-  const startRoundEventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);;
+  const startRoundEventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Validate battleId is a valid number
   const isValidBattleId = match && battleId !== undefined && !isNaN(battleId) && battleId > 0;
