@@ -76,7 +76,7 @@ function BattleTrackerInner() {
     missionId: number;
     status: 'active' | 'completed' | 'failed';
     progress?: string;
-  }[]>();
+  }[]>([]);
   
   // Ref to store timeout ID for cleanup
   const startRoundEventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);;
