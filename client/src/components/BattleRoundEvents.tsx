@@ -213,7 +213,7 @@ export default function BattleRoundEvents({
                       <Icon className={`h-4 w-4 ${event.color}`} />
                       {event.title}
                     </label>
-                    <p className={`text-sm mt-1 ${isChecked ? "text-muted-foreground" : "text-muted-foreground"}`}>
+                    <p className="text-sm mt-1 text-muted-foreground">
                       {event.description}
                     </p>
                   </div>

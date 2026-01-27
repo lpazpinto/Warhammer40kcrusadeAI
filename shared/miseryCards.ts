@@ -286,10 +286,22 @@ export function getRandomMiseryCard(): MiseryCard {
 }
 
 /**
+ * Fisher-Yates shuffle algorithm for unbiased randomization
+ */
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
  * Get multiple random Misery Cards (without duplicates)
  */
 export function getRandomMiseryCards(count: number): MiseryCard[] {
-  const shuffled = [...MISERY_CARDS].sort(() => Math.random() - 0.5);
+  const shuffled = fisherYatesShuffle(MISERY_CARDS);
   return shuffled.slice(0, Math.min(count, MISERY_CARDS.length));
 }
 

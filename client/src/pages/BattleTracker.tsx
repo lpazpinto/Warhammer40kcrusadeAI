@@ -65,7 +65,7 @@ function BattleTrackerInner() {
   // Battle Round Events state
   const [showStartOfRoundEvents, setShowStartOfRoundEvents] = useState(false);
   const [showEndOfRoundEvents, setShowEndOfRoundEvents] = useState(false);
-  const [previousRound, setPreviousRound] = useState(1);
+  const [previousRound, setPreviousRound] = useState<number | null>(null);
   
   // Horde spawn state
   const [showSpawnModal, setShowSpawnModal] = useState(false);
@@ -390,16 +390,17 @@ function BattleTrackerInner() {
   };
 
   const handlePhaseChange = (phase: string, round: number, playerTurn: "player" | "opponent") => {
-    setPhaseLog([...phaseLog, { phase, round, timestamp: new Date() }]);
+    setPhaseLog(prev => [...prev, { phase, round, timestamp: new Date() }]);
     
-    // Detect round change and show events
-    if (round !== previousRound) {
+    // Detect round change and show events (skip on first load when previousRound is null)
+    if (previousRound !== null && round !== previousRound) {
       // End of previous round
       if (round > previousRound) {
         setShowEndOfRoundEvents(true);
       }
-      setPreviousRound(round);
     }
+    // Always update previousRound to current round
+    setPreviousRound(round);
     
     // Show start of round events when entering Command phase at start of new round
     if (phase === "command" && playerTurn === "opponent" && round > 1) {
@@ -785,7 +786,6 @@ function BattleTrackerInner() {
             {/* Misery Cards Panel */}
             <MiseryCardsPanel
               activeCardIds={activeMiseryCardIds}
-              battleRound={battle?.battleRound || 1}
               onDrawCards={(cards) => {
                 setActiveMiseryCardIds(prev => [...prev, ...cards.map(c => c.id)]);
                 toast.info(`${cards.length} Carta(s) de Miséria comprada(s)!`);

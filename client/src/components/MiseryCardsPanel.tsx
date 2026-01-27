@@ -24,8 +24,6 @@ interface MiseryCardsPanelProps {
   onDrawCards?: (cards: MiseryCard[]) => void;
   /** Callback when a card is dismissed */
   onDismissCard?: (cardId: number) => void;
-  /** Current battle round */
-  battleRound: number;
   /** Whether to show draw button */
   showDrawButton?: boolean;
   /** Number of cards to draw by default */
@@ -36,7 +34,6 @@ export default function MiseryCardsPanel({
   activeCardIds,
   onDrawCards,
   onDismissCard,
-  battleRound,
   showDrawButton = true,
   defaultDrawCount = 1,
 }: MiseryCardsPanelProps) {

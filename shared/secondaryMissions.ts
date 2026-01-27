@@ -270,10 +270,22 @@ export function getRandomSecondaryMission(): SecondaryMission {
 }
 
 /**
+ * Fisher-Yates shuffle algorithm for unbiased randomization
+ */
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
  * Get multiple random Secondary Missions (without duplicates)
  */
 export function getRandomSecondaryMissions(count: number): SecondaryMission[] {
-  const shuffled = [...SECONDARY_MISSIONS].sort(() => Math.random() - 0.5);
+  const shuffled = fisherYatesShuffle(SECONDARY_MISSIONS);
   return shuffled.slice(0, Math.min(count, SECONDARY_MISSIONS.length));
 }
 
