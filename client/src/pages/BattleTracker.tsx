@@ -168,7 +168,7 @@ function BattleTrackerInner() {
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
   // Local state for current turn - updates immediately on turn change
-  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'opponent');
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'player');
   
   // Local state for current round - updates immediately on round change
   const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
