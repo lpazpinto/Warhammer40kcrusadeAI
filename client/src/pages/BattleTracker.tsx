@@ -785,6 +785,7 @@ function BattleTrackerInner() {
             <div className="relative z-20">
             <MiseryCardsPanel
               activeCardIds={activeMiseryCardIds}
+              battleRound={battle?.battleRound || 1}
               onDrawCards={(cards) => {
                 setActiveMiseryCardIds(prev => [...prev, ...cards.map(c => c.id)]);
                 toast.info(`${cards.length} Carta(s) de Miséria comprada(s)!`);
