@@ -83,7 +83,7 @@ export default function StartOfRoundModal({
 
       setHasRevealed(true);
     }
-  }, [isOpen, hasRevealed, miseryCardCount, existingMiseryCardIds, existingMissionIds]);
+  }, [isOpen, hasRevealed, miseryCardCount, battleRound, existingMiseryCardIds, existingMissionIds]);
 
   // Reset state when modal closes
   useEffect(() => {
