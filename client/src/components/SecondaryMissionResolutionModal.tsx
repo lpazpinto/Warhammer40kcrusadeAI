@@ -4,7 +4,7 @@
  * Automatically applies punishments including revealing Misery Cards
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +66,17 @@ export default function SecondaryMissionResolutionModal({
       success: null,
     }))
   );
+
+  // Sincronizar resolutions quando missionsToResolve mudar
+  useEffect(() => {
+    setResolutions(
+      missionsToResolve.map(mission => ({
+        mission,
+        resolved: false,
+        success: null,
+      }))
+    );
+  }, [missionsToResolve.map(m => m.id).join(','), timing])
 
   const [pendingMiseryCards, setPendingMiseryCards] = useState<MiseryCard[]>([]);
   const [showingMiseryCards, setShowingMiseryCards] = useState(false);

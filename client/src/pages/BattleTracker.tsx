@@ -196,7 +196,7 @@ function BattleTrackerInner() {
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
   // Local state for current turn - updates immediately on turn change
-  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'opponent');
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">("opponent");
   
   // Local state for current round - updates immediately on round change
   const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
@@ -984,12 +984,13 @@ function BattleTrackerInner() {
                       // Format event description
                       const getEventDescription = () => {
                         switch (event.type) {
-                          case 'phase_change':
+                          case 'phase_change': {
                             const phaseNames: Record<string, string> = {
                               command: 'Comando', movement: 'Movimento', shooting: 'Tiro',
                               charge: 'Carga', fight: 'Combate'
                             };
                             return `Fase de ${phaseNames[event.phase || ''] || event.phase}`;
+                          }
                           case 'horde_spawn':
                             return `👾 Spawn: ${event.details?.unitName} (Zona ${event.details?.spawnZone})`;
                           case 'unit_destroyed':
@@ -1119,7 +1120,7 @@ function BattleTrackerInner() {
         onClose={() => setShowMissionResolutionModal(false)}
         activeMissions={activeSecondaryMissions
           .filter(m => m.status === 'active')
-          .map(m => getSecondaryMissionById(m.missionId)!)
+          .map(m => getSecondaryMissionById(m.missionId))
           .filter(Boolean)}
         timing={missionResolutionTiming}
         battleRound={battle?.battleRound || 1}
