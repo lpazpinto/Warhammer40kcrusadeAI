@@ -25,12 +25,11 @@ interface RoundEvent {
   skipFirstRound?: boolean;
 }
 
-// Horde Mode: No CP generation in Command Phase, objective is to survive
 const START_OF_ROUND_EVENTS: RoundEvent[] = [
   {
-    id: "check_secondary_missions",
-    title: "Verificar Missões Secundárias",
-    description: "Verifique se alguma missão secundária pode ser pontuada no início deste round.",
+    id: "check_objectives",
+    title: "Verificar Objetivos",
+    description: "Verifique se algum objetivo primário ou secundário pode ser pontuado no início deste round.",
     icon: Flag,
     color: "text-blue-500",
   },
@@ -42,6 +41,14 @@ const START_OF_ROUND_EVENTS: RoundEvent[] = [
     color: "text-red-500",
   },
   {
+    id: "command_points",
+    title: "Ganhar Pontos de Comando",
+    description: "Cada jogador ganha 1 Ponto de Comando no início de cada Battle Round (exceto o primeiro).",
+    icon: Zap,
+    color: "text-yellow-500",
+    skipFirstRound: true,
+  },
+  {
     id: "reinforcements",
     title: "Verificar Reforços",
     description: "Unidades em Reservas Estratégicas podem entrar a partir do Round 2.",
@@ -51,21 +58,28 @@ const START_OF_ROUND_EVENTS: RoundEvent[] = [
   },
 ];
 
-// Events that happen at the end of each Battle Round (Horde Mode)
+// Events that happen at the end of each Battle Round
 const END_OF_ROUND_EVENTS: RoundEvent[] = [
   {
-    id: "resolve_secondary_missions",
-    title: "Resolver Missões Secundárias",
-    description: "Verifique se alguma missão secundária foi completada ou falhou neste round.",
+    id: "score_objectives",
+    title: "Pontuar Objetivos",
+    description: "Pontue objetivos primários e secundários que são marcados no final do round.",
     icon: Flag,
     color: "text-blue-500",
   },
   {
-    id: "check_survival",
-    title: "Verificar Sobrevivência",
-    description: "O objetivo é sobreviver até o último Battle Round. Verifique se ainda há unidades vivas.",
+    id: "check_victory",
+    title: "Verificar Condições de Vitória",
+    description: "Verifique se alguma condição de vitória foi atingida (ex: todos os inimigos destruídos).",
     icon: Swords,
     color: "text-purple-500",
+  },
+  {
+    id: "secondary_missions",
+    title: "Verificar Missões Secundárias",
+    description: "Verifique se alguma missão secundária foi completada ou falhou neste round.",
+    icon: AlertTriangle,
+    color: "text-orange-500",
   },
   {
     id: "remove_effects",
@@ -199,7 +213,7 @@ export default function BattleRoundEvents({
                       <Icon className={`h-4 w-4 ${event.color}`} />
                       {event.title}
                     </label>
-                    <p className={`text-sm mt-1 ${isChecked ? "text-muted-foreground" : "text-muted-foreground"}`}>
+                    <p className="text-sm mt-1 text-muted-foreground">
                       {event.description}
                     </p>
                   </div>
