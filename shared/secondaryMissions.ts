@@ -270,23 +270,39 @@ export function getRandomSecondaryMission(): SecondaryMission {
 }
 
 /**
- * Fisher-Yates shuffle algorithm for unbiased randomization
- */
-function fisherYatesShuffle<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-/**
  * Get multiple random Secondary Missions (without duplicates)
  */
 export function getRandomSecondaryMissions(count: number): SecondaryMission[] {
-  const shuffled = fisherYatesShuffle(SECONDARY_MISSIONS);
+  const shuffled = [...SECONDARY_MISSIONS].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, SECONDARY_MISSIONS.length));
+}
+
+/**
+ * Resolution timing for secondary missions
+ */
+export type ResolutionTiming = 'end_of_turn' | 'end_of_round';
+
+/**
+ * Get when a mission should be resolved based on its condition
+ * Most missions resolve at end of battle round, but action-based missions resolve at end of turn
+ */
+export function getMissionResolutionTiming(missionId: number): ResolutionTiming {
+  // Action-based missions that complete at end of turn
+  const endOfTurnMissions = [4, 5, 15, 20]; // Establish Orbital Comms, Search for Supplies, Baiting the Trap, Insane Gambit
+  return endOfTurnMissions.includes(missionId) ? 'end_of_turn' : 'end_of_round';
+}
+
+/**
+ * Parse the number of Misery Cards from punishment text
+ * Returns 0 if no Misery Cards are mentioned
+ */
+export function parseMiseryCardPunishment(punishmentPt: string): number {
+  // Match patterns like "+1 Carta de Miséria", "+2 Cartas de Miséria", "+X Cartas de Miséria"
+  const match = punishmentPt.match(/\+(\d+)\s*Cartas?\s*de\s*Miséria/i);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return 0;
 }
 
 /**
