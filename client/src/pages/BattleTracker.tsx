@@ -202,7 +202,7 @@ function BattleTrackerInner() {
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
   // Local state for current turn - updates immediately on turn change
-  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'opponent');
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'player');
   
   // Local state for current round - updates immediately on round change
   const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
@@ -1118,6 +1118,8 @@ function BattleTrackerInner() {
         onCardsRevealed={(cards) => {
           // Set new round's misery cards (previous ones already discarded)
           setActiveMiseryCardIds(cards.map(c => c.id));
+          // Reset pending misery cards counter after consumption
+          setPendingMiseryCardsForNextRound(0);
           // Log each revealed card as battle event
           cards.forEach(card => {
             setBattleEvents(prev => [...prev, {
