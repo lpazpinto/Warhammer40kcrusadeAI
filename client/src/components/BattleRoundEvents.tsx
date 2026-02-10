@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertTriangle, Flag, Skull, Zap, Shield, Swords } from "lucide-react";
+import { AlertTriangle, Flag, Skull, Zap, Shield, Swords, Trash2 } from "lucide-react";
 
 interface BattleRoundEventsProps {
   battleRound: number;
@@ -25,21 +25,46 @@ interface RoundEvent {
   skipFirstRound?: boolean;
 }
 
-// Horde Mode: No CP generation in Command Phase, objective is to survive
+// Horde Mode Start of Round Events (Section 3.2)
 const START_OF_ROUND_EVENTS: RoundEvent[] = [
   {
-    id: "check_secondary_missions",
-    title: "Verificar Missões Secundárias",
-    description: "Verifique se alguma missão secundária pode ser pontuada no início deste round.",
+    id: "discard_misery",
+    title: "Descartar Cartas de Miséria Ativas",
+    description: "Descarte todas as Cartas de Miséria ativas do round anterior.",
+    icon: Trash2,
+    color: "text-red-500",
+    skipFirstRound: true,
+  },
+  {
+    id: "reveal_misery",
+    title: "Revelar Novas Cartas de Miséria",
+    description: "Revele as Cartas de Miséria para este round (incluindo modificadores de missões falhadas).",
+    icon: Skull,
+    color: "text-red-500",
+    skipFirstRound: true,
+  },
+  {
+    id: "reveal_secondary",
+    title: "Revelar Nova Missão Secundária",
+    description: "Revele a nova Missão Secundária para este round.",
     icon: Flag,
     color: "text-blue-500",
+  },
+  {
+    id: "resolve_start_missions",
+    title: "Resolver Recompensas/Punições de Início de Round",
+    description: "Resolva todas as recompensas e punições de missões que se aplicam no início do Battle Round.",
+    icon: Zap,
+    color: "text-yellow-500",
+    skipFirstRound: true,
   },
   {
     id: "misery_effects",
     title: "Aplicar Efeitos de Miséria",
     description: "Verifique se alguma Carta de Miséria ativa tem efeitos que ocorrem no início do round.",
     icon: Skull,
-    color: "text-red-500",
+    color: "text-orange-500",
+    skipFirstRound: true,
   },
   {
     id: "reinforcements",
@@ -51,12 +76,12 @@ const START_OF_ROUND_EVENTS: RoundEvent[] = [
   },
 ];
 
-// Events that happen at the end of each Battle Round (Horde Mode)
+// Events that happen at the end of each Battle Round (Section 3.6)
 const END_OF_ROUND_EVENTS: RoundEvent[] = [
   {
     id: "resolve_secondary_missions",
     title: "Resolver Missões Secundárias",
-    description: "Verifique se alguma missão secundária foi completada ou falhou neste round.",
+    description: "Todas as Missões Secundárias reveladas são resolvidas. Missões bem-sucedidas dão recompensas, missões falhadas dão punições.",
     icon: Flag,
     color: "text-blue-500",
   },
@@ -66,6 +91,13 @@ const END_OF_ROUND_EVENTS: RoundEvent[] = [
     description: "O objetivo é sobreviver até o último Battle Round. Verifique se ainda há unidades vivas.",
     icon: Swords,
     color: "text-purple-500",
+  },
+  {
+    id: "carry_over_effects",
+    title: "Transferir Efeitos para o Próximo Round",
+    description: "Resultados de Misery Cards e Spawn Roll são adicionados às revelações e rolls do próximo round.",
+    icon: AlertTriangle,
+    color: "text-yellow-500",
   },
   {
     id: "remove_effects",
@@ -118,6 +150,23 @@ export default function BattleRoundEvents({
 
   const allEventsChecked = filteredEvents.every(event => checkedEvents.has(event.id));
 
+  // Get spawn roll modifier for current round
+  const getSpawnRollModifier = () => {
+    if (battleRound >= 5) return "+2";
+    if (battleRound >= 3) return "+1";
+    return null;
+  };
+
+  // Get misery card count for current round
+  const getMiseryCardCount = () => {
+    if (battleRound >= 5) return 3;
+    if (battleRound >= 2) return 1;
+    return 0;
+  };
+
+  const spawnModifier = getSpawnRollModifier();
+  const miseryCount = getMiseryCardCount();
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleDismiss(); }}>
       <DialogContent className="max-w-lg">
@@ -152,19 +201,41 @@ export default function BattleRoundEvents({
             </Badge>
           </div>
 
+          {/* Round-specific info badges */}
+          {isStartOfRound && (
+            <div className="flex flex-wrap gap-2">
+              {miseryCount > 0 && (
+                <Badge variant="destructive" className="gap-1">
+                  <Skull className="h-3 w-3" />
+                  {miseryCount} Carta(s) de Miséria neste round
+                </Badge>
+              )}
+              <Badge variant="default" className="gap-1">
+                <Flag className="h-3 w-3" />
+                1 Missão Secundária
+              </Badge>
+              {spawnModifier && (
+                <Badge variant="outline" className="gap-1 border-orange-500 text-orange-500">
+                  <Swords className="h-3 w-3" />
+                  Spawn Roll: {spawnModifier}
+                </Badge>
+              )}
+            </div>
+          )}
+
           {/* Active Cards/Missions Summary */}
           {(activeMiseryCards.length > 0 || activeSecondaryMissions.length > 0) && (
             <div className="flex gap-2">
               {activeMiseryCards.length > 0 && (
                 <Badge variant="destructive" className="gap-1">
                   <Skull className="h-3 w-3" />
-                  {activeMiseryCards.length} Carta(s) de Miséria
+                  {activeMiseryCards.length} Miséria(s) Ativa(s)
                 </Badge>
               )}
               {activeSecondaryMissions.length > 0 && (
                 <Badge variant="default" className="gap-1">
                   <Flag className="h-3 w-3" />
-                  {activeSecondaryMissions.length} Missão(ões) Secundária(s)
+                  {activeSecondaryMissions.length} Missão(ões) Ativa(s)
                 </Badge>
               )}
             </div>
@@ -208,24 +279,25 @@ export default function BattleRoundEvents({
             })}
           </div>
 
+          {/* Spawn Roll Modifier Warning */}
+          {isStartOfRound && spawnModifier && (
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+              <p className="text-sm text-orange-600 dark:text-orange-400 font-medium flex items-center gap-2">
+                <Swords className="h-4 w-4" />
+                {battleRound >= 5 
+                  ? "Round 5+: A Horda recebe +2 no Spawn Roll! 3 Cartas de Miséria reveladas!"
+                  : `Rounds 3-4: A Horda recebe +1 no Spawn Roll! 1 Carta de Miséria revelada.`
+                }
+              </p>
+            </div>
+          )}
+
           {/* Special Round Warnings */}
           {battleRound === maxRounds && isEndOfRound && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
               <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Este é o último round! A batalha terminará após este round.
-              </p>
-            </div>
-          )}
-
-          {battleRound >= 3 && isStartOfRound && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
-                <Skull className="h-4 w-4" />
-                {battleRound >= 5 
-                  ? "Round 5+: A Horda recebe +2 no Spawn Roll!"
-                  : "Rounds 3-4: A Horda recebe +1 no Spawn Roll!"
-                }
               </p>
             </div>
           )}

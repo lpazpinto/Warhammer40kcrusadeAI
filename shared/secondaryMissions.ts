@@ -288,7 +288,7 @@ export type ResolutionTiming = 'end_of_turn' | 'end_of_round';
  */
 export function getMissionResolutionTiming(missionId: number): ResolutionTiming {
   // Action-based missions that complete at end of turn
-  const endOfTurnMissions = [4, 5, 15, 20]; // Establish Orbital Comms, Search for Supplies, Baiting the Trap, Insane Gambit
+  const endOfTurnMissions = [4, 5, 15]; // Establish Orbital Comms, Search for Supplies, Baiting the Trap
   return endOfTurnMissions.includes(missionId) ? 'end_of_turn' : 'end_of_round';
 }
 

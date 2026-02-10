@@ -1,7 +1,13 @@
 /**
  * SecondaryMissionResolutionModal - Asks players to resolve secondary missions
- * Shows at end of turn (for action-based missions) or end of battle round
- * Automatically applies punishments including revealing Misery Cards
+ * 
+ * Per rules (Section 3.6):
+ * - At the end of each battle round, all revealed Secondary Missions are resolved
+ * - Successful missions give their listed rewards and failed missions give their punishments
+ * - Misery card and Spawn Roll-related results are added to the next battle round's reveals and rolls
+ * 
+ * Some action-based missions resolve at end of turn instead of end of round.
+ * If a mission's punishment includes Misery Cards, they are revealed immediately as active.
  */
 
 import { useState, useEffect } from "react";
@@ -42,6 +48,8 @@ interface SecondaryMissionResolutionModalProps {
     completedMissionIds: number[]; 
     failedMissionIds: number[];
     newMiseryCards: MiseryCard[];
+    /** Number of misery cards to add to next round's reveal (from failed missions) */
+    pendingMiseryCardsForNextRound: number;
   }) => void;
 }
 
@@ -59,27 +67,26 @@ export default function SecondaryMissionResolutionModal({
     mission => getMissionResolutionTiming(mission.id) === timing
   );
 
-  const [resolutions, setResolutions] = useState<MissionResolution[]>(
-    missionsToResolve.map(mission => ({
-      mission,
-      resolved: false,
-      success: null,
-    }))
-  );
-
-  // Sincronizar resolutions quando missionsToResolve mudar
-  useEffect(() => {
-    setResolutions(
-      missionsToResolve.map(mission => ({
-        mission,
-        resolved: false,
-        success: null,
-      }))
-    );
-  }, [missionsToResolve.map(m => m.id).join(','), timing])
-
+  const [resolutions, setResolutions] = useState<MissionResolution[]>([]);
   const [pendingMiseryCards, setPendingMiseryCards] = useState<MiseryCard[]>([]);
   const [showingMiseryCards, setShowingMiseryCards] = useState(false);
+  const [pendingMiseryCountForNextRound, setPendingMiseryCountForNextRound] = useState(0);
+
+  // Reset resolutions when modal opens with new missions
+  useEffect(() => {
+    if (isOpen && missionsToResolve.length > 0) {
+      setResolutions(
+        missionsToResolve.map(mission => ({
+          mission,
+          resolved: false,
+          success: null,
+        }))
+      );
+      setPendingMiseryCards([]);
+      setShowingMiseryCards(false);
+      setPendingMiseryCountForNextRound(0);
+    }
+  }, [isOpen, missionsToResolve.map(m => m.id).join(',')]);
 
   const handleResolution = (missionId: number, success: boolean) => {
     setResolutions(prev => 
@@ -91,11 +98,12 @@ export default function SecondaryMissionResolutionModal({
     );
   };
 
-  const allResolved = resolutions.every(r => r.resolved);
+  const allResolved = resolutions.length > 0 && resolutions.every(r => r.resolved);
 
   const handleConfirm = () => {
-    // Calculate Misery Cards to draw from failed missions
-    let totalMiseryCards = 0;
+    // Calculate Misery Cards from failed missions
+    let totalImmediateMiseryCards = 0;
+    let totalNextRoundMiseryCards = 0;
     const failedMissionIds: number[] = [];
     const completedMissionIds: number[] = [];
 
@@ -104,23 +112,38 @@ export default function SecondaryMissionResolutionModal({
         completedMissionIds.push(r.mission.id);
       } else if (r.success === false) {
         failedMissionIds.push(r.mission.id);
-        // Parse how many Misery Cards to draw
+        // Parse how many Misery Cards from punishment
         const miseryCount = parseMiseryCardPunishment(r.mission.punishmentPt);
-        totalMiseryCards += miseryCount;
+        if (miseryCount > 0) {
+          // Per rules 3.6: "Misery card and Spawn Roll-related results are added to the 
+          // next battle round's reveals and rolls respectively"
+          // However, if the punishment says "immediately" or it's an end_of_turn resolution,
+          // reveal them now. Otherwise, add to next round.
+          if (timing === 'end_of_turn') {
+            // End of turn failures: reveal misery cards immediately as they affect current round
+            totalImmediateMiseryCards += miseryCount;
+          } else {
+            // End of round failures: per rules 3.6, add to next round's reveals
+            totalNextRoundMiseryCards += miseryCount;
+          }
+        }
       }
     });
 
-    // Draw Misery Cards if any are needed
-    if (totalMiseryCards > 0) {
-      const newCards = drawMiseryCards(totalMiseryCards, existingMiseryCardIds);
+    setPendingMiseryCountForNextRound(totalNextRoundMiseryCards);
+
+    // Draw immediate Misery Cards if any are needed
+    if (totalImmediateMiseryCards > 0) {
+      const newCards = drawMiseryCards(totalImmediateMiseryCards, existingMiseryCardIds);
       setPendingMiseryCards(newCards);
       setShowingMiseryCards(true);
     } else {
-      // No Misery Cards needed, close immediately
+      // No immediate Misery Cards needed, close
       onMissionsResolved({
         completedMissionIds,
         failedMissionIds,
         newMiseryCards: [],
+        pendingMiseryCardsForNextRound: totalNextRoundMiseryCards,
       });
       onClose();
     }
@@ -138,13 +161,14 @@ export default function SecondaryMissionResolutionModal({
       completedMissionIds,
       failedMissionIds,
       newMiseryCards: pendingMiseryCards,
+      pendingMiseryCardsForNextRound: pendingMiseryCountForNextRound,
     });
     setShowingMiseryCards(false);
     setPendingMiseryCards([]);
     onClose();
   };
 
-  // Don't show if no missions to resolve
+  // Don't show if no missions to resolve at this timing
   if (missionsToResolve.length === 0) {
     return null;
   }
@@ -160,7 +184,7 @@ export default function SecondaryMissionResolutionModal({
               Punição: Cartas de Miséria Reveladas
             </DialogTitle>
             <DialogDescription>
-              Devido à falha em missões secundárias, as seguintes Cartas de Miséria foram reveladas:
+              Devido à falha em missões secundárias, as seguintes Cartas de Miséria foram reveladas e estão ativas imediatamente:
             </DialogDescription>
           </DialogHeader>
 
@@ -180,7 +204,7 @@ export default function SecondaryMissionResolutionModal({
                     </p>
                   </div>
                   <Badge variant="destructive" className="ml-2">
-                    Nova
+                    Ativa
                   </Badge>
                 </div>
               </div>
@@ -192,6 +216,15 @@ export default function SecondaryMissionResolutionModal({
                 Estas cartas estão agora ativas e seus efeitos devem ser aplicados imediatamente.
               </p>
             </div>
+
+            {pendingMiseryCountForNextRound > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800 flex items-center gap-2">
+                  <Skull className="h-4 w-4" />
+                  Além disso, +{pendingMiseryCountForNextRound} Carta(s) de Miséria serão adicionadas à revelação do próximo round.
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -206,7 +239,7 @@ export default function SecondaryMissionResolutionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Target className="h-6 w-6 text-blue-500" />
@@ -215,12 +248,19 @@ export default function SecondaryMissionResolutionModal({
           <DialogDescription>
             {timing === 'end_of_turn' 
               ? "Resolva as missões baseadas em ações que terminam no final do turno:"
-              : `Resolva as missões secundárias do Battle Round ${battleRound}:`
+              : `Fim do Battle Round ${battleRound} - Resolva todas as missões secundárias reveladas (Seção 3.6):`
             }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Rules reminder */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+            <p className="font-medium mb-1">Regra 3.6:</p>
+            <p>Missões bem-sucedidas dão suas recompensas listadas. Missões falhadas dão suas punições. 
+            Resultados de Cartas de Miséria e Spawn Roll são adicionados às revelações e rolagens do próximo round.</p>
+          </div>
+
           {resolutions.map((resolution) => (
             <Card 
               key={resolution.mission.id}
