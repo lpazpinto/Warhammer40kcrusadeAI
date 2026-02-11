@@ -9,6 +9,7 @@
 ## How to Test
 
 <!-- Step-by-step commands or instructions to validate the change. -->
+<!-- If docs-only, state: "Sem testes — apenas documentação." -->
 
 ```bash
 pnpm install

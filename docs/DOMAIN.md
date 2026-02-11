@@ -1,7 +1,7 @@
 # Domain Model — Warhammer 40K Crusade AI Manager
 
 > **Version:** 1.0 (initial)
-> **Last updated:** 2025-02-11
+> **Last updated:** 2026-02-11
 > **Source of truth:** code in `lpazpinto/Warhammer40kcrusadeAI` (branch `main`)
 
 This document describes the core business rules and domain concepts of the application, based exclusively on evidence found in the repository. Items marked **TODO:** or **Assumption:** indicate areas where the code is ambiguous or incomplete.
