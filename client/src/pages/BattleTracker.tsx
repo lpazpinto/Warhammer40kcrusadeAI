@@ -73,6 +73,7 @@ function BattleTrackerInner() {
   // Secondary Mission Resolution state
   const [showMissionResolutionModal, setShowMissionResolutionModal] = useState(false);
   const [missionResolutionTiming, setMissionResolutionTiming] = useState<'end_of_turn' | 'end_of_round'>('end_of_round');
+  const [missionResolutionRound, setMissionResolutionRound] = useState<number>(1);
   
   // Horde spawn state
   const [showSpawnModal, setShowSpawnModal] = useState(false);
@@ -482,6 +483,7 @@ function BattleTrackerInner() {
         const hasResolvableMissions = activeSecondaryMissions.some(m => m.status === 'active' && m.revealedRound < round);
         if (hasResolvableMissions) {
           setMissionResolutionTiming('end_of_round');
+          setMissionResolutionRound(round);
           setTimeout(() => setShowMissionResolutionModal(true), 600);
         }
       }
@@ -496,6 +498,7 @@ function BattleTrackerInner() {
       const hasResolvableMissions = activeSecondaryMissions.some(m => m.status === 'active' && m.revealedRound < round);
       if (hasResolvableMissions) {
         setMissionResolutionTiming('end_of_turn');
+        setMissionResolutionRound(round);
         setTimeout(() => setShowMissionResolutionModal(true), 300);
       }
     }
@@ -1173,7 +1176,7 @@ function BattleTrackerInner() {
         isOpen={showMissionResolutionModal}
         onClose={() => setShowMissionResolutionModal(false)}
         activeMissions={activeSecondaryMissions
-          .filter(m => m.status === 'active' && m.revealedRound < (battle?.battleRound || 1))
+          .filter(m => m.status === 'active' && m.revealedRound < missionResolutionRound)
           .map(m => getSecondaryMissionById(m.missionId)!)
           .filter(Boolean)}
         timing={missionResolutionTiming}
