@@ -207,15 +207,15 @@ After a battle completes, the post-battle system (`server/postBattle.ts`) handle
 
 Unit ranks form a strict linear progression (defined in `drizzle/schema.ts` enum and `server/postBattle.ts`):
 
-| Rank | Battle Honours Pool |
-|---|---|
-| `battle_ready` | (starting rank, no honours) |
-| `blooded` | 4 honours (combat/shooting/resilience/speed) |
-| `battle_hardened` | 4 honours (rerolls/inspiration/charge/objective) |
-| `heroic` | 4 honours (leadership debuff/mortal wounds/save ignore/command) |
-| `legendary` | 4 honours (FNP/extra CP/+1 damage/reroll all hits) |
+| Rank | XP Threshold | Battle Honours Pool |
+|---|---|---|
+| `battle_ready` | 0 – 5 XP | (starting rank, no honours) |
+| `blooded` | 6 – 15 XP | 4 honours (combat/shooting/resilience/speed) |
+| `battle_hardened` | 16 – 30 XP | 4 honours (rerolls/inspiration/charge/objective) |
+| `heroic` | 31 – 50 XP | 4 honours (leadership debuff/mortal wounds/save ignore/command) |
+| `legendary` | 51+ XP | 4 honours (FNP/extra CP/+1 damage/reroll all hits) |
 
-**TODO:** The XP thresholds for rank-up are not explicitly defined in `postBattle.ts`. Assumption: they follow official Crusade rules but the exact values should be verified.
+These thresholds are hard-coded in `server/postBattle.ts` → `determineRank()` (lines 118–124). Rank promotion is checked via `checkRankProgression()` which compares the current rank against the rank derived from the unit's new XP total.
 
 ---
 
