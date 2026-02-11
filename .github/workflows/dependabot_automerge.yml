@@ -1,46 +1,63 @@
-name: Dependabot (auto-merge)
+name: Dependabot Auto-merge (safe)
 
 on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 
 permissions:
-  pull-requests: write
   contents: write
+  pull-requests: write
 
 jobs:
-  automerge:
-    runs-on: ubuntu-latest
+  dependabot-automerge:
     if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
 
     steps:
       - name: Fetch Dependabot metadata
-        id: metadata
+        id: meta
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge (squash) for safe updates
-        if: |
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: squash
-
-      - name: Comment when not auto-merging (major / other)
-        if: |
-          steps.metadata.outputs.update-type != 'version-update:semver-patch' &&
-          steps.metadata.outputs.update-type != 'version-update:semver-minor'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pr = context.payload.pull_request;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              body: `⚠️ Dependabot: não habilitei auto-merge porque o update-type é **${{ steps.metadata.outputs.update-type }}**.\n` +
-                    `Sugestão: revisar manualmente (ou ajustar regra se você quiser auto-merge para majors).`
-            });
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.pull_request.number;
+            const prNodeId = context.payload.pull_request.node_id;
+
+            const updateType = "${{ steps.meta.outputs.update-type }}"; 
+            const dependencyGroup = "${{ steps.meta.outputs.dependency-group }}";
+            const isSecurityUpdate = "${{ steps.meta.outputs.security-update }}" === "true"
+              || (dependencyGroup && dependencyGroup.toLowerCase().includes("security"));
+
+            core.info(`Dependabot metadata: updateType=${updateType} group=${dependencyGroup} security=${isSecurityUpdate}`);
+
+            // Bloqueia major *quando não for security*
+            if (updateType === "version-update:semver-major" && !isSecurityUpdate) {
+              core.info("Major update (non-security). Skipping auto-merge.");
+              return;
+            }
+
+            // Se updateType vier vazio/unknown, só auto-merge se for security group
+            if (!updateType && !isSecurityUpdate) {
+              core.info("Unknown update-type and not a security update. Skipping auto-merge.");
+              return;
+            }
+
+            await github.graphql(`
+              mutation($pullRequestId: ID!) {
+                enablePullRequestAutoMerge(input: {
+                  pullRequestId: $pullRequestId,
+                  mergeMethod: SQUASH
+                }) {
+                  pullRequest { number }
+                }
+              }
+            `, { pullRequestId: prNodeId });
+
+            core.info(`✅ Auto-merge enabled (SQUASH) for Dependabot PR #${prNumber}`);
