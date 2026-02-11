@@ -32,6 +32,7 @@ jobs:
             const busyLabel = "manus-busy";
             const pendingLabel = "manus-feedback-pending";
 
+            // Só esses bots disparam o autopilot (evita loop com comentários do Manus/humanos)
             const allowedBots = new Set([
               "coderabbitai",
               "coderabbitai[bot]",
@@ -52,7 +53,7 @@ jobs:
                 };
               }
 
-              // review comment
+              // review comment (inline)
               if (p.comment && p.pull_request) {
                 return {
                   prNumber: p.pull_request.number,
@@ -62,7 +63,7 @@ jobs:
                 };
               }
 
-              // review submitted/edited
+              // review (submitted/edited)
               if (p.review && p.pull_request) {
                 return {
                   prNumber: p.pull_request.number,
@@ -75,6 +76,50 @@ jobs:
               return null;
             }
 
+            function looksPlaceholder(text) {
+              const t = (text || "").toLowerCase();
+              const signals = [
+                "reviewing",
+                "i'm reviewing",
+                "starting review",
+                "in progress",
+                "queued",
+                "estou revisando",
+                "analisando",
+                "analyzing"
+              ];
+              // placeholder típico é curto
+              return signals.some(s => t.includes(s)) && t.length < 500;
+            }
+
+            function looksActionable(text) {
+              const t = (text || "").toLowerCase();
+              if (!t.trim()) return false;
+              if (looksPlaceholder(t)) return false;
+
+              const actionableSignals = [
+                "actionable",
+                "requested changes",
+                "must",
+                "should",
+                "fix",
+                "bug",
+                "security",
+                "vulnerab",
+                "error",
+                "pre-merge",
+                "nitpick",
+                "finishing touches",
+                "⚠",
+                "❌"
+              ];
+
+              if (actionableSignals.some(s => t.includes(s))) return true;
+
+              // Se é review grande, assume actionable
+              return t.length >= 800;
+            }
+
             const info = getEventInfo();
             if (!info) {
               core.info("Evento não associado a PR. Ignorando.");
@@ -83,6 +128,12 @@ jobs:
 
             if (!allowedBots.has(info.actor)) {
               core.info(`Autor ${info.actor} não é bot alvo. Ignorando.`);
+              return;
+            }
+
+            // Evita disparar com placeholder: só começa o debounce se já parecer actionable
+            if (!looksActionable(info.body)) {
+              core.info("Comentário do bot não parece actionable (ou é placeholder). Aguardando comentários/edições futuras.");
               return;
             }
 
@@ -103,31 +154,28 @@ jobs:
 
             const labels = (pr.labels || []).map(l => l.name);
 
-            // Se já tem busy, não cria nova task (evita flood)
             if (labels.includes(busyLabel)) {
               core.info(`PR #${info.prNumber} já está ${busyLabel}. Ignorando.`);
               return;
             }
 
-            // Debounce: se já tem pending, não cria outro job (ele vai agregar tudo)
             if (labels.includes(pendingLabel)) {
               core.info(`PR #${info.prNumber} já está ${pendingLabel}. Ignorando para evitar duplicidade.`);
               return;
             }
 
-            // Marca pending
+            // Marca pending e espera 15 minutos para agregar feedback final
             await github.rest.issues.addLabels({
               owner, repo,
               issue_number: info.prNumber,
               labels: [pendingLabel]
             }).catch(() => {});
 
-            // Espera 15 minutos pra deixar CodeRabbit/Codex terminarem (e capturar comentários editados)
             const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-            core.info("Aguardando 15 minutos para agregar feedback final (debounce)...");
+            core.info("Debounce: aguardando 15 minutos para agregar feedback final (CodeRabbit/Codex)...");
             await sleep(15 * 60 * 1000);
 
-            // Recarrega PR e labels (pode ter mudado)
+            // Recarrega PR
             const prResp2 = await github.rest.pulls.get({ owner, repo, pull_number: info.prNumber });
             const pr2 = prResp2.data;
 
@@ -139,14 +187,14 @@ jobs:
 
             const labels2 = (pr2.labels || []).map(l => l.name);
             if (labels2.includes(busyLabel)) {
-              core.info(`PR ficou busy durante debounce. Limpando pending e saindo.`);
+              core.info("PR ficou busy durante debounce. Limpando pending e saindo.");
               await github.rest.issues.removeLabel({ owner, repo, issue_number: info.prNumber, name: pendingLabel }).catch(() => {});
               return;
             }
 
-            // Coleta comentários (issue comments + review comments + reviews)
+            // Coleta feedback recente (últimas 24h) de CodeRabbit + Codex
             async function collectBotFeedback(prNumber) {
-              const sinceMs = Date.now() - (24 * 60 * 60 * 1000); // últimas 24h
+              const sinceMs = Date.now() - (24 * 60 * 60 * 1000);
               const items = [];
 
               const issueComments = await github.paginate(github.rest.issues.listComments, {
@@ -158,13 +206,7 @@ jobs:
                 const created = new Date(c.created_at).getTime();
                 if (created < sinceMs) continue;
                 if (!allowedBots.has(login)) continue;
-                items.push({
-                  kind: "issue_comment",
-                  author: login,
-                  url: c.html_url,
-                  created_at: c.created_at,
-                  body: c.body || ""
-                });
+                items.push({ kind: "issue_comment", author: login, url: c.html_url, created_at: c.created_at, body: c.body || "" });
               }
 
               const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
@@ -176,13 +218,7 @@ jobs:
                 const created = new Date(c.created_at).getTime();
                 if (created < sinceMs) continue;
                 if (!allowedBots.has(login)) continue;
-                items.push({
-                  kind: "review_comment",
-                  author: login,
-                  url: c.html_url,
-                  created_at: c.created_at,
-                  body: c.body || ""
-                });
+                items.push({ kind: "review_comment", author: login, url: c.html_url, created_at: c.created_at, body: c.body || "" });
               }
 
               const reviews = await github.paginate(github.rest.pulls.listReviews, {
@@ -191,125 +227,74 @@ jobs:
 
               for (const r of reviews) {
                 const login = r.user?.login;
-                const created = new Date(r.submitted_at || r.created_at || Date.now()).getTime();
+                const ts = r.submitted_at || r.created_at || new Date().toISOString();
+                const created = new Date(ts).getTime();
                 if (created < sinceMs) continue;
                 if (!allowedBots.has(login)) continue;
-                items.push({
-                  kind: "review",
-                  author: login,
-                  url: r.html_url,
-                  created_at: r.submitted_at || r.created_at || "",
-                  body: r.body || ""
-                });
+                items.push({ kind: "review", author: login, url: r.html_url, created_at: ts, body: r.body || "" });
               }
 
-              // ordena por data e mantém os mais recentes
-              items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-              return items.slice(-30);
-            }
-
-            function isActionable(text) {
-              const t = (text || "").toLowerCase();
-
-              // Ignora placeholders comuns
-              const placeholderSignals = [
-                "reviewing",
-                "i'm reviewing",
-                "estou revisando",
-                "starting review",
-                "in progress",
-                "queued"
-              ];
-              const isLikelyPlaceholder = placeholderSignals.some(s => t.includes(s)) && t.length < 400;
-              if (isLikelyPlaceholder) return false;
-
-              // Heurísticas de actionable (Coderabbit/Codex)
-              const actionableSignals = [
-                "actionable",
-                "requested changes",
-                "must",
-                "should",
-                "fix",
-                "bug",
-                "security",
-                "vulnerab",
-                "error",
-                "pre-merge checks",
-                "nitpick",
-                "finishing touches",
-                "❌",
-                "⚠"
-              ];
-              if (actionableSignals.some(s => t.includes(s))) return true;
-
-              // Se tem bastante conteúdo, assume que é review real
-              if (t.length >= 600) return true;
-
-              return false;
+              items.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+              return items.slice(-40);
             }
 
             const feedback = await collectBotFeedback(info.prNumber);
 
-            const actionable = feedback.some(f => isActionable(f.body));
-
-            if (!actionable) {
-              core.info("Nenhum feedback actionable detectado. Limpando pending e saindo.");
+            // Confirma que existe algo actionable no agregado (proteção extra)
+            const hasActionable = feedback.some(f => looksActionable(f.body));
+            if (!hasActionable) {
+              core.info("Após debounce, não há feedback actionable detectado. Limpando pending e saindo.");
               await github.rest.issues.removeLabel({ owner, repo, issue_number: info.prNumber, name: pendingLabel }).catch(() => {});
               return;
             }
 
-            // Marca busy (agora sim)
+            // Marca busy
             await github.rest.issues.addLabels({
               owner, repo,
               issue_number: info.prNumber,
               labels: [busyLabel]
             }).catch(() => {});
 
-            // Monta prompt agregando CodeRabbit + Codex
-            const prUrl = pr2.html_url;
-            const headRef2 = pr2.head?.ref || "";
-
+            // Monta prompt agregando CodeRabbit + Codex e reforçando AGENTS.md
             const chunks = feedback.map((f, idx) => {
               const body = (f.body || "").replace(/\r/g, "");
-              const clipped = body.length > 2200 ? body.slice(0, 2200) + "\n...(truncado)" : body;
+              const clipped = body.length > 2400 ? body.slice(0, 2400) + "\n...(truncado)" : body;
               return [
                 `### Feedback ${idx + 1} (${f.author} / ${f.kind})`,
                 `Link: ${f.url}`,
-                "```",
-                clipped,
-                "```"
+                "",
+                clipped
               ].join("\n");
-            });
+            }).join("\n\n---\n\n");
 
             const prompt = [
-              `Você é o agente Manus e há feedback ACTIONABLE de bots de review neste Pull Request.`,
-              ``,
+              "Você é o agente Manus e há feedback ACTIONABLE de bots de review neste Pull Request.",
+              "",
+              "ANTES DE QUALQUER MUDANÇA:",
+              "- Leia o arquivo AGENTS.md na raiz do repositório e siga todas as regras.",
+              "",
               `Repositório: ${owner}/${repo}`,
-              `PR: ${prUrl}`,
-              `Branch: ${headRef2}`,
-              ``,
-              `IMPORTANTE: Considere TODO o feedback de:`,
-              `- CodeRabbit (coderabbitai)`,
-              `- ChatGPT Codex (chatgpt-codex-connector)`,
-              ``,
-              `Resumo do feedback (agregado; pode haver comentários editados):`,
-              "```",
-              `Total itens: ${feedback.length}`,
-              "```",
-              ``,
-              ...chunks,
-              ``,
-              `Tarefa:`,
-              `1) Ler TODO o feedback no PR (todas as threads e comentários), incluindo CodeRabbit + Codex.`,
-              `2) Implementar as mudanças necessárias com o MENOR patch possível.`,
-              `3) Fazer push na MESMA branch do PR (${headRef2}).`,
-              `4) Garantir CI/CodeQL verdes.`,
-              `5) NÃO fazer merge.`,
-              ``,
-              `Ao finalizar, comentar no PR:`,
-              `- o que foi feito`,
-              `- por que foi feito`,
-              `- como validar`
+              `PR: ${pr2.html_url}`,
+              `Branch: ${headRef}`,
+              "",
+              "IMPORTANTE:",
+              "- Considere TODO o feedback de CodeRabbit e ChatGPT Codex.",
+              "- Mesmo que o resumo abaixo esteja incompleto, leia TODAS as threads/comentários no PR.",
+              "",
+              "Feedback agregado (últimas 24h):",
+              chunks,
+              "",
+              "Tarefa:",
+              "1) Ler TODO o feedback no PR (todas as threads e comentários), incluindo CodeRabbit + Codex.",
+              "2) Implementar as mudanças necessárias com o MENOR patch possível.",
+              `3) Fazer push na MESMA branch do PR (${headRef}).`,
+              "4) Garantir CI/CodeQL verdes (se quebrar, conserte).",
+              "5) NÃO fazer merge.",
+              "",
+              "Ao finalizar, comentar no PR:",
+              "- o que foi feito",
+              "- por que foi feito",
+              "- como validar."
             ].join("\n");
 
             const body = {
@@ -339,19 +324,23 @@ jobs:
 
               data = await res.json();
             } catch (err) {
-              // rollback: remove busy e pending, pra não travar
+              // rollback para não travar PR
               await github.rest.issues.removeLabel({ owner, repo, issue_number: info.prNumber, name: busyLabel }).catch(() => {});
               await github.rest.issues.removeLabel({ owner, repo, issue_number: info.prNumber, name: pendingLabel }).catch(() => {});
               throw err;
             }
 
-            // remove pending (busy continua até checks verdes ou ação do checks workflow)
-            await github.rest.issues.removeLabel({ owner, repo, issue_number: info.prNumber, name: pendingLabel }).catch(() => {});
+            // remove pending (busy continua até checks verdes removerem)
+            await github.rest.issues.removeLabel({
+              owner, repo,
+              issue_number: info.prNumber,
+              name: pendingLabel
+            }).catch(() => {});
 
             const taskUrl = data?.metadata?.task_url || data?.task_url || "(sem task_url no payload)";
 
             await github.rest.issues.createComment({
               owner, repo,
               issue_number: info.prNumber,
-              body: `🤖 **Manus Autopilot acionado por review bots (CodeRabbit + Codex)**\n- Task: ${taskUrl}\n- PR: ${prUrl}\n\n(Proteção: label **${busyLabel}** ativa; debounce 15 min aplicado.)`
+              body: `🤖 **Manus Autopilot acionado por review bots (CodeRabbit + Codex)**\n- Task: ${taskUrl}\n\n(Proteção: label **${busyLabel}** ativa; debounce 15 min aplicado.)`
             }).catch(() => {});
