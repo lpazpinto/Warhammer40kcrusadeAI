@@ -1,65 +1,77 @@
 version: 2
-
 updates:
-  # 1) Updates de GitHub Actions (actions/*)
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Europe/Lisbon"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "github-actions"
-    groups:
-      gha-security:
-        applies-to: "security-updates"
-        patterns:
-          - "*"
-      gha-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-
-  # 2) Updates de dependências JS/TS (pnpm via ecossistema npm)
+  # NPM / PNPM / Yarn (depende do lockfile)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "06:10"
+      day: "sunday"
+      time: "06:00"
       timezone: "Europe/Lisbon"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
+
+    # Remova esta seção se não quiser criar labels no GitHub
     labels:
       - "dependencies"
       - "javascript"
+
     groups:
       npm-security:
         applies-to: "security-updates"
         patterns:
           - "*"
+
       npm-prod-minor-patch:
+        applies-to: "version-updates"
         dependency-type: "production"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
+        patterns:
+          - "*"
+
       npm-dev-minor-patch:
+        applies-to: "version-updates"
         dependency-type: "development"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
+        patterns:
+          - "*"
+
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+      timezone: "Europe/Lisbon"
+    open-pull-requests-limit: 10
+
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+    groups:
+      gha-security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+
+      gha-minor-patch:
+        applies-to: "version-updates"
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
     ignore:
       - dependency-name: "*"
         update-types:
