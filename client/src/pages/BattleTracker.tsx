@@ -84,6 +84,7 @@ function BattleTrackerInner() {
   const [activeSecondaryMissions, setActiveSecondaryMissions] = useState<{
     missionId: number;
     status: 'active' | 'completed' | 'failed';
+    revealedRound: number;
     progress?: string;
   }[]>([]);
   
@@ -477,8 +478,9 @@ function BattleTrackerInner() {
       if (round > previousRound) {
         setShowEndOfRoundEvents(true);
         // Show mission resolution modal for end of battle round
-        const hasActiveMissions = activeSecondaryMissions.some(m => m.status === 'active');
-        if (hasActiveMissions) {
+        // Only include missions from previous rounds (not the one just revealed this round)
+        const hasResolvableMissions = activeSecondaryMissions.some(m => m.status === 'active' && m.revealedRound < round);
+        if (hasResolvableMissions) {
           setMissionResolutionTiming('end_of_round');
           setTimeout(() => setShowMissionResolutionModal(true), 600);
         }
@@ -490,8 +492,9 @@ function BattleTrackerInner() {
     // Detect end of player turn (when switching from player to opponent in same round)
     // This triggers end_of_turn mission resolution for action-based missions
     if (phase === "command" && playerTurn === "opponent" && localCurrentTurn === "player") {
-      const hasActiveMissions = activeSecondaryMissions.some(m => m.status === 'active');
-      if (hasActiveMissions) {
+      // Only resolve missions from previous rounds (not the one just revealed this round)
+      const hasResolvableMissions = activeSecondaryMissions.some(m => m.status === 'active' && m.revealedRound < round);
+      if (hasResolvableMissions) {
         setMissionResolutionTiming('end_of_turn');
         setTimeout(() => setShowMissionResolutionModal(true), 300);
       }
@@ -912,7 +915,7 @@ function BattleTrackerInner() {
             onDrawMissions={(missions) => {
               setActiveSecondaryMissions(prev => [
                 ...prev,
-                ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+                ...missions.map(m => ({ missionId: m.id, status: 'active' as const, revealedRound: battle?.battleRound || 1 }))
               ]);
               toast.info(`${missions.length} Missão(ões) Secundária(s) comprada(s)!`);
             }}
@@ -1137,7 +1140,7 @@ function BattleTrackerInner() {
         onMissionsRevealed={(missions) => {
           setActiveSecondaryMissions(prev => [
             ...prev,
-            ...missions.map(m => ({ missionId: m.id, status: 'active' as const }))
+            ...missions.map(m => ({ missionId: m.id, status: 'active' as const, revealedRound: battle?.battleRound || 1 }))
           ]);
           if (missions.length > 0) {
             toast.info(`Nova Missão Secundária revelada: ${missions[0].namePt}`);
@@ -1170,7 +1173,7 @@ function BattleTrackerInner() {
         isOpen={showMissionResolutionModal}
         onClose={() => setShowMissionResolutionModal(false)}
         activeMissions={activeSecondaryMissions
-          .filter(m => m.status === 'active')
+          .filter(m => m.status === 'active' && m.revealedRound < (battle?.battleRound || 1))
           .map(m => getSecondaryMissionById(m.missionId)!)
           .filter(Boolean)}
         timing={missionResolutionTiming}
