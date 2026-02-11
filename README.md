@@ -8,25 +8,26 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ## Sumário
 
-- [Status do Projeto](#-status-do-projeto)
-- [Funcionalidades Implementadas](#-funcionalidades-implementadas)
-- [Stack Tecnológica](#%EF%B8%8F-stack-tecnológica)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Schema do Banco de Dados](#%EF%B8%8F-schema-do-banco-de-dados)
-- [Como Executar Localmente](#-como-executar-localmente)
-- [Como Usar](#-como-usar)
-- [Development Workflow](#-development-workflow)
-- [Automation / AI Stack](#-automation--ai-stack)
-- [GitHub Actions Overview](#-github-actions-overview)
-- [Troubleshooting](#-troubleshooting)
-- [How to Validate](#-how-to-validate)
-- [Convenções de Código](#-convenções-de-código)
-- [Contribuindo](#-contribuindo)
-- [Licença](#-licença)
+- [Status do Projeto](#status-do-projeto)
+- [Funcionalidades Implementadas](#funcionalidades-implementadas)
+- [Stack Tecnológica](#stack-tecnológica)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Schema do Banco de Dados](#schema-do-banco-de-dados)
+- [Como Executar Localmente](#como-executar-localmente)
+- [Como Usar](#como-usar)
+- [Development Workflow](#development-workflow)
+- [Automation / AI Stack](#automation--ai-stack)
+- [GitHub Actions Overview](#github-actions-overview)
+- [Troubleshooting](#troubleshooting)
+- [How to Validate](#how-to-validate)
+- [Facções Implementadas](#facções-implementadas)
+- [Convenções de Código](#convenções-de-código)
+- [Contribuindo](#contribuindo)
+- [Licença](#licença)
 
 ---
 
-## 📋 Status do Projeto
+## Status do Projeto
 
 | Campo | Valor |
 |---|---|
@@ -39,7 +40,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ---
 
-## 🎯 Funcionalidades Implementadas
+## Funcionalidades Implementadas
 
 ### Gerenciamento de Campanhas
 - Criação e gerenciamento de campanhas cooperativas contra a Horda
@@ -134,7 +135,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ---
 
-## 🛠️ Stack Tecnológica
+## Stack Tecnológica
 
 | Camada | Tecnologia |
 |---|---|
@@ -149,7 +150,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 ├── .github/
@@ -187,7 +188,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ---
 
-## 🗄️ Schema do Banco de Dados
+## Schema do Banco de Dados
 
 ### Principais Tabelas
 
@@ -208,7 +209,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 
 ---
 
-## 🚀 Como Executar Localmente
+## Como Executar Localmente
 
 ### Pré-requisitos
 
@@ -255,7 +256,7 @@ OWNER_NAME=Seu Nome
 
 ---
 
-## 🎯 Como Usar
+## Como Usar
 
 ### 1. Criar Campanha
 Faça login → "Nova Campanha" → Escolha facção da Horda, modo de jogo e limite de pontos.
@@ -271,7 +272,7 @@ Na página do jogador → "Importar Lista" → Cole o conteúdo do `.txt` export
 
 ---
 
-## 🔄 Development Workflow
+## Development Workflow
 
 Todo o desenvolvimento segue um fluxo baseado em **branches e Pull Requests**. Commits diretos na `main` são proibidos.
 
@@ -320,7 +321,7 @@ main ──┬── manus/feature-xyz ──► PR ──► Review (CodeRabbit
 
 ---
 
-## 🤖 Automation / AI Stack
+## Automation / AI Stack
 
 Este repositório utiliza um pipeline de automação com três camadas de IA que trabalham em conjunto, orquestradas por GitHub Actions.
 
@@ -378,7 +379,7 @@ O label `manus-busy` é adicionado antes de criar a task e removido quando os ch
 
 ---
 
-## ⚙️ GitHub Actions Overview
+## GitHub Actions Overview
 
 O repositório possui 4 workflows ativos:
 
@@ -448,7 +449,7 @@ PR criado/atualizado
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Problema: Placeholder do CodeRabbit gera task vazia no Manus
 
@@ -518,7 +519,7 @@ gh pr merge <PR_NUMBER> --squash
 
 ---
 
-## ✅ How to Validate
+## How to Validate
 
 ### Comandos Disponíveis
 
@@ -561,13 +562,13 @@ O workflow de CI (`ci.yml`) executa os seguintes passos em sequência. Se qualqu
 
 ---
 
-## 📊 21 Facções Implementadas
+## Facções Implementadas
 
 Adepta Sororitas, Adeptus Custodes, Adeptus Mechanicus, Aeldari, Astra Militarum, Chaos Daemons, Chaos Knights, Chaos Space Marines, Death Guard, Drukhari, Genestealer Cults, Grey Knights, Imperial Knights, Leagues of Votann, Necrons, Orks, Space Marines, T'au Empire, Thousand Sons, Tyranids, World Eaters
 
 ---
 
-## 📝 Convenções de Código
+## Convenções de Código
 
 ### Commits
 - Mensagens descritivas em inglês
@@ -584,13 +585,13 @@ Adepta Sororitas, Adeptus Custodes, Adeptus Mechanicus, Aeldari, Astra Militarum
 
 ---
 
-## 🤝 Contribuindo
+## Contribuindo
 
-Este é um projeto pessoal, mas sugestões são bem-vindas. Abra uma issue para discutir mudanças. Ao contribuir, siga o [Development Workflow](#-development-workflow) descrito acima.
+Este é um projeto pessoal, mas sugestões são bem-vindas. Abra uma issue para discutir mudanças. Ao contribuir, siga o [Development Workflow](#development-workflow) descrito acima.
 
 ---
 
-## 📄 Licença
+## Licença
 
 Gerenciador não oficial para Warhammer 40.000. Warhammer 40.000 é marca registrada da Games Workshop Ltd.
 
