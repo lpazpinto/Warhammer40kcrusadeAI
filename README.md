@@ -23,6 +23,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 - [Facções Implementadas](#facções-implementadas)
 - [Convenções de Código](#convenções-de-código)
 - [Contribuindo](#contribuindo)
+- [AI workflow (agents)](#AI-workflow-(agents))
 - [Licença](#licença)
 
 ---
@@ -588,6 +589,11 @@ Adepta Sororitas, Adeptus Custodes, Adeptus Mechanicus, Aeldari, Astra Militarum
 ## Contribuindo
 
 Este é um projeto pessoal, mas sugestões são bem-vindas. Abra uma issue para discutir mudanças. Ao contribuir, siga o [Development Workflow](#development-workflow) descrito acima.
+
+## AI workflow (agents)
+
+Este repositório usa agentes automatizados (Manus, CodeRabbit, Codex, Dependabot).
+Regras obrigatórias de contribuição por agentes (branching, PRs, checks, segurança): ver AGENTS.md.
 
 ---
 
