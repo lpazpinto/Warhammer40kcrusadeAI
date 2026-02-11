@@ -23,6 +23,7 @@ interface ResupplyShopProps {
   playerName: string;
   currentSP: number;
   battleRound: number;
+  onPurchase?: (cardName: string, cardCost: number, playerName: string) => void;
 }
 
 export default function ResupplyShop({
@@ -33,6 +34,7 @@ export default function ResupplyShop({
   playerName,
   currentSP,
   battleRound,
+  onPurchase,
 }: ResupplyShopProps) {
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const utils = trpc.useUtils();
@@ -47,6 +49,13 @@ export default function ResupplyShop({
   const purchaseMutation = trpc.battle.purchaseCard.useMutation({
     onSuccess: (data) => {
       toast.success(`Carta comprada! SP restante: ${data.remainingSP}`);
+      // Log the purchase event
+      if (onPurchase && selectedCard) {
+        const card = cards?.find(c => c.id === selectedCard);
+        if (card) {
+          onPurchase(card.namePt || card.nameEn, card.cost, playerName);
+        }
+      }
       utils.battle.getPurchasedCards.invalidate({ battleId });
       utils.battleParticipant.list.invalidate({ battleId });
       setSelectedCard(null);

@@ -40,6 +40,7 @@ import BattleRoundEvents from "@/components/BattleRoundEvents";
 import StartOfRoundModal from "@/components/StartOfRoundModal";
 import SecondaryMissionResolutionModal from "@/components/SecondaryMissionResolutionModal";
 import { getSecondaryMissionById } from "@shared/secondaryMissions";
+import { getMiseryCardById } from "@shared/miseryCards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -169,7 +170,7 @@ function BattleTrackerInner() {
 
   // Enhanced phase log with detailed battle events
   type BattleEvent = {
-    type: 'phase_change' | 'horde_spawn' | 'unit_destroyed' | 'mission_completed' | 'mission_failed' | 'misery_card_revealed';
+    type: 'phase_change' | 'horde_spawn' | 'unit_destroyed' | 'mission_completed' | 'mission_failed' | 'misery_card_revealed' | 'misery_card_discarded' | 'resupply_purchase';
     phase?: string;
     round: number;
     turn: 'player' | 'opponent';
@@ -184,9 +185,14 @@ function BattleTrackerInner() {
       missionId?: number;
       cardName?: string;
       cardId?: number;
+      cardCost?: number;
+      playerName?: string;
     };
   };
   const [battleEvents, setBattleEvents] = useState<BattleEvent[]>([]);
+  
+  // Track pending Misery Cards from failed missions to add to next round's reveals
+  const [pendingMiseryCardsForNextRound, setPendingMiseryCardsForNextRound] = useState(0);
   
   // Legacy phaseLog for backwards compatibility
   const [phaseLog, setPhaseLog] = useState<Array<{ phase: string; round: number; timestamp: Date }>>([]);
@@ -196,7 +202,7 @@ function BattleTrackerInner() {
   const [localCurrentPhase, setLocalCurrentPhase] = useState<string>(battle?.currentPhase || "command");
   
   // Local state for current turn - updates immediately on turn change
-  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">("opponent");
+  const [localCurrentTurn, setLocalCurrentTurn] = useState<"player" | "opponent">((battle as any)?.currentTurn === 'horde' ? 'opponent' : 'player');
   
   // Local state for current round - updates immediately on round change
   const [localCurrentRound, setLocalCurrentRound] = useState<number>(battle?.battleRound || 1);
@@ -972,25 +978,27 @@ function BattleTrackerInner() {
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {battleEvents.slice().reverse().map((event, index) => {
                       // Determine border color based on event type
-                      const borderColor = {
+                      const borderColorMap: Record<string, string> = {
                         'phase_change': 'border-blue-500',
                         'horde_spawn': 'border-red-500',
                         'unit_destroyed': 'border-green-500',
                         'mission_completed': 'border-yellow-500',
                         'mission_failed': 'border-orange-500',
                         'misery_card_revealed': 'border-purple-500',
-                      }[event.type] || 'border-primary';
+                        'misery_card_discarded': 'border-gray-500',
+                        'resupply_purchase': 'border-cyan-500',
+                      };
+                      const borderColor = borderColorMap[event.type] || 'border-primary';
                       
                       // Format event description
                       const getEventDescription = () => {
                         switch (event.type) {
-                          case 'phase_change': {
+                          case 'phase_change':
                             const phaseNames: Record<string, string> = {
                               command: 'Comando', movement: 'Movimento', shooting: 'Tiro',
                               charge: 'Carga', fight: 'Combate'
                             };
                             return `Fase de ${phaseNames[event.phase || ''] || event.phase}`;
-                          }
                           case 'horde_spawn':
                             return `👾 Spawn: ${event.details?.unitName} (Zona ${event.details?.spawnZone})`;
                           case 'unit_destroyed':
@@ -1000,7 +1008,11 @@ function BattleTrackerInner() {
                           case 'mission_failed':
                             return `❌ Missão falhou: ${event.details?.missionName}`;
                           case 'misery_card_revealed':
-                            return `🃏 Carta de Miséria: ${event.details?.cardName}`;
+                            return `🃏 Carta de Miséria revelada: ${event.details?.cardName}`;
+                          case 'misery_card_discarded':
+                            return `🗑️ Carta de Miséria descartada: ${event.details?.cardName}`;
+                          case 'resupply_purchase':
+                            return `🛒 Compra: ${event.details?.unitName} (${event.details?.cardCost} SP) - ${event.details?.playerName}`;
                           default:
                             return 'Evento desconhecido';
                         }
@@ -1049,16 +1061,25 @@ function BattleTrackerInner() {
       {/* Resupply Shop Modal */}
       {selectedParticipantForShop && (
         <ResupplyShop
-          open={showResupplyShop}
-          onOpenChange={setShowResupplyShop}
-          battleId={battleId}
-          participantId={selectedParticipantForShop}
-          playerName={players?.find(p => 
-            participants?.find(part => part.id === selectedParticipantForShop)?.playerId === p.id
-          )?.name || "Jogador"}
-          currentSP={participants?.find(p => p.id === selectedParticipantForShop)?.supplyPoints || 0}
-          battleRound={battle?.battleRound || 1}
-        />
+           open={showResupplyShop}
+           onOpenChange={setShowResupplyShop}
+           battleId={battleId}
+           participantId={selectedParticipantForShop}
+           playerName={players?.find(p => 
+             participants?.find(part => part.id === selectedParticipantForShop)?.playerId === p.id
+           )?.name || "Jogador"}
+           currentSP={participants?.find(p => p.id === selectedParticipantForShop)?.supplyPoints || 0}
+           battleRound={battle?.battleRound || 1}
+           onPurchase={(cardName, cardCost, playerName) => {
+             setBattleEvents(prev => [...prev, {
+               type: 'resupply_purchase' as const,
+               round: battle?.battleRound || 1,
+               turn: localCurrentTurn,
+               timestamp: new Date(),
+               details: { unitName: cardName, cardCost, playerName },
+             }]);
+           }}
+         />
       )}
       
       {/* Horde Spawn Modal */}
@@ -1095,8 +1116,20 @@ function BattleTrackerInner() {
         isOpen={showStartOfRoundModal}
         onClose={() => setShowStartOfRoundModal(false)}
         onCardsRevealed={(cards) => {
-          // Clear previous round's cards and add new ones
+          // Set new round's misery cards (previous ones already discarded)
           setActiveMiseryCardIds(cards.map(c => c.id));
+          // Reset pending misery cards counter after consumption
+          setPendingMiseryCardsForNextRound(0);
+          // Log each revealed card as battle event
+          cards.forEach(card => {
+            setBattleEvents(prev => [...prev, {
+              type: 'misery_card_revealed' as const,
+              round: battle?.battleRound || 1,
+              turn: localCurrentTurn,
+              timestamp: new Date(),
+              details: { cardName: card.namePt, cardId: card.id },
+            }]);
+          });
           if (cards.length > 0) {
             toast.info(`${cards.length} Carta(s) de Miséria revelada(s) para o Round ${battle?.battleRound || 1}!`);
           }
@@ -1110,6 +1143,24 @@ function BattleTrackerInner() {
             toast.info(`Nova Missão Secundária revelada: ${missions[0].namePt}`);
           }
         }}
+        onDiscardMiseryCards={() => {
+          // Log discarded cards as battle events
+          activeMiseryCardIds.forEach(cardId => {
+            const card = getMiseryCardById(cardId);
+            if (card) {
+              setBattleEvents(prev => [...prev, {
+                type: 'misery_card_discarded' as const,
+                round: battle?.battleRound || 1,
+                turn: localCurrentTurn,
+                timestamp: new Date(),
+                details: { cardName: card.namePt, cardId: card.id },
+              }]);
+            }
+          });
+          // Clear active misery cards
+          setActiveMiseryCardIds([]);
+        }}
+        pendingMiseryCardsFromFailures={pendingMiseryCardsForNextRound}
         existingMiseryCardIds={activeMiseryCardIds}
         existingMissionIds={activeSecondaryMissions.map(m => m.missionId)}
       />
@@ -1120,12 +1171,12 @@ function BattleTrackerInner() {
         onClose={() => setShowMissionResolutionModal(false)}
         activeMissions={activeSecondaryMissions
           .filter(m => m.status === 'active')
-          .map(m => getSecondaryMissionById(m.missionId))
+          .map(m => getSecondaryMissionById(m.missionId)!)
           .filter(Boolean)}
         timing={missionResolutionTiming}
         battleRound={battle?.battleRound || 1}
         existingMiseryCardIds={activeMiseryCardIds}
-        onMissionsResolved={({ completedMissionIds, failedMissionIds, newMiseryCards }) => {
+        onMissionsResolved={({ completedMissionIds, failedMissionIds, newMiseryCards, pendingMiseryCardsForNextRound: pendingCount }) => {
           // Update mission statuses
           setActiveSecondaryMissions(prev => prev.map(m => {
             if (completedMissionIds.includes(m.missionId)) {
@@ -1137,18 +1188,61 @@ function BattleTrackerInner() {
             return m;
           }));
           
-          // Add new Misery Cards from failed missions
+          // Log completed missions as battle events
+          completedMissionIds.forEach(missionId => {
+            const mission = getSecondaryMissionById(missionId);
+            if (mission) {
+              setBattleEvents(prev => [...prev, {
+                type: 'mission_completed' as const,
+                round: battle?.battleRound || 1,
+                turn: localCurrentTurn,
+                timestamp: new Date(),
+                details: { missionName: mission.namePt, missionId: mission.id },
+              }]);
+            }
+          });
+          
+          // Log failed missions as battle events
+          failedMissionIds.forEach(missionId => {
+            const mission = getSecondaryMissionById(missionId);
+            if (mission) {
+              setBattleEvents(prev => [...prev, {
+                type: 'mission_failed' as const,
+                round: battle?.battleRound || 1,
+                turn: localCurrentTurn,
+                timestamp: new Date(),
+                details: { missionName: mission.namePt, missionId: mission.id },
+              }]);
+            }
+          });
+          
+          // Add new Misery Cards from failed missions (immediate)
           if (newMiseryCards.length > 0) {
             setActiveMiseryCardIds(prev => [...prev, ...newMiseryCards.map(c => c.id)]);
-            toast.error(`${newMiseryCards.length} Carta(s) de Miséria revelada(s) como punição!`);
+            // Log each misery card from punishment
+            newMiseryCards.forEach(card => {
+              setBattleEvents(prev => [...prev, {
+                type: 'misery_card_revealed' as const,
+                round: battle?.battleRound || 1,
+                turn: localCurrentTurn,
+                timestamp: new Date(),
+                details: { cardName: `${card.namePt} (puni\u00e7\u00e3o)`, cardId: card.id },
+              }]);
+            });
+            toast.error(`${newMiseryCards.length} Carta(s) de Mis\u00e9ria revelada(s) como puni\u00e7\u00e3o!`);
+          }
+          
+          // Track pending misery cards for next round
+          if (pendingCount > 0) {
+            setPendingMiseryCardsForNextRound(prev => prev + pendingCount);
           }
           
           // Show success message
           if (completedMissionIds.length > 0) {
-            toast.success(`${completedMissionIds.length} missão(ões) completada(s)!`);
+            toast.success(`${completedMissionIds.length} miss\u00e3o(\u00f5es) completada(s)!`);
           }
           if (failedMissionIds.length > 0) {
-            toast.warning(`${failedMissionIds.length} missão(ões) falhou/falharam.`);
+            toast.warning(`${failedMissionIds.length} miss\u00e3o(\u00f5es) falhou/falharam.`);
           }
         }}
       />
