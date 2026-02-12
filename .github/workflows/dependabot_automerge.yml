@@ -1,63 +1,164 @@
-name: Dependabot Auto-merge (safe)
+name: dependabot-automerge
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_run:
+    workflows: ["CI", "CodeQL"]
+    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
+  issues: write
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
 
 jobs:
-  dependabot-automerge:
-    if: github.actor == 'dependabot[bot]'
+  automerge:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Fetch Dependabot metadata
-        id: meta
-        uses: dependabot/fetch-metadata@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Enable auto-merge (squash) for safe updates
+      - name: Try squash-merge Dependabot PRs when clean
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const run = context.payload.workflow_run;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const prNumber = context.payload.pull_request.number;
-            const prNodeId = context.payload.pull_request.node_id;
 
-            const updateType = "${{ steps.meta.outputs.update-type }}"; 
-            const dependencyGroup = "${{ steps.meta.outputs.dependency-group }}";
-            const isSecurityUpdate = "${{ steps.meta.outputs.security-update }}" === "true"
-              || (dependencyGroup && dependencyGroup.toLowerCase().includes("security"));
-
-            core.info(`Dependabot metadata: updateType=${updateType} group=${dependencyGroup} security=${isSecurityUpdate}`);
-
-            // Bloqueia major *quando não for security*
-            if (updateType === "version-update:semver-major" && !isSecurityUpdate) {
-              core.info("Major update (non-security). Skipping auto-merge.");
+            // Só faz sentido quando veio de PR workflow
+            if (run.event !== 'pull_request') {
+              core.info(`Ignoring workflow_run event=${run.event}`);
               return;
             }
 
-            // Se updateType vier vazio/unknown, só auto-merge se for security group
-            if (!updateType && !isSecurityUpdate) {
-              core.info("Unknown update-type and not a security update. Skipping auto-merge.");
-              return;
-            }
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-            await github.graphql(`
-              mutation($pullRequestId: ID!) {
-                enablePullRequestAutoMerge(input: {
-                  pullRequestId: $pullRequestId,
-                  mergeMethod: SQUASH
-                }) {
-                  pullRequest { number }
-                }
+            async function getAssociatedPRNumbers() {
+              const prs = run.pull_requests || [];
+              if (prs.length > 0) return prs.map(p => p.number);
+
+              const sha = run.head_sha;
+              if (!sha) return [];
+
+              try {
+                const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  owner,
+                  repo,
+                  commit_sha: sha,
+                  mediaType: { previews: ["groot"] }
+                });
+                return (data || []).map(pr => pr.number);
+              } catch (e) {
+                core.warning(`Failed to find PR by SHA (${sha}): ${String(e?.message || e)}`);
+                return [];
               }
-            `, { pullRequestId: prNodeId });
+            }
 
-            core.info(`✅ Auto-merge enabled (SQUASH) for Dependabot PR #${prNumber}`);
+            const prNumbers = await getAssociatedPRNumbers();
+            if (prNumbers.length === 0) {
+              core.info("No PR associated to this workflow_run.");
+              return;
+            }
+
+            // Tentativas curtas só pra GitHub calcular mergeability.
+            // Se não estiver clean ainda (ex: CodeQL rodando), outra conclusão de workflow_run vai retriggar.
+            const maxAttempts = 8;
+            const waitMs = 15000;
+
+            for (const prNumber of prNumbers) {
+              let prResp = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              let pr = prResp.data;
+
+              const isDependabot =
+                pr.user?.login === "dependabot[bot]" ||
+                (pr.head?.ref || "").startsWith("dependabot/");
+
+              if (!isDependabot) {
+                core.info(`PR #${prNumber} is not Dependabot. Skipping.`);
+                continue;
+              }
+
+              if (pr.state !== "open" || pr.draft) {
+                core.info(`PR #${prNumber} not ready (state=${pr.state}, draft=${pr.draft}).`);
+                continue;
+              }
+
+              if (pr.merged) {
+                core.info(`PR #${prNumber} already merged.`);
+                continue;
+              }
+
+              // Não automerge se tiver label de bloqueio
+              const labels = (pr.labels || []).map(l => l.name);
+              if (labels.includes("no-automerge") || labels.includes("do-not-merge")) {
+                core.info(`PR #${prNumber} has no-automerge label. Skipping.`);
+                continue;
+              }
+
+              let ready = false;
+
+              for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                prResp = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+                pr = prResp.data;
+
+                const mergeable = pr.mergeable;               // true/false/null
+                const state = pr.mergeable_state;             // clean/unstable/blocked/dirty/unknown
+
+                core.info(`PR #${prNumber} attempt ${attempt}/${maxAttempts}: mergeable=${mergeable}, state=${state}`);
+
+                if (state === "clean" && mergeable === true) {
+                  ready = true;
+                  break;
+                }
+
+                if (state === "dirty") {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: prNumber,
+                    body: `❌ Auto-merge não realizado: PR com conflitos (mergeable_state=dirty).`
+                  }).catch(() => {});
+                  break;
+                }
+
+                if (state === "blocked") {
+                  // Ex: branch protection pedindo approval/required checks específicos
+                  core.info(`PR #${prNumber} is blocked by rules. Will not fail the workflow.`);
+                  break;
+                }
+
+                // unknown/unstable -> ainda calculando ou checks pendentes/falhando
+                await sleep(waitMs);
+              }
+
+              if (!ready) {
+                // Importante: NÃO falhar job (não virar check vermelho no PR)
+                core.info(`PR #${prNumber} is not clean yet. Exiting without failure.`);
+                continue;
+              }
+
+              try {
+                await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  merge_method: "squash",
+                  sha: pr.head.sha
+                });
+
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `✅ Auto-merge executado (squash) após checks verdes.\nRun: ${run.html_url}`
+                }).catch(() => {});
+
+                core.info(`Merged PR #${prNumber} (squash).`);
+              } catch (e) {
+                const msg = String(e?.message || e);
+                core.warning(`Merge failed for PR #${prNumber}: ${msg}`);
+
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `❌ Tentei auto-merge (squash), mas falhou.\nErro: \`${msg}\`\nSe tudo estiver verde, dá pra fazer merge manualmente.`
+                }).catch(() => {});
+                // Não falha o job
+              }
