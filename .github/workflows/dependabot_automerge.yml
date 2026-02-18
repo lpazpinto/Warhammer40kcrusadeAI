@@ -16,8 +16,7 @@ concurrency:
 
 jobs:
   automerge:
-    # Garante que roda apenas para PRs cujo autor é o Dependabot,
-    # mesmo que o evento seja disparado por outra conta (ex.: reruns/edições).
+    # Roda apenas para PRs cujo autor é o Dependabot.
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
 
@@ -66,27 +65,42 @@ jobs:
               return data.check_runs || [];
             }
 
+            // IMPORTANT: Em GitHub Actions, o check-run costuma ter como "name" o nome do JOB.
+            // No seu caso ele aparece como "... / automerge (pull_request_target)", então o name tende a ser "automerge".
+            // Se a gente não ignorar o próprio check-run, dá deadlock: sempre vai existir 1 pending (ele mesmo).
+            const currentRunId = process.env.GITHUB_RUN_ID;
+            const currentJob = (process.env.GITHUB_JOB || "").toLowerCase();
+
             function isOwnCheckRun(cr) {
               const name = (cr.name || "").toLowerCase();
-              // Evita deadlock: não espere pelo próprio job/workflow
-              return name.includes("dependabot auto-merge") || name.includes("enable auto-merge");
+
+              // 1) Match pelo job id (geralmente igual ao check-run name)
+              if (currentJob && name === currentJob) return true;
+
+              // 2) Match por URL do run atual
+              if (cr.details_url && currentRunId && cr.details_url.includes(`/actions/runs/${currentRunId}`)) return true;
+
+              // 3) Fallback por texto (caso GH mude o name)
+              if (name.includes("dependabot auto-merge")) return true;
+
+              return false;
             }
 
             function isOkConclusion(conclusion) {
               return ["success", "neutral", "skipped"].includes(conclusion);
             }
 
-            const maxAttempts = 40;      // ~20 min
-            const waitMs = 30000;
+            // Espera curta só para os checks TERMINAREM (se já terminou, sai na primeira tentativa)
+            const maxAttempts = 20; // ~5 min
+            const waitMs = 15000;
 
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
               const pr = await getPR();
 
-              // mergeable_state pode vir null/unknown no começo
               const mergeable = pr.mergeable;
               const mergeableState = pr.mergeable_state;
-
               const sha = pr.head.sha;
+
               const checkRuns = await getCheckRuns(sha);
               const relevant = checkRuns.filter((cr) => !isOwnCheckRun(cr));
 
@@ -106,7 +120,8 @@ jobs:
                 return;
               }
 
-              if (pending.length === 0 && failed.length === 0 && mergeable === true && mergeableState === "clean") {
+              // Não exige mergeable_state=clean porque ele pode ficar "unstable" por causa de checks não-requeridos.
+              if (pending.length === 0 && failed.length === 0 && mergeable === true) {
                 break;
               }
 
@@ -140,10 +155,9 @@ jobs:
               await github.graphql(mutation, { pullRequestId: pr.node_id });
               await github.rest.issues.createComment({
                 owner, repo, issue_number: prNumber,
-                body: `✅ Auto-merge habilitado (SQUASH) para update seguro do Dependabot.\nupdate-type: \`${updateType}\``,
+                body: `✅ Auto-merge habilitado (SQUASH) para update seguro do Dependabot.\nupdate-type: \`${updateType}\``
               }).catch(() => {});
               core.info("Auto-merge enabled.");
             } catch (e) {
               core.warning(`Falha ao habilitar auto-merge: ${String(e?.message || e)}`);
-              // Não dá hard-fail pra não ficar vermelho por nada
             }
