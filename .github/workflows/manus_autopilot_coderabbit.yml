@@ -15,6 +15,9 @@ permissions:
 
 jobs:
   autopilot:
+    # Só roda quando o comentário/review veio dos bots alvo.
+    # Isso evita execuções inúteis quando humanos comentam/revisam.
+    if: contains(fromJson('["coderabbitai","coderabbitai[bot]","chatgpt-codex-connector","chatgpt-codex-connector[bot]"]'), github.actor)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
