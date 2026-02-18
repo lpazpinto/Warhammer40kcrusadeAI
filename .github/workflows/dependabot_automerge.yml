@@ -1,171 +1,147 @@
 name: Dependabot Auto-merge (safe)
 
 on:
-  check_suite:
-    types: [completed]
-  workflow_dispatch: {}
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   checks: read
-  statuses: read
 
 concurrency:
-  group: dependabot-automerge-${{ github.event.check_suite.head_sha || github.run_id }}
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   automerge:
+    if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+
     steps:
-      - name: Try squash-merge Dependabot PRs when clean
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge (squash) when checks are green
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const prNumber = context.payload.pull_request.number;
 
-            const sha = context.payload.check_suite?.head_sha;
-            if (!sha) {
-              core.info("Sem head_sha no payload (check_suite). Saindo.");
+            const updateType = "${{ steps.meta.outputs.update-type }}";
+            const safeTypes = new Set([
+              "security-update",
+              "version-update:semver-patch",
+              "version-update:semver-minor",
+            ]);
+
+            if (!safeTypes.has(updateType)) {
+              core.info(`Skip: update-type=${updateType} (not safe).`);
               return;
             }
 
-            // Busca PRs associados ao commit SHA
-            async function getAssociatedPRs(commitSha) {
-              try {
-                const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                  owner,
-                  repo,
-                  commit_sha: commitSha,
-                  mediaType: { previews: ["groot"] }
-                });
-                return data || [];
-              } catch (e) {
-                core.warning(`Falha ao buscar PRs associados ao SHA ${commitSha}: ${String(e?.message || e)}`);
-                return [];
-              }
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+            async function getPR() {
+              const { data } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+              return data;
             }
 
-            function isDependabotPR(pr) {
-              const login = pr?.user?.login || "";
-              const headRef = pr?.head?.ref || "";
-              return login === "dependabot[bot]" || headRef.startsWith("dependabot/");
-            }
-
-            // Lê check-runs (GitHub Actions, CodeQL, etc.) do SHA
-            async function getCheckRuns(commitSha) {
+            async function getCheckRuns(sha) {
               const { data } = await github.rest.checks.listForRef({
                 owner,
                 repo,
-                ref: commitSha,
-                per_page: 100
+                ref: sha,
+                per_page: 100,
               });
-              return data?.check_runs || [];
+              return data.check_runs || [];
             }
 
-            // Lê commit status agregado (alguns providers ainda usam status API)
-            async function getCombinedStatus(commitSha) {
-              try {
-                const { data } = await github.rest.repos.getCombinedStatusForRef({
-                  owner,
-                  repo,
-                  ref: commitSha
-                });
-                return data;
-              } catch (e) {
-                core.warning(`Falha ao ler combined status do SHA ${commitSha}: ${String(e?.message || e)}`);
-                return null;
-              }
-            }
-
-            const prs = await getAssociatedPRs(sha);
-            if (!prs.length) {
-              core.info(`Nenhum PR associado ao SHA ${sha}. Saindo.`);
-              return;
-            }
-
-            // Carrega check-runs / statuses uma vez (por SHA)
-            const allCheckRuns = await getCheckRuns(sha);
-            const combinedStatus = await getCombinedStatus(sha);
-
-            // Remove o próprio workflow de automerge da lista de checks (para não "esperar por si mesmo")
-            const checkRuns = allCheckRuns.filter(cr => {
-              const n = (cr.name || "").toLowerCase();
-              return !n.includes("dependabot auto-merge") && !n.includes("dependabot-automerge");
-            });
-
-            // Gate 1: ainda tem coisa rodando?
-            const inProgress = checkRuns.filter(cr => cr.status !== "completed");
-            if (inProgress.length) {
-              core.info(`Ainda existem checks em execução para ${sha}: ${inProgress.map(x => x.name).join(", ")}. Vou tentar novamente no próximo check_suite completed.`);
-              return;
-            }
-
-            // Gate 2: algum check falhou?
-            const badConclusions = new Set(["failure", "cancelled", "timed_out", "action_required"]);
-            const failed = checkRuns.filter(cr => badConclusions.has(cr.conclusion));
-            if (failed.length) {
-              core.info(`Checks falharam para ${sha}: ${failed.map(x => `${x.name}=${x.conclusion}`).join(", ")}. Não vou mergear.`);
-              return;
-            }
-
-            // Gate 3: CodeQL NUNCA pode ser neutral/skipped
-            const nonSuccessCodeQL = checkRuns.filter(cr => {
+            function isOwnCheckRun(cr) {
               const name = (cr.name || "").toLowerCase();
-              return name.includes("codeql") && cr.conclusion !== "success";
-            });
-            if (nonSuccessCodeQL.length) {
-              core.info(`CodeQL não está SUCCESS para ${sha}: ${nonSuccessCodeQL.map(x => `${x.name}=${x.conclusion}`).join(", ")}. Bloqueando merge.`);
-              return;
+              // Evita deadlock: não espere pelo próprio job/workflow
+              return name.includes("dependabot auto-merge") || name.includes("enable auto-merge");
             }
 
-            // Gate 4: statuses agregados (se existirem) também precisam estar success
-            if (combinedStatus && combinedStatus.state && combinedStatus.state !== "success") {
-              core.info(`Combined status do SHA ${sha} não é success (state=${combinedStatus.state}). Bloqueando merge.`);
-              return;
+            function isOkConclusion(conclusion) {
+              return ["success", "neutral", "skipped"].includes(conclusion);
             }
 
-            // Agora sim: tentar merge em cada PR dependabot associado
-            for (const pr of prs) {
-              if (!isDependabotPR(pr)) {
-                core.info(`PR #${pr.number} não é Dependabot. Ignorando.`);
-                continue;
-              }
+            const maxAttempts = 40;      // ~20 min
+            const waitMs = 30000;
 
-              if (pr.state !== "open" || pr.draft) {
-                core.info(`PR #${pr.number} não está pronto (state=${pr.state}, draft=${pr.draft}). Ignorando.`);
-                continue;
-              }
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              const pr = await getPR();
 
-              try {
-                await github.rest.pulls.merge({
-                  owner,
-                  repo,
-                  pull_number: pr.number,
-                  merge_method: "squash",
-                  sha
-                });
+              // mergeable_state pode vir null/unknown no começo
+              const mergeable = pr.mergeable;
+              const mergeableState = pr.mergeable_state;
 
+              const sha = pr.head.sha;
+              const checkRuns = await getCheckRuns(sha);
+              const relevant = checkRuns.filter((cr) => !isOwnCheckRun(cr));
+
+              const pending = relevant.filter((cr) => cr.status !== "completed");
+              const failed = relevant.filter((cr) => cr.status === "completed" && !isOkConclusion(cr.conclusion));
+
+              core.info(
+                `Attempt ${attempt}/${maxAttempts}: mergeable=${mergeable} state=${mergeableState} | ` +
+                `checks: total=${relevant.length} pending=${pending.length} failed=${failed.length}`
+              );
+
+              if (mergeableState === "dirty") {
                 await github.rest.issues.createComment({
-                  owner,
-                  repo,
-                  issue_number: pr.number,
-                  body: `✅ Dependabot auto-merge (squash) executado.\nSHA: ${sha}\nTrigger: check_suite completed`
+                  owner, repo, issue_number: prNumber,
+                  body: "❌ Dependabot auto-merge bloqueado: PR com conflitos (mergeable_state=dirty).",
                 }).catch(() => {});
-                
-                core.info(`Merged PR #${pr.number} (squash).`);
-              } catch (e) {
-                const msg = String(e?.message || e);
-                core.warning(`Falha ao mergear PR #${pr.number}: ${msg}`);
-
-                // Não falha o job: apenas comenta (opcional)
-                await github.rest.issues.createComment({
-                  owner,
-                  repo,
-                  issue_number: pr.number,
-                  body: `⚠️ Tentei fazer auto-merge (squash), mas não foi possível.\nErro: \`${msg}\`\nSe o GitHub exigir branch up-to-date ou houver regra extra, pode ser necessário "Update branch" / rebase.`
-                }).catch(() => {});
+                return;
               }
+
+              if (pending.length === 0 && failed.length === 0 && mergeable === true && mergeableState === "clean") {
+                break;
+              }
+
+              if (attempt === maxAttempts) {
+                core.info("Checks/mergeable ainda não prontos. Vou sair sem habilitar auto-merge.");
+                return;
+              }
+
+              await sleep(waitMs);
+            }
+
+            // Aprova PR (caso branch protection exija review)
+            await github.rest.pulls.createReview({
+              owner, repo,
+              pull_number: prNumber,
+              event: "APPROVE",
+              body: "✅ Auto-approval via GitHub Actions (Dependabot safe update).",
+            }).catch(() => {});
+
+            // Habilita auto-merge (SQUASH)
+            const pr = await getPR();
+            const mutation = `
+              mutation($pullRequestId: ID!) {
+                enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: SQUASH }) {
+                  pullRequest { number }
+                }
+              }
+            `;
+
+            try {
+              await github.graphql(mutation, { pullRequestId: pr.node_id });
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNumber,
+                body: `✅ Auto-merge habilitado (SQUASH) para update seguro do Dependabot.\nupdate-type: \`${updateType}\``,
+              }).catch(() => {});
+              core.info("Auto-merge enabled.");
+            } catch (e) {
+              core.warning(`Falha ao habilitar auto-merge: ${String(e?.message || e)}`);
+              // Não dá hard-fail pra não ficar vermelho por nada
             }
