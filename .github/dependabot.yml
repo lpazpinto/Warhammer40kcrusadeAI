@@ -1,78 +1,67 @@
 version: 2
+
 updates:
-  # NPM / PNPM / Yarn (depende do lockfile)
+  # Node / pnpm (Dependabot usa "npm" ecosystem mesmo com pnpm)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "sunday"
-      time: "06:00"
+      day: "saturday"
+      time: "04:00"
       timezone: "Europe/Lisbon"
     open-pull-requests-limit: 10
-
-    # Remova esta seção se não quiser criar labels no GitHub
     labels:
       - "dependencies"
-      - "javascript"
-
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-security:
         applies-to: "security-updates"
-        patterns:
-          - "*"
-
-      npm-prod-minor-patch:
+        patterns: ["*"]
+      npm-minor-patch:
         applies-to: "version-updates"
-        dependency-type: "production"
-        update-types:
-          - "minor"
-          - "patch"
-        patterns:
-          - "*"
+        update-types: ["minor", "patch"]
+        patterns: ["*"]
 
-      npm-dev-minor-patch:
-        applies-to: "version-updates"
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
-        patterns:
-          - "*"
-
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-
-  # GitHub Actions
+  # GitHub Actions versions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "sunday"
-      time: "06:00"
+      day: "saturday"
+      time: "04:10"
       timezone: "Europe/Lisbon"
     open-pull-requests-limit: 10
-
     labels:
       - "dependencies"
       - "github-actions"
-
-    groups:
-      gha-security:
-        applies-to: "security-updates"
-        patterns:
-          - "*"
-
-      gha-minor-patch:
-        applies-to: "version-updates"
-        update-types:
-          - "minor"
-          - "patch"
-        patterns:
-          - "*"
-
     ignore:
       - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
+        update-types: ["version-update:semver-major"]
+    groups:
+      actions-minor-patch:
+        applies-to: "version-updates"
+        update-types: ["minor", "patch"]
+        patterns: ["*"]
+
+  # Python (se você tiver requirements/pyproject no root)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      time: "04:20"
+      timezone: "Europe/Lisbon"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      pip-minor-patch:
+        applies-to: "version-updates"
+        update-types: ["minor", "patch"]
+        patterns: ["*"]
