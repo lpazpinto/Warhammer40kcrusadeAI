@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   automerge:
-    if: github.actor == 'dependabot[bot]'
+    # Garante que roda apenas para PRs cujo autor é o Dependabot,
+    # mesmo que o evento seja disparado por outra conta (ex.: reruns/edições).
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
 
     steps:
