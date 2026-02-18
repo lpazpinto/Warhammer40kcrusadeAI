@@ -6,6 +6,10 @@ on:
       - CI
       - CodeQL
     types: [completed]
+    # Evita rodar em PRs do Dependabot e em runs no main.
+    # Só dispara quando o run original (CI/CodeQL) foi executado em branches manus/*.
+    branches:
+      - 'manus/**'
 
 permissions:
   contents: read
