@@ -58,7 +58,7 @@ git push -u origin HEAD
 
 Se tiver GitHub CLI (gh):
 
-gh pr create --base main --head manus/<nome-curto> --title "<título>" --body "Resumo:
+gh pr create --base main --head <sua-branch> --title "..." --body "..."
 - <bullet 1>
 - <bullet 2>
 
