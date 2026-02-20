@@ -20,13 +20,24 @@ Objetivo: manter um fluxo seguro, previsível, incremental e 100% automatizável
 
 ### 1.1 Criar branch (sempre a partir de "main")
 
-Comandos:
+**Branches permitidas:**
+- `manus/*` (fluxo legado com autopilot)
+- `agent/*` (fluxo para Copilot/Codex agents e migrações sem acionar Manus)
+- `dependabot/*` (automático)
 
-git checkout main  
-git pull  
+**Padrão (durante o fadeout do Manus – até <DATA>):**
+git checkout main
+git pull
 git checkout -b manus/<nome-curto>
 
 > Observação: use nomes curtos e descritivos: manus/harden-workflows, manus/fix-ci, manus/deps-audit, etc.
+
+**Novo padrão (pós-Manus – a partir de <DATA>):**
+git checkout main
+git pull
+git checkout -b agent/<slug-curto>
+
+> Observação: branches agent/* NÃO acionam o Manus Autopilot. Use para tarefas executadas por Copilot/Codex.
 
 ### 1.2 Commits (somente na branch manus/*)
 
