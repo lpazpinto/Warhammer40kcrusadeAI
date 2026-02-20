@@ -227,7 +227,7 @@ Evitar:
 ## 11) Checklist mental final
 
 Antes de enviar commits:
-- Estou em manus/* (não em main)
+- Estou em manus/* ou agent/* (não em main)
 - Patch mínimo e objetivo
 - Sem segredos no diff
 - CI/CodeQL continuam verdes (ou caminho claro para ficar)
