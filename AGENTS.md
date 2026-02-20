@@ -39,7 +39,7 @@ git checkout -b agent/<slug-curto>
 
 > Observação: branches agent/* NÃO acionam o Manus Autopilot. Use para tarefas executadas por Copilot/Codex.
 
-### 1.2 Commits (somente na branch manus/*)
+### 1.2 Commits (na branch manus/* ou agent/*)
 
 Regras:
 - Faça commits pequenos e claros.
