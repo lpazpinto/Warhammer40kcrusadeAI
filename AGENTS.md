@@ -25,14 +25,14 @@ Objetivo: manter um fluxo seguro, previsível, incremental e 100% automatizável
 - `agent/*` (fluxo para Copilot/Codex agents e migrações sem acionar Manus)
 - `dependabot/*` (automático)
 
-**Padrão (durante o fadeout do Manus – até <DATA>):**
+**Padrão (durante o fadeout do Manus – até 01 de Abril de 2026):**
 git checkout main
 git pull
 git checkout -b manus/<nome-curto>
 
 > Observação: use nomes curtos e descritivos: manus/harden-workflows, manus/fix-ci, manus/deps-audit, etc.
 
-**Novo padrão (pós-Manus – a partir de <DATA>):**
+**Novo padrão (pós-Manus – a partir de 02 de Abril de 2026):**
 git checkout main
 git pull
 git checkout -b agent/<slug-curto>
