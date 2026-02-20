@@ -1,0 +1,73 @@
+name: "Exit Manus: Migration Task (AI-ready)"
+description: "Tarefa pequena, bem definida, para Copilot/Codex pegar e entregar PR."
+title: "[exit-manus] <tarefa curta>"
+labels: ["exit-manus", "ai-ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Use branch `agent/*`**. Não use `manus/*` nesta migração (para não acionar Manus Autopilot).
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo
+      description: O que exatamente deve ficar pronto ao final?
+      placeholder: "Ex.: Separar build do client/server em dist/client e dist/server"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo (bullets)
+      description: Liste passos objetivos e pequenos.
+      placeholder: |
+        - Alterar script build para ...
+        - Ajustar start para ...
+        - Não quebrar pnpm dev
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Restrições / Guardrails
+      value: |
+        - Criar branch `agent/<slug>`
+        - Mudanças mínimas; sem refactor grande
+        - Não comitar segredos
+        - Não alterar workflows para “passar”
+        - CI deve ficar verde
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Como validar
+      value: |
+        - pnpm install
+        - pnpm test
+        - pnpm build
+        - (se aplicável) pnpm start + teste manual
+
+  - type: textarea
+    id: agent_prompt
+    attributes:
+      label: Prompt para o agente (copiar/colar)
+      value: |
+        Você é um coding agent trabalhando neste repositório.
+        Leia e siga AGENTS.md.
+        Crie branch agent/<slug>.
+        Implemente APENAS o escopo abaixo (mudança mínima).
+        Garanta CI verde e descreva como validar no PR.
+
+        Objetivo:
+        <cole aqui o objetivo>
+
+        Escopo:
+        <cole aqui o escopo>
+
+        Como validar:
+        <cole aqui o passo a passo>
+    validations:
+      required: true
