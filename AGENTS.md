@@ -40,6 +40,8 @@ git checkout -b agent/<slug-curto>
 > Observação: branches agent/* NÃO acionam o Manus Autopilot. Use para tarefas executadas por Copilot/Codex.
 
 ### 1.2 Commits (na branch manus/* ou agent/*)
+> Transição (fadeout): enquanto o Manus estiver ativo, use `manus/*` para tarefas executadas pelo Manus.
+> Use `agent/*` para tarefas executadas por Copilot/Codex e para a migração “exit-manus”.
 
 Regras:
 - Faça commits pequenos e claros.
