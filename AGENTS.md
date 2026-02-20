@@ -8,7 +8,7 @@ Objetivo: manter um fluxo seguro, previsível, incremental e 100% automatizável
 ## 0) Princípios (invioláveis)
 
 - Nunca faça commit direto na branch "main".
-- Trabalhe sempre via Pull Request a partir de uma branch "manus/" (ou conforme regra do item 1).
+- Trabalhe sempre via Pull Request a partir de uma branch `manus/*` ou `agent/*` (ver item 1.1).
 - Mudanças mínimas: corrija o problema com o menor patch possível. Evite refactors grandes sem pedido explícito.
 - Não degrade segurança: não desative checks (CI, CodeQL etc.) “para passar”.
 - Não invente ambiente/segredos: se faltar variável/serviço, pare e reporte.
