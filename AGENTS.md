@@ -69,7 +69,9 @@ Revisão automatizada: @coderabbitai review"
 
 Se não tiver gh:
 - informe o nome da branch e um resumo para o mantenedor abrir o PR manualmente.
-
+Exemplos:
+- Manus: `gh pr create --base main --head manus/<nome-curto> --title "..." --body "..."`
+- Agents: `gh pr create --base main --head agent/<slug-curto> --title "..." --body "..."`
 ============================================================
 ## 2) Regras de revisão (CodeRabbit + Codex + Checks)
 
