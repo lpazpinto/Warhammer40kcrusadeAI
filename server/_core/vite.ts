@@ -48,6 +48,12 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
+  // Health-check endpoint — registered before the distPath guard so it is
+  // always available, even when the build directory is missing (degraded mode).
+  app.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   const distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(import.meta.dirname, "../..", "dist", "client")
@@ -61,19 +67,17 @@ export function serveStatic(app: Express) {
     return;
   }
 
-  // Health-check endpoint (useful for Railway, Docker, load balancers)
-  app.get("/healthz", (_req, res) => {
-    res.status(200).json({ status: "ok" });
-  });
-
   app.use(express.static(distPath));
 
   // SPA fallback: any route not matched by API or static files serves index.html
   const indexPath = path.resolve(distPath, "index.html");
-  app.use("*", (_req, res) => {
+  app.use("*", (_req, res, next) => {
     res.sendFile(indexPath, (err) => {
       if (err) {
         console.error(`[Static] Failed to send index.html:`, err);
+        if (res.headersSent) {
+          return next(err);
+        }
         res.status(500).send("Internal Server Error");
       }
     });
