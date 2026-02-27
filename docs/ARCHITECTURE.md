@@ -16,9 +16,9 @@ This document describes the current architecture of the application based exclus
 | **Backend** | Express 4, tRPC 11, TypeScript | RPC-first API under `/api/trpc` |
 | **Database** | MySQL / TiDB | Managed via Drizzle ORM; connection string in `DATABASE_URL` |
 | **Auth** | Manus OAuth | Session cookie; callback at `/api/oauth/callback` |
-| **Build** | Vite (frontend), esbuild (server bundle) | Single `pnpm build` produces both client and server artifacts |
+| **Build** | Vite (frontend), esbuild (server bundle) | `pnpm build` produces `dist/client/` (static assets) and `dist/server/index.js` (server bundle) |
 | **Package Manager** | pnpm 10.4.1 | Lockfile: `pnpm-lock.yaml` |
-| **Runtime** | Node.js 20+ | CI uses Node 20; local dev uses `tsx watch` |
+| **Runtime** | Node.js >= 20.11 | `import.meta.dirname` requires Node 20.11+; CI uses Node 20; local dev uses `tsx watch` |
 | **Testing** | Vitest | Server-side tests only (`server/**/*.test.ts`) |
 | **Serialisation** | Superjson | Drizzle rows (including `Date`) pass through tRPC without manual conversion |
 
@@ -71,8 +71,8 @@ The following commands are available in `package.json`:
 |---|---|
 | `pnpm install` | Install all dependencies |
 | `pnpm dev` | Start the dev server (`tsx watch server/_core/index.ts`) with hot-reload |
-| `pnpm build` | Production build: Vite for client, esbuild for server → `dist/` |
-| `pnpm start` | Run the production build (`node dist/index.js`) |
+| `pnpm build` | Production build: Vite → `dist/client/`, esbuild → `dist/server/index.js` |
+| `pnpm start` | Run the production build (`node dist/server/index.js`) |
 | `pnpm check` | TypeScript type-check (`tsc --noEmit`) |
 | `pnpm format` | Format code with Prettier |
 | `pnpm test` | Run Vitest test suite |
