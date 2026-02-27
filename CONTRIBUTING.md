@@ -19,7 +19,7 @@ Para manter o fluxo seguro e previsível, seguimos regras simples.
 
 ## 2) Branch naming
 
-- Para agentes (Manus): `manus/<tema-curto>`
+- Para agentes: `manus/<tema-curto>` ou `agent/<tema-curto>` (use `manus/*` até 01/04/2026; após essa data, use `agent/*` para Copilot/Codex)
 - Para humanos: `feature/<tema>`, `fix/<tema>`, `chore/<tema>` (ou padrão do time)
 
 ---
@@ -34,7 +34,7 @@ No PR, inclua:
 
 Se você usa CodeRabbit, pode pedir review no corpo/comentário:
 
-```
+```text
 @coderabbitai review
 ```
 
@@ -45,7 +45,7 @@ Se você usa CodeRabbit, pode pedir review no corpo/comentário:
 As regras completas para automação (Manus/CodeRabbit/Codex/etc.) estão em `AGENTS.md`.
 Isso inclui:
 
-- Fluxo obrigatório `manus/*` → PR → checks
+- Fluxo obrigatório `manus/*` ou `agent/*` → PR → checks
 - Como tratar feedback ACTIONABLE vs placeholder
 - Limites de refatoração
 - Requisitos de segurança
