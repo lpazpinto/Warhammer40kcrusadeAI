@@ -40,8 +40,9 @@ git checkout -b agent/<slug-curto>
 > Observação: branches agent/* NÃO acionam o Manus Autopilot. Use para tarefas executadas por Copilot/Codex.
 
 ### 1.2 Commits (na branch manus/* ou agent/*)
-> Transição (fadeout): enquanto o Manus estiver ativo, use `manus/*` para tarefas executadas pelo Manus.
-> Use `agent/*` para tarefas executadas por Copilot/Codex e para a migração “exit-manus”.
+
+> **Regra de transição (fadeout — até 01/04/2026):**
+> Ambos os prefixos são aceitos. Use `manus/*` para tarefas executadas pelo Manus e `agent/*` para tarefas executadas por Copilot/Codex ou migração "exit-manus". Após o fadeout, `agent/*` será o padrão único.
 
 Regras:
 - Faça commits pequenos e claros.
@@ -56,9 +57,10 @@ git push -u origin HEAD
 
 ### 1.3 Abrir PR para "main"
 
-Se tiver GitHub CLI (gh):
+Se tiver GitHub CLI (`gh`):
 
-gh pr create --base main --head <sua-branch> --title "..." --body "..."
+```bash
+gh pr create --base main --head <sua-branch> --title "..." --body "
 - <bullet 1>
 - <bullet 2>
 
@@ -66,12 +68,14 @@ Como validar:
 - <comando(s)>
 
 Revisão automatizada: @coderabbitai review"
+```
 
-Se não tiver gh:
-- informe o nome da branch e um resumo para o mantenedor abrir o PR manualmente.
-Exemplos:
-- Manus: `gh pr create --base main --head manus/<nome-curto> --title "..." --body "..."`
-- Agents: `gh pr create --base main --head agent/<slug-curto> --title "..." --body "..."`
+Se não tiver `gh`:
+- Informe o nome da branch e um resumo para o mantenedor abrir o PR manualmente.
+
+Exemplos (ambos os prefixos são válidos durante o fadeout):
+- `gh pr create --base main --head manus/<nome-curto> --title "..." --body "..."`
+- `gh pr create --base main --head agent/<slug-curto> --title "..." --body "..."`
 ============================================================
 ## 2) Regras de revisão (CodeRabbit + Codex + Checks)
 
@@ -227,9 +231,22 @@ Evitar:
 ## 11) Checklist mental final
 
 Antes de enviar commits:
-- Estou em manus/* ou agent/* (não em main)
-- Patch mínimo e objetivo
-- Sem segredos no diff
-- CI/CodeQL continuam verdes (ou caminho claro para ficar)
-- Feedback CodeRabbit + Codex foi lido e tratado
-- Comentário final no PR com o que/por quê/como validar
+- [ ] Estou em `manus/*` ou `agent/*` (não em `main`) — ambos aceitos durante o fadeout
+- [ ] Patch mínimo e objetivo
+- [ ] Sem segredos no diff
+- [ ] CI/CodeQL continuam verdes (ou caminho claro para ficar)
+- [ ] Feedback CodeRabbit + Codex foi lido e tratado
+- [ ] Comentário final no PR com o que/por quê/como validar
+
+---
+
+## 12) Nota de transição (fadeout)
+
+Este repositório está em período de transição de ferramentas de automação. Durante o **fadeout** (até 01/04/2026), duas convenções de branch coexistem:
+
+| Prefixo | Quem usa | Aciona Manus Autopilot? |
+|---|---|---|
+| `manus/*` | Manus (tarefas via plataforma Manus) | Sim |
+| `agent/*` | Copilot, Codex, outros agents, migração | Não |
+
+Nenhum dos dois prefixos é "errado" durante este período. A regra é simples: se a tarefa vem do Manus, use `manus/*`; caso contrário, use `agent/*`. Após o fadeout, `agent/*` passará a ser o padrão único e referências a `manus/*` serão removidas deste documento.
