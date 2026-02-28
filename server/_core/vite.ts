@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import rateLimit from "express-rate-limit";
 import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
@@ -69,9 +70,17 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // SPA fallback: any route not matched by API or static files serves index.html
+  // SPA fallback: any route not matched by API or static files serves index.html.
+  // Rate-limited to prevent file-system exhaustion (CodeQL: Missing rate limiting).
+  const spaLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 120,            // 120 requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
   const indexPath = path.resolve(distPath, "index.html");
-  app.use("*", (_req, res, next) => {
+  app.use("*", spaLimiter, (_req, res, next) => {
     res.sendFile(indexPath, (err) => {
       if (err) {
         console.error(`[Static] Failed to send index.html:`, err);
