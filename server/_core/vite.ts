@@ -11,8 +11,8 @@ import path from "path";
  * never evaluates it.  Since `vite` is a devDependency it is not installed
  * in the runtime Docker stage (`pnpm install --prod`).
  *
- * The Vite config is loaded by Vite itself via `configFile: true` (the
- * default), so we do NOT import `vite.config.ts` here.  This prevents
+ * The Vite config is loaded by Vite itself (auto-detected from the project
+ * root), so we do NOT import `vite.config.ts` here.  This prevents
  * esbuild from bundling vite.config.ts and its dev-only plugin imports
  * (`@vitejs/plugin-react`, `@tailwindcss/vite`, etc.) into the server
  * bundle, which would cause MODULE_NOT_FOUND crashes in production.
@@ -23,14 +23,17 @@ export async function setupVite(app: Express, server: Server) {
   const { nanoid } = await import("nanoid");
 
   const vite = await createViteServer({
-    // Let Vite find and load vite.config.ts from the project root at runtime.
-    // This avoids bundling the config file (and its dev-only dependencies)
-    // into the esbuild output.
-    configFile: true,
+    // Vite auto-detects vite.config.ts from the project root at runtime.
+    // We do NOT set configFile here — omitting it (defaults to undefined)
+    // lets Vite resolve the config file itself.  Setting `true` would cause
+    // ERR_INVALID_ARG_TYPE because Vite passes the value to path.resolve().
+    //
+    // allowedHosts is NOT set here because vite.config.ts already defines
+    // an explicit allowlist.  Setting `true` would allow any Host header,
+    // creating a DNS rebinding risk.
     server: {
       middlewareMode: true,
       hmr: { server },
-      allowedHosts: true as const,
     },
     appType: "custom",
   });
