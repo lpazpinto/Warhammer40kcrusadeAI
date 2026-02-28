@@ -218,7 +218,7 @@ A verificação de sessão em `sdk.ts` funciona independente do provider porque:
 | Variável | Status |
 |---|---|
 | `OAUTH_SERVER_URL` | Mantida durante período paralelo; removida no PR 3.2 |
-| `VITE_APP_ID` | Mantida durante período paralelo; removida no PR 3.2 |
+| `VITE_APP_ID` | Mantida durante período paralelo; removida no PR 3.2. **Atenção:** `ENV.appId` (sourced de `VITE_APP_ID` em `server/_core/env.ts`) é usado na assinatura de sessões JWT e validado por `sdk.verifySession`. O PR 3.2 **deve** definir uma fonte substituta para `appId` (ex: variável de ambiente própria como `APP_ID`) ou remover a validação de `appId` do `verifySession` antes de remover `VITE_APP_ID`, caso contrário novas sessões serão inválidas. |
 | `VITE_OAUTH_PORTAL_URL` | Mantida durante período paralelo; removida no PR 3.2 |
 
 > **Nota de segurança:** `GITHUB_CLIENT_SECRET` é um segredo sensível. Nunca commite este valor no repositório. Use o gerenciador de segredos do provedor de hospedagem ou GitHub Actions Secrets.
@@ -314,8 +314,8 @@ Novos usuários que fazem login via GitHub criam **novos registros** na tabela `
 |---|---|
 | `openId` | `github:<user_id>` (ex: `github:12345678`) |
 | `loginMethod` | `"github"` |
-| `name` | Nome do perfil GitHub |
-| `email` | Email primário do GitHub (se disponível) |
+| `name` | Nome do perfil GitHub (`name` da resposta de `/user`). **Fallback:** se `name` for `null` (GitHub permite nome vazio), usar o campo `login` (username) como fallback, pois `sdk.verifySession` rejeita sessões com `name` vazio. |
+| `email` | Email primário verificado do GitHub (obtido via `GET /user/emails`, filtrado por `verified=true` e `primary=true`) |
 
 ### Usuários existentes (Manus)
 
@@ -335,7 +335,6 @@ A vinculação de contas Manus → GitHub pode ser feita por **email verificado 
 6. Se não existir usuário com esse email, cria novo registro
 
 > **Nota sobre unicidade de email:** O campo `users.email` no schema atual (`drizzle/schema.ts`) não possui constraint `unique`. A implementação **deve** verificar que existe exatamente um match antes de vincular automaticamente. Se houver duplicatas, o sistema deve solicitar confirmação explícita do usuário.
-
 > **Importante:** A validação de `verified=true` e `primary=true` é obrigatória para segurança. Sem essa validação, seria possível vincular contas usando emails não verificados ou secundários, o que representa um risco de segurança.
 > **Decisão:** Não haverá migração automática de contas. Usuários existentes fazem re-login com GitHub, e a vinculação acontece via email verificado. Isso simplifica a implementação e evita riscos de migração de dados.
 
