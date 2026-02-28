@@ -116,6 +116,74 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+// ─── GitHub OAuth helpers ───────────────────────────────────────────
+
+/**
+ * Find a user by their GitHub ID.
+ */
+export async function getUserByGithubId(githubId: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user by githubId: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.githubId, githubId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+/**
+ * Find a user by email address.
+ * Returns undefined if no match or if multiple matches exist (ambiguous).
+ */
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user by email: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(2);
+
+  // If multiple users share the same email, do not auto-link (ambiguous)
+  if (result.length !== 1) {
+    if (result.length > 1) {
+      console.warn(`[Database] Multiple users found with email ${email}, skipping auto-link`);
+    }
+    return undefined;
+  }
+
+  return result[0];
+}
+
+/**
+ * Link a GitHub account to an existing user by setting their githubId.
+ */
+export async function linkGithubAccount(
+  userId: number,
+  githubId: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot link GitHub account: database not available");
+    return;
+  }
+
+  await db
+    .update(users)
+    .set({ githubId, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
 // Campaign helpers
 export async function createCampaign(campaign: InsertCampaign): Promise<Campaign> {
   const db = await getDb();
