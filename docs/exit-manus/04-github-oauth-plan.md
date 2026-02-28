@@ -169,7 +169,7 @@ Todas as configurações de cookie existentes em `server/_core/cookies.ts` serã
 |---|---|---|
 | `httpOnly` | `true` | Cookie não acessível via JavaScript |
 | `secure` | `true` (em produção) | Cookie enviado apenas via HTTPS |
-| `sameSite` | `lax` | Proteção contra CSRF em requisições cross-site |
+| `sameSite` | `none` | Permite requisições cross-site (valor atual em `server/_core/cookies.ts`). Considerar alterar para `lax` após migração completa para domínio próprio. |
 | `path` | `/` | Cookie válido para todas as rotas |
 
 ### Campo `loginMethod`
@@ -320,7 +320,7 @@ Novos usuários que fazem login via GitHub criam **novos registros** na tabela `
 ### Usuários existentes (Manus)
 
 - Usuários existentes com login Manus **mantêm acesso** durante o período de coexistência
-- Campanhas e dados permanecem vinculados ao `id` interno do usuário (chave primária auto-increment), **não ao `openId`**
+- Campanhas e dados permanecem vinculados ao `id` interno do usuário (chave primária autoincremento), **não ao `openId`**
 - Isso significa que mesmo que o `openId` mude (de Manus para GitHub), os dados permanecem acessíveis desde que o usuário esteja vinculado ao mesmo `id`
 
 ### Vinculação de contas
@@ -329,12 +329,14 @@ A vinculação de contas Manus → GitHub pode ser feita por **email verificado 
 
 1. Usuário faz login via GitHub
 2. Sistema obtém emails via `GET /user/emails` (requer escopo `user:email`) e seleciona apenas o email com `verified=true` **e** `primary=true`
-3. Se existir usuário com esse email verificado no banco, **atualiza** o registro existente com o novo `openId` (`github:<id>`) e `loginMethod` (`"github"`)
-4. Se não houver email verificado e primário disponível, **não vincular automaticamente** — exigir confirmação explícita do usuário para vincular contas
-5. Se não existir usuário com esse email, cria novo registro
+3. Se existir **exatamente um** usuário com esse email verificado no banco, **atualiza** o registro existente com o novo `openId` (`github:<id>`) e `loginMethod` (`"github"`)
+4. Se existirem **múltiplos** usuários com o mesmo email (campo `email` não é unique no schema atual), **não vincular automaticamente** — exigir confirmação explícita do usuário para evitar vincular ao registro errado
+5. Se não houver email verificado e primário disponível, **não vincular automaticamente** — exigir confirmação explícita do usuário para vincular contas
+6. Se não existir usuário com esse email, cria novo registro
+
+> **Nota sobre unicidade de email:** O campo `users.email` no schema atual (`drizzle/schema.ts`) não possui constraint `unique`. A implementação **deve** verificar que existe exatamente um match antes de vincular automaticamente. Se houver duplicatas, o sistema deve solicitar confirmação explícita do usuário.
 
 > **Importante:** A validação de `verified=true` e `primary=true` é obrigatória para segurança. Sem essa validação, seria possível vincular contas usando emails não verificados ou secundários, o que representa um risco de segurança.
-
 > **Decisão:** Não haverá migração automática de contas. Usuários existentes fazem re-login com GitHub, e a vinculação acontece via email verificado. Isso simplifica a implementação e evita riscos de migração de dados.
 
 ### Coexistência de `openId`
