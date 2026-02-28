@@ -98,6 +98,7 @@ O fluxo de autenticação segue o padrão OAuth 2.0 Authorization Code Grant:
 | Authorization | `https://github.com/login/oauth/authorize` | GET | Redireciona o usuário para a página de login do GitHub |
 | Token Exchange | `https://github.com/login/oauth/access_token` | POST | Troca o `code` temporário por um `access_token` |
 | User Info | `https://api.github.com/user` | GET | Obtém informações do usuário autenticado |
+| User Emails | `https://api.github.com/user/emails` | GET | Obtém lista de emails do usuário (requer escopo `user:email`). Necessário porque usuários com email privado não expõem email em `/user`. |
 
 ### Escopos mínimos necessários
 
@@ -324,14 +325,17 @@ Novos usuários que fazem login via GitHub criam **novos registros** na tabela `
 
 ### Vinculação de contas
 
-A vinculação de contas Manus → GitHub pode ser feita por **email**:
+A vinculação de contas Manus → GitHub pode ser feita por **email verificado e primário**:
 
 1. Usuário faz login via GitHub
-2. Sistema verifica se existe um usuário com o mesmo email no banco
-3. Se existir, **atualiza** o registro existente com o novo `openId` (`github:<id>`) e `loginMethod` (`"github"`)
-4. Se não existir, cria novo registro
+2. Sistema obtém emails via `GET /user/emails` (requer escopo `user:email`) e seleciona apenas o email com `verified=true` **e** `primary=true`
+3. Se existir usuário com esse email verificado no banco, **atualiza** o registro existente com o novo `openId` (`github:<id>`) e `loginMethod` (`"github"`)
+4. Se não houver email verificado e primário disponível, **não vincular automaticamente** — exigir confirmação explícita do usuário para vincular contas
+5. Se não existir usuário com esse email, cria novo registro
 
-> **Decisão:** Não haverá migração automática de contas. Usuários existentes fazem re-login com GitHub, e a vinculação acontece via email. Isso simplifica a implementação e evita riscos de migração de dados.
+> **Importante:** A validação de `verified=true` e `primary=true` é obrigatória para segurança. Sem essa validação, seria possível vincular contas usando emails não verificados ou secundários, o que representa um risco de segurança.
+
+> **Decisão:** Não haverá migração automática de contas. Usuários existentes fazem re-login com GitHub, e a vinculação acontece via email verificado. Isso simplifica a implementação e evita riscos de migração de dados.
 
 ### Coexistência de `openId`
 
@@ -408,20 +412,22 @@ Se problemas críticos forem identificados após o deploy do PR 3.1:
 
 ### Rollback rápido (sem perda de dados)
 
-1. **Reverter o PR 3.1** via `git revert` do merge commit
+1. **Reverter o PR 3.1** via `git revert` do commit squash
 2. **Redeployar** a versão anterior
 3. Sessões JWT existentes (Manus ou GitHub) **permanecem válidas** — usuários com sessão ativa não são afetados
 4. Usuários que fizeram login via GitHub **mantêm seus registros** no banco de dados (sem impacto)
 5. Manus OAuth **permanece funcional** durante todo o período paralelo — nenhum usuário perde acesso
 
+> **Nota:** Este repositório usa política de **squash merge**, portanto não haverá merge commit. O revert deve ser feito diretamente no commit squash (sem a flag `-m`).
+
 ### Passos detalhados
 
 ```bash
-# 1. Identificar o merge commit do PR 3.1
-git log --oneline --merges -5
+# 1. Identificar o commit squash do PR 3.1 na main
+git log --oneline -10
 
-# 2. Reverter o merge commit
-git revert -m 1 <merge-commit-hash>
+# 2. Reverter o commit squash (sem -m, pois não é merge commit)
+git revert <squash-commit-hash>
 
 # 3. Criar PR de rollback
 git push origin HEAD
