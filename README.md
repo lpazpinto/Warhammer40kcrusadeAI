@@ -20,6 +20,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 - [GitHub Actions Overview](#github-actions-overview)
 - [Troubleshooting](#troubleshooting)
 - [How to Validate](#how-to-validate)
+- [Docker](#docker)
 - [Facções Implementadas](#facções-implementadas)
 - [Convenções de Código](#convenções-de-código)
 - [Contribuindo](#contribuindo)
@@ -560,6 +561,56 @@ O workflow de CI (`ci.yml`) executa os seguintes passos em sequência. Se qualqu
 4. `pnpm run --if-present build`
 
 > **Nota:** Os comandos usam `--if-present`, então se um script não existir no `package.json`, o step é pulado sem erro.
+
+---
+
+## Docker
+
+A aplicação pode ser executada em container Docker usando uma imagem multi-stage otimizada. O Dockerfile separa o estágio de build (com todas as dependências de desenvolvimento) do estágio de runtime (apenas dependências de produção), resultando em uma imagem final menor e mais segura.
+
+### Build da Imagem
+
+```bash
+docker build -t crusade-ai .
+```
+
+### Execução do Container
+
+O container requer variáveis de ambiente para funcionar corretamente. Passe-as via `-e` ou com um arquivo `--env-file`:
+
+```bash
+docker run -p 3000:3000 \
+  -e DATABASE_URL="mysql://user:pass@host:3306/crusade_db" \
+  -e JWT_SECRET="seu_segredo_jwt_aqui" \
+  -e OAUTH_SERVER_URL="https://api.manus.im" \
+  -e VITE_APP_ID="seu_app_id" \
+  crusade-ai
+```
+
+### Variáveis de Ambiente Suportadas
+
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | Sim | Connection string MySQL/TiDB |
+| `JWT_SECRET` | Sim | Segredo para assinatura de cookies de sessão |
+| `OAUTH_SERVER_URL` | Sim | URL base do servidor OAuth |
+| `VITE_APP_ID` | Sim | ID da aplicação OAuth |
+| `OWNER_OPEN_ID` | Não | OpenID do proprietário (promovido a admin automaticamente) |
+| `BUILT_IN_FORGE_API_URL` | Não | URL da API interna (LLM, storage, etc.) |
+| `BUILT_IN_FORGE_API_KEY` | Não | Bearer token para a API interna |
+| `PORT` | Não | Porta do servidor (padrão: 3000) |
+| `NODE_ENV` | Não | Definida automaticamente como `production` no Dockerfile |
+
+### Validação do Health Check
+
+Após iniciar o container, verifique se a aplicação está respondendo:
+
+```bash
+curl http://localhost:3000/healthz
+# Resposta esperada: {"status":"ok"}
+```
+
+O endpoint `/healthz` retorna HTTP 200 com `{"status": "ok"}` e está disponível mesmo quando o diretório de build está ausente (modo degradado), sendo adequado para probes de saúde em Railway, Docker Compose ou Kubernetes.
 
 ---
 

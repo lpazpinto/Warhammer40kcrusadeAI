@@ -1,0 +1,42 @@
+# Dependencies (reinstalled inside the container)
+node_modules/
+
+# Build output (rebuilt inside the container)
+dist/
+
+# Version control
+.git/
+.gitignore
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files (secrets must be passed via env vars at runtime)
+.env
+.env.*
+!.env.example
+
+# Documentation (not needed at runtime)
+docs/
+design_document.md
+AGENTS.md
+CONTRIBUTING.md
+LICENSE
+
+# CI / tooling config
+.github/
+.coderabbit.yaml
+.prettierrc
+.prettierignore
+eslint.config.js
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Docker (avoid recursive copy)
+Dockerfile
+.dockerignore
