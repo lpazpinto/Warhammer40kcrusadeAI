@@ -43,6 +43,12 @@ export function getGitHubAuthUrl(state: string): string {
     ENV.githubCallbackUrl ||
     `${process.env.VITE_APP_URL || ""}/api/oauth/github/callback`;
 
+  if (!callbackUrl.startsWith("http")) {
+    throw new Error(
+      "GitHub OAuth callback URL must be absolute. Set GITHUB_CALLBACK_URL or VITE_APP_URL."
+    );
+  }
+
   const url = new URL(GITHUB_AUTHORIZE_URL);
   url.searchParams.set("client_id", ENV.githubClientId);
   url.searchParams.set("redirect_uri", callbackUrl);

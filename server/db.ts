@@ -157,7 +157,7 @@ export async function getUserByEmail(email: string) {
   // If multiple users share the same email, do not auto-link (ambiguous)
   if (result.length !== 1) {
     if (result.length > 1) {
-      console.warn(`[Database] Multiple users found with email ${email}, skipping auto-link`);
+      console.warn(`[Database] Multiple users found with same email, skipping auto-link`);
     }
     return undefined;
   }
