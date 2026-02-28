@@ -329,7 +329,7 @@ A vinculação de contas Manus → GitHub pode ser feita por **email verificado 
 
 1. Usuário faz login via GitHub
 2. Sistema obtém emails via `GET /user/emails` (requer escopo `user:email`) e seleciona apenas o email com `verified=true` **e** `primary=true`
-3. Se existir **exatamente um** usuário com esse email verificado no banco, **atualiza** o registro existente com o novo `openId` (`github:<id>`) e `loginMethod` (`"github"`)
+3. Se existir **exatamente um** usuário com esse email verificado no banco, **adiciona** o `githubId` ao registro existente (ver estratégia de mapeamento abaixo) e atualiza `loginMethod` para `"github"`
 4. Se existirem **múltiplos** usuários com o mesmo email (campo `email` não é unique no schema atual), **não vincular automaticamente** — exigir confirmação explícita do usuário para evitar vincular ao registro errado
 5. Se não houver email verificado e primário disponível, **não vincular automaticamente** — exigir confirmação explícita do usuário para vincular contas
 6. Se não existir usuário com esse email, cria novo registro
@@ -338,6 +338,23 @@ A vinculação de contas Manus → GitHub pode ser feita por **email verificado 
 > **Importante:** A validação de `verified=true` e `primary=true` é obrigatória para segurança. Sem essa validação, seria possível vincular contas usando emails não verificados ou secundários, o que representa um risco de segurança.
 > **Decisão:** Não haverá migração automática de contas. Usuários existentes fazem re-login com GitHub, e a vinculação acontece via email verificado. Isso simplifica a implementação e evita riscos de migração de dados.
 
+### Estratégia de mapeamento de identidade (PR 3.1)
+
+> **Crítico:** Durante o período de coexistência (PR 3.1), o `openId` Manus original **não deve ser sobrescrito**. O fluxo atual de upsert (`server/_core/oauth.ts` e `server/db.ts`) e lookup de auth (`server/_core/sdk.ts`) usam `openId` como chave. Se o `openId` for substituído por `github:<id>` enquanto o login Manus ainda está ativo, um usuário que fizer login via Manus após a vinculação criará um **segundo registro**, perdendo acesso às campanhas vinculadas ao `id` original.
+
+**Solução:** Adicionar um campo `githubId` (nullable) à tabela `users` no PR 3.1:
+
+```sql
+ALTER TABLE users ADD COLUMN githubId VARCHAR(64) UNIQUE DEFAULT NULL;
+```
+
+| Fase | Comportamento |
+|---|---|
+| **PR 3.1** (coexistência) | Vinculação armazena GitHub ID em `githubId`, mantém `openId` Manus original. Login GitHub faz lookup por `githubId` primeiro, depois por email. Login Manus continua usando `openId` normalmente. |
+| **PR 3.2** (remoção Manus) | Migra `openId` para formato `github:<id>` usando `githubId` como fonte. Remove campo `githubId` após migração. |
+
+Isso garante que ambos os provedores funcionem simultaneamente sem conflito de identidade.
+
 ### Coexistência de `openId`
 
 Durante o período de transição, a tabela `users` pode conter registros com dois formatos de `openId`:
@@ -345,9 +362,9 @@ Durante o período de transição, a tabela `users` pode conter registros com do
 | Formato | Provider | Exemplo |
 |---|---|---|
 | ID Manus (sem prefixo) | Manus OAuth | `abc123def456` |
-| `github:<id>` | GitHub OAuth | `github:12345678` |
+| `github:<id>` | GitHub OAuth (novos usuários) | `github:12345678` |
 
-Ambos os formatos são válidos e funcionam com a verificação de sessão existente.
+Usuários vinculados mantêm o `openId` Manus original até o PR 3.2, com `githubId` preenchido para lookup via GitHub.
 
 ---
 
@@ -403,7 +420,7 @@ Após implementação do PR 3.1, validar:
 | 2 | **Token GitHub exposto** em logs ou mensagens de erro | Alta | Nunca logar access tokens. Usar o token apenas para obter user info e descartar imediatamente. Não armazenar no banco de dados. |
 | 3 | **Usuários perdem acesso a dados** após migração | Média | Vincular contas por email. Manter Manus OAuth ativo durante todo o período de transição. Não remover registros de usuários Manus. |
 | 4 | **Callback URL não corresponde** ao configurado no GitHub | Média | Usar variável de ambiente `GITHUB_CALLBACK_URL` para configuração flexível. Documentar configuração claramente. Validar URL no startup do servidor. |
-| 5 | **Rate limiting da API GitHub** | Baixa | Autenticação usa apenas 2 chamadas por login (token exchange + user info). Rate limit autenticado é 5.000 req/hora. Risco extremamente baixo para uso normal. |
+| 5 | **Rate limiting da API GitHub** | Baixa | Autenticação usa 3 chamadas por login (token exchange + user info + user emails). Rate limit autenticado é 5.000 req/hora. Risco extremamente baixo para uso normal. |
 
 ---
 
