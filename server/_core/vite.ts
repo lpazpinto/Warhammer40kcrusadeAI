@@ -2,22 +2,36 @@ import express, { type Express } from "express";
 import rateLimit from "express-rate-limit";
 import fs from "fs";
 import { type Server } from "http";
-import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
 
+/**
+ * Development mode: sets up Vite dev server with HMR.
+ *
+ * `vite` is loaded lazily via dynamic import so that the production bundle
+ * never evaluates it.  Since `vite` is a devDependency it is not installed
+ * in the runtime Docker stage (`pnpm install --prod`).
+ *
+ * The Vite config is loaded by Vite itself via `configFile: true` (the
+ * default), so we do NOT import `vite.config.ts` here.  This prevents
+ * esbuild from bundling vite.config.ts and its dev-only plugin imports
+ * (`@vitejs/plugin-react`, `@tailwindcss/vite`, etc.) into the server
+ * bundle, which would cause MODULE_NOT_FOUND crashes in production.
+ */
 export async function setupVite(app: Express, server: Server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
+  // Dynamic imports — only resolved at runtime in development
+  const { createServer: createViteServer } = await import("vite");
+  const { nanoid } = await import("nanoid");
 
   const vite = await createViteServer({
-    ...viteConfig,
-    configFile: false,
-    server: serverOptions,
+    // Let Vite find and load vite.config.ts from the project root at runtime.
+    // This avoids bundling the config file (and its dev-only dependencies)
+    // into the esbuild output.
+    configFile: true,
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true as const,
+    },
     appType: "custom",
   });
 
@@ -33,7 +47,7 @@ export async function setupVite(app: Express, server: Server) {
         "index.html"
       );
 
-      // always reload the index.html file from disk incase it changes
+      // always reload the index.html file from disk in case it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,

@@ -28,6 +28,9 @@ FROM node:20-alpine AS runtime
 
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
+# Create a non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
 
 # Copy dependency manifests and patches for production install
@@ -40,9 +43,15 @@ RUN pnpm install --prod --frozen-lockfile
 # Copy built artifacts from the builder stage
 COPY --from=builder /app/dist ./dist
 
+# Transfer ownership of the app directory to the non-root user
+RUN chown -R appuser:appgroup /app
+
 # Runtime configuration
 ENV NODE_ENV=production
 EXPOSE 3000
+
+# Run as non-root user
+USER appuser
 
 # Start the server
 CMD ["node", "dist/server/index.js"]
