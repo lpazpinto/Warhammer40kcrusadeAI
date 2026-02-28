@@ -42,6 +42,8 @@ export function registerGitHubOAuthRoutes(app: Express) {
 
     res.cookie(GITHUB_STATE_COOKIE, state, {
       ...cookieOptions,
+      httpOnly: true,
+      secure: true,
       maxAge: STATE_COOKIE_MAX_AGE_MS,
     });
 
@@ -99,7 +101,7 @@ export function registerGitHubOAuthRoutes(app: Express) {
         const displayName = ghUser.name || ghUser.login;
 
         console.log(
-          `[GitHub OAuth] User: ${ghUser.login} (id=${githubId}), email=${primaryEmail}`
+          `[GitHub OAuth] User: ${ghUser.login} (id=${githubId}), hasEmail=${!!primaryEmail}`
         );
 
         // ── Account linking logic ──────────────────────────────────────
@@ -113,7 +115,7 @@ export function registerGitHubOAuthRoutes(app: Express) {
             await db.linkGithubAccount(existingByEmail.id, githubId);
             user = existingByEmail;
             console.log(
-              `[GitHub OAuth] Linked GitHub ${githubId} to existing user ${existingByEmail.id} via email ${primaryEmail}`
+              `[GitHub OAuth] Linked GitHub ${githubId} to existing user ${existingByEmail.id}`
             );
           }
         }
