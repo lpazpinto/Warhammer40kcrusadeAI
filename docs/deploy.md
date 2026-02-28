@@ -42,7 +42,7 @@ A arquitetura escolhida é **monolito** (Express serve API + assets estáticos),
 
 | Requisito | Versão | Referência |
 |---|---|---|
-| **Node.js** | 20+ (LTS recomendado) | `Dockerfile:2` — `node:20-alpine` |
+| **Node.js** | 20.11+ (LTS recomendado) | `Dockerfile:2` — `node:20-alpine`; projeto usa `import.meta.dirname` (requer >= 20.11) |
 | **pnpm** | 10.4.1 | `package.json` — campo `packageManager` |
 | **MySQL** | 8.0+ ou TiDB (MySQL-compatível) | `drizzle.config.ts` — dialect `mysql` |
 | **Git** | Qualquer versão recente | Para clonar o repositório |
@@ -68,7 +68,7 @@ Estas variáveis são fundamentais para o funcionamento da aplicação independe
 | `JWT_SECRET` | Sim | — | Segredo para assinatura de cookies de sessão. Deve ser uma string longa e aleatória (mínimo 32 caracteres). | `server/_core/env.ts:3` |
 | `PORT` | Não | `3000` | Porta HTTP do servidor. Se ocupada, o servidor tenta automaticamente até +20 portas acima. | `server/_core/index.ts` |
 | `NODE_ENV` | Não | — | Definir como `production` para deploy. Controla modo de execução (Vite dev vs. static serving). | `server/_core/env.ts:7` |
-| `OWNER_OPEN_ID` | Não | — | OpenID do proprietário. Usuários com este ID recebem role `admin` automaticamente no primeiro login. | `server/db.ts` |
+| `OWNER_OPEN_ID` | Não | — | OpenID do proprietário. Usuários com este ID recebem role `admin` automaticamente no primeiro login. | `server/_core/env.ts:6` |
 
 ### OAuth Manus (Temporárias — Fase de Migração)
 
@@ -147,7 +147,7 @@ pnpm start
 
 Após `pnpm build`, a pasta `dist/` contém:
 
-```
+```text
 dist/
 ├── client/          ← Assets estáticos (HTML, CSS, JS) gerados pelo Vite
 │   ├── index.html
@@ -270,13 +270,13 @@ A aplicação utiliza **MySQL 8.0+** ou **TiDB** (compatível com protocolo MySQ
 
 ### Formato da connection string
 
-```
+```plaintext
 mysql://usuario:senha@host:porta/nome_do_banco
 ```
 
 Exemplo para TiDB Cloud (com SSL):
 
-```
+```plaintext
 mysql://user:pass@gateway01.us-east-1.prod.aws.tidbcloud.com:4000/crusade?ssl={"rejectUnauthorized":true}
 ```
 
