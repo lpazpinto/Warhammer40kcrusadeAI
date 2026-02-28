@@ -5,7 +5,7 @@
 > **Parent Epic:** [#34 — Epic: rodar fora do Manus](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/34)  
 > **ADR relacionada:** [ADR-0001 — Deploy Infrastructure Decision](decisions/ADR-0001-deploy.md)
 
-*Última atualização: Fevereiro 2026*
+*Última atualização: 28 de fevereiro de 2026*
 
 ---
 
@@ -149,7 +149,9 @@ O parâmetro `state` será implementado da seguinte forma:
 
 ### Reutilização do JWT existente
 
-O JWT existente será reutilizado sem alterações no formato do payload:
+O JWT existente será reutilizado sem alterações no formato do payload.
+
+**Para novos usuários (sem conta Manus prévia):**
 
 ```json
 {
@@ -159,7 +161,19 @@ O JWT existente será reutilizado sem alterações no formato do payload:
 }
 ```
 
-A única diferença é que o campo `openId` para usuários GitHub será formatado como `github:<user_id>`, onde `<user_id>` é o ID numérico do GitHub (estável e imutável, diferente do username).
+**Para usuários vinculados (conta Manus existente com `githubId` preenchido):**
+
+```json
+{
+  "openId": "abc123def456",
+  "appId": "<VITE_APP_ID>",
+  "name": "octocat"
+}
+```
+
+> **Crítico (PR 3.1):** Usuários vinculados **devem** receber o JWT com o `openId` Manus original (não `github:<id>`), pois `sdk.authenticateRequest` resolve usuários pelo campo `openId` na tabela `users`. Se o JWT contiver `github:<id>` para um usuário vinculado cujo `openId` ainda é o Manus original, a autenticação falhará ou criará um registro duplicado. Apenas no PR 3.2 (após migração de `openId`) todos os JWTs usarão o formato `github:<id>`.
+
+O campo `openId` para **novos** usuários GitHub será formatado como `github:<user_id>`, onde `<user_id>` é o ID numérico do GitHub (estável e imutável, diferente do username).
 
 ### Configurações de cookie
 
@@ -441,17 +455,26 @@ Se problemas críticos forem identificados após o deploy do PR 3.1:
 ### Passos detalhados
 
 ```bash
-# 1. Identificar o commit squash do PR 3.1 na main
+# 1. Garantir que estamos na main atualizada
+git checkout main
+git pull origin main
+
+# 2. Criar branch de rollback (respeita branch protection e fluxo de PR)
+git checkout -b rollback/revert-github-oauth
+
+# 3. Identificar o commit squash do PR 3.1
 git log --oneline -10
 
-# 2. Reverter o commit squash (sem -m, pois não é merge commit)
+# 4. Reverter o commit squash (sem -m, pois não é merge commit)
 git revert <squash-commit-hash>
 
-# 3. Criar PR de rollback
-git push origin HEAD
-gh pr create --base main --title "revert: rollback GitHub OAuth (PR 3.1)" --body "Rollback do PR 3.1 devido a [descrever problema]"
+# 5. Push da branch de rollback e criar PR
+git push -u origin rollback/revert-github-oauth
+gh pr create --base main --head rollback/revert-github-oauth \
+  --title "revert: rollback GitHub OAuth (PR 3.1)" \
+  --body "Rollback do PR 3.1 devido a [descrever problema]"
 
-# 4. Após merge, redeployar
+# 6. Após merge do PR, redeployar
 ```
 
 ### O que NÃO é afetado pelo rollback
