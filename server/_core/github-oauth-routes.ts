@@ -43,7 +43,8 @@ export function registerGitHubOAuthRoutes(app: Express) {
     res.cookie(GITHUB_STATE_COOKIE, state, {
       ...cookieOptions,
       httpOnly: true,
-      secure: true,
+      sameSite: "lax",
+      secure: cookieOptions.secure,
       maxAge: STATE_COOKIE_MAX_AGE_MS,
     });
 
@@ -185,5 +186,11 @@ function parseCookieValue(
     .split(";")
     .map((c) => c.trim())
     .find((c) => c.startsWith(`${name}=`));
-  return match ? decodeURIComponent(match.slice(name.length + 1)) : undefined;
+  if (!match) return undefined;
+  const rawValue = match.slice(name.length + 1);
+  try {
+    return decodeURIComponent(rawValue);
+  } catch {
+    return undefined;
+  }
 }
