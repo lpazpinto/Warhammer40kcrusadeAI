@@ -2,8 +2,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sword } from "lucide-react";
-import { APP_LOGO, APP_TITLE, getLoginUrl, getGitHubLoginUrl } from "@/const";
-import { Link, useLocation } from "wouter";
+import { APP_TITLE, getGitHubLoginUrl } from "@/const";
+import { useLocation } from "wouter";
 import { useEffect } from "react";
 
 export default function Home() {
@@ -43,19 +43,8 @@ export default function Home() {
               Faça login para começar a gerenciar suas campanhas
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             <Button asChild className="w-full" size="lg">
-              <a href={getLoginUrl()}>Fazer Login</a>
-            </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou</span>
-              </div>
-            </div>
-            <Button asChild variant="outline" className="w-full" size="lg">
               <a href={getGitHubLoginUrl()}>
                 <svg
                   className="mr-2 h-5 w-5"
