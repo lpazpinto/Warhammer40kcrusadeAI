@@ -33,8 +33,9 @@ A arquitetura escolhida é **monolito** (Express serve API + assets estáticos),
 | Issue | Impacto |
 |---|---|
 | [#38 — Dockerfile multi-stage + /healthz](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/38) | Configuração Docker (já mergeada) |
-| [#40 — Auth GitHub OAuth (plano)](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/40) | Substituirá OAuth Manus |
-| [#41 — Implementar GitHub OAuth + sessão](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/41) | Removerá dependência de `OAUTH_SERVER_URL` Manus |
+| [#40 — Auth GitHub OAuth (plano)](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/40) | Plano de migração OAuth (concluído) |
+| [#41 — Implementar GitHub OAuth + sessão](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/41) | GitHub OAuth implementado (concluído) |
+| [#56 — Remover Manus OAuth](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/56) | Remoção completa do OAuth Manus |
 
 ---
 
@@ -70,25 +71,16 @@ Estas variáveis são fundamentais para o funcionamento da aplicação independe
 | `NODE_ENV` | Não | — | Definir como `production` para deploy. Controla modo de execução (Vite dev vs. static serving). | `server/_core/env.ts:7` |
 | `OWNER_OPEN_ID` | Não | — | OpenID do proprietário. Usuários com este ID recebem role `admin` automaticamente no primeiro login. | `server/_core/env.ts:6` |
 
-### OAuth Manus (Temporárias — Fase de Migração)
+### GitHub OAuth
 
-> **Aviso:** Estas variáveis serão **removidas** após a implementação do GitHub OAuth ([#40](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/40), [#41](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/41)). Durante o período de transição, elas são necessárias para autenticação.
+A autenticação é feita via GitHub OAuth. Crie um OAuth App em https://github.com/settings/developers.
 
 | Variável | Obrigatória | Descrição | Referência |
 |---|---|---|---|
-| `OAUTH_SERVER_URL` | Sim | URL base do servidor OAuth Manus (ex: `https://api.manus.im`) | `server/_core/env.ts:5` |
-| `VITE_APP_ID` | Sim | Identificador da aplicação no OAuth Manus | `server/_core/env.ts:2` |
-| `VITE_OAUTH_PORTAL_URL` | Sim | URL do portal de login Manus (usada no frontend) | Variável Vite (client-side) |
-
-### GitHub OAuth (Futuras — Pós-migração)
-
-> **Pendente implementação.** Estas variáveis substituirão as de OAuth Manus após as issues [#40](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/40) e [#41](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/41).
-
-| Variável | Descrição |
-|---|---|
-| `GITHUB_CLIENT_ID` | Client ID do GitHub OAuth App |
-| `GITHUB_CLIENT_SECRET` | Client Secret do GitHub OAuth App |
-| `GITHUB_CALLBACK_URL` | URL de callback (ex: `https://seudominio.com/api/oauth/callback`) |
+| `GITHUB_CLIENT_ID` | Sim | Client ID do GitHub OAuth App | `server/_core/env.ts` |
+| `GITHUB_CLIENT_SECRET` | Sim | Client Secret do GitHub OAuth App | `server/_core/env.ts` |
+| `GITHUB_CALLBACK_URL` | Sim | URL de callback (ex: `https://seudominio.com/api/oauth/github/callback`) | `server/_core/env.ts` |
+| `APP_ID` | Não | Identificador da aplicação usado em JWT. Default: `crusade-ai` | `server/_core/env.ts` |
 
 ### Cliente (Vite)
 
@@ -225,8 +217,9 @@ docker run -d \
   -p 3000:3000 \
   -e DATABASE_URL="mysql://user:pass@host:3306/dbname" \
   -e JWT_SECRET="sua-chave-secreta-longa" \
-  -e OAUTH_SERVER_URL="https://api.manus.im" \
-  -e VITE_APP_ID="seu-app-id" \
+  -e GITHUB_CLIENT_ID="seu-github-client-id" \
+  -e GITHUB_CLIENT_SECRET="seu-github-client-secret" \
+  -e GITHUB_CALLBACK_URL="https://seudominio.com/api/oauth/github/callback" \
   -e NODE_ENV=production \
   crusade-manager
 
@@ -357,9 +350,9 @@ A maioria dos provedores PaaS permite configurar health checks via dashboard. Co
 
 | Causa | Resolução |
 |---|---|
-| `OAUTH_SERVER_URL` não configurado | Definir URL do servidor OAuth (ex: `https://api.manus.im`) |
-| `VITE_APP_ID` incorreto | Verificar ID da aplicação no painel OAuth |
-| Callback URL não registrada | Registrar `https://seudominio.com/api/oauth/callback` no provedor OAuth |
+| `GITHUB_CLIENT_ID` não configurado | Criar OAuth App em https://github.com/settings/developers e definir o Client ID |
+| `GITHUB_CLIENT_SECRET` incorreto | Verificar o Client Secret no painel do GitHub OAuth App |
+| `GITHUB_CALLBACK_URL` não registrada | Registrar `https://seudominio.com/api/oauth/github/callback` no GitHub OAuth App |
 
 ### Diretório de build ausente
 

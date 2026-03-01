@@ -144,7 +144,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 | **Frontend** | React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Wouter |
 | **Backend** | Node.js 22, Express 4, tRPC 11, Superjson |
 | **Banco de Dados** | MySQL / TiDB via Drizzle ORM |
-| **Autenticação** | Manus OAuth |
+| **Autenticação** | GitHub OAuth |
 | **Testes** | Vitest |
 | **CI/CD** | GitHub Actions |
 | **Code Review** | CodeRabbit, ChatGPT Codex |
@@ -218,7 +218,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 1. **Node.js 22.x ou superior** — https://nodejs.org/
 2. **pnpm** — `npm install -g pnpm`
 3. **Git** — https://git-scm.com/
-4. **MySQL** (opcional — pode usar o banco do Manus) — https://dev.mysql.com/downloads/mysql/
+4. **MySQL** (ou TiDB) — https://dev.mysql.com/downloads/mysql/
 
 ### Instalação
 
@@ -249,12 +249,14 @@ pnpm dev
 DATABASE_URL=mysql://root:@localhost:3306/crusade_db
 JWT_SECRET=qualquer_texto_longo_e_aleatorio_aqui_12345
 VITE_APP_TITLE=Warhammer 40k Crusade AI Manager
-OAUTH_SERVER_URL=https://api.manus.im
-VITE_OAUTH_PORTAL_URL=https://auth.manus.im
+GITHUB_CLIENT_ID=seu_github_client_id
+GITHUB_CLIENT_SECRET=seu_github_client_secret
+GITHUB_CALLBACK_URL=http://localhost:3000/api/oauth/github/callback
+OWNER_OPEN_ID=github:seu_github_user_id
 OWNER_NAME=Seu Nome
 ```
 
-> **Nota:** Para produção com OAuth funcionando, publique no Manus — todas as variáveis serão configuradas automaticamente.
+> **Nota:** Crie um GitHub OAuth App em https://github.com/settings/developers para obter `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET`. Configure o callback URL apontando para `/api/oauth/github/callback`.
 
 ---
 
@@ -582,8 +584,9 @@ O container requer variáveis de ambiente para funcionar corretamente. Passe-as 
 docker run -p 3000:3000 \
   -e DATABASE_URL="mysql://user:pass@host:3306/crusade_db" \
   -e JWT_SECRET="seu_segredo_jwt_aqui" \
-  -e OAUTH_SERVER_URL="https://api.manus.im" \
-  -e VITE_APP_ID="seu_app_id" \
+  -e GITHUB_CLIENT_ID="seu_github_client_id" \
+  -e GITHUB_CLIENT_SECRET="seu_github_client_secret" \
+  -e GITHUB_CALLBACK_URL="https://seu-dominio.com/api/oauth/github/callback" \
   crusade-ai
 ```
 
@@ -593,8 +596,9 @@ docker run -p 3000:3000 \
 |---|---|---|
 | `DATABASE_URL` | Sim | Connection string MySQL/TiDB |
 | `JWT_SECRET` | Sim | Segredo para assinatura de cookies de sessão |
-| `OAUTH_SERVER_URL` | Sim | URL base do servidor OAuth |
-| `VITE_APP_ID` | Sim | ID da aplicação OAuth |
+| `GITHUB_CLIENT_ID` | Sim | Client ID do GitHub OAuth App |
+| `GITHUB_CLIENT_SECRET` | Sim | Client Secret do GitHub OAuth App |
+| `GITHUB_CALLBACK_URL` | Sim | URL de callback do GitHub OAuth (ex: `https://dominio/api/oauth/github/callback`) |
 | `OWNER_OPEN_ID` | Não | OpenID do proprietário (promovido a admin automaticamente) |
 | `BUILT_IN_FORGE_API_URL` | Não | URL da API interna (LLM, storage, etc.) |
 | `BUILT_IN_FORGE_API_KEY` | Não | Bearer token para a API interna |
