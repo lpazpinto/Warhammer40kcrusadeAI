@@ -4,7 +4,7 @@ export const ENV = {
    * Previously sourced from VITE_APP_ID (Manus OAuth). Now set via APP_ID env var.
    * If not set, falls back to "crusade-ai" as default.
    */
-  appId: process.env.APP_ID ?? "crusade-ai",
+  appId: process.env.APP_ID?.trim() || "crusade-ai",
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",

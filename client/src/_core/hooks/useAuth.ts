@@ -60,6 +60,11 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.isPending,
   ]);
 
+  // Cleanup legacy Manus localStorage key during migration
+  useEffect(() => {
+    localStorage.removeItem("manus-runtime-user-info");
+  }, []);
+
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;

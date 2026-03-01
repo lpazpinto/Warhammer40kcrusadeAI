@@ -317,7 +317,7 @@ A aplicação utiliza prefixos consistentes nos logs para facilitar filtragem e 
 | Prefixo | Módulo | Exemplo |
 |---|---|---|
 | `[Database]` | Conexão e queries | `[Database] Failed to connect: ...` |
-| `[OAuth]` | Autenticação | `[OAuth] Initialized with baseURL: ...` |
+| `[OAuth]` | Autenticação GitHub | `[OAuth] GitHub OAuth callback processed` |
 | `[Auth]` | Sessão e JWT | `[Auth] Invalid token: ...` |
 | `[Static]` | Serving de arquivos | `[Static] Could not find the build directory: ...` |
 

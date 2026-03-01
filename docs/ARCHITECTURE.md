@@ -15,7 +15,7 @@ This document describes the current architecture of the application based exclus
 | **Frontend** | React 19, TypeScript, Tailwind CSS 4, shadcn/ui | SPA with client-side routing via `wouter` |
 | **Backend** | Express 4, tRPC 11, TypeScript | RPC-first API under `/api/trpc` |
 | **Database** | MySQL / TiDB | Managed via Drizzle ORM; connection string in `DATABASE_URL` |
-| **Auth** | Manus OAuth | Session cookie; callback at `/api/oauth/callback` |
+| **Auth** | GitHub OAuth | Session cookie; callback at `/api/oauth/github/callback` |
 | **Build** | Vite (frontend), esbuild (server bundle) | `pnpm build` produces `dist/client/` (static assets) and `dist/server/index.js` (server bundle) |
 | **Package Manager** | pnpm 10.4.1 | Lockfile: `pnpm-lock.yaml` |
 | **Runtime** | Node.js >= 20.11 | `import.meta.dirname` requires Node 20.11+; CI uses Node 20; local dev uses `tsx watch` |
@@ -57,7 +57,7 @@ The repository follows a monorepo-like layout with three main areas: `client/`, 
 
 The application follows a straightforward tRPC request/response pattern. The frontend calls typed procedures via `trpc.*.useQuery()` and `trpc.*.useMutation()` hooks. The backend resolves these by querying the database through Drizzle ORM helpers in `server/db.ts` or by executing domain logic in modules like `hordeSpawn.ts` and `postBattle.ts`.
 
-Authentication is handled by Manus OAuth. The callback at `/api/oauth/callback` sets a session cookie. Every tRPC request builds a context (`server/_core/context.ts`) that optionally includes the authenticated `user`. Protected procedures (`protectedProcedure`) require a valid session; public procedures (`publicProcedure`) do not.
+Authentication is handled by GitHub OAuth. The callback at `/api/oauth/github/callback` exchanges a GitHub authorization code for an access token, fetches user info and verified emails, and sets a JWT session cookie. Every tRPC request builds a context (`server/_core/context.ts`) that optionally includes the authenticated `user`. Protected procedures (`protectedProcedure`) require a valid session; public procedures (`publicProcedure`) do not.
 
 File uploads go through the `storage.uploadImage` tRPC mutation, which calls `storagePut()` to store bytes in S3 and returns a public URL. Metadata (URL, key) is stored in the database alongside the owning entity.
 

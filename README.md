@@ -252,6 +252,7 @@ VITE_APP_TITLE=Warhammer 40k Crusade AI Manager
 GITHUB_CLIENT_ID=seu_github_client_id
 GITHUB_CLIENT_SECRET=seu_github_client_secret
 GITHUB_CALLBACK_URL=http://localhost:3000/api/oauth/github/callback
+APP_ID=crusade-ai
 OWNER_OPEN_ID=github:seu_github_user_id
 OWNER_NAME=Seu Nome
 ```
@@ -587,6 +588,7 @@ docker run -p 3000:3000 \
   -e GITHUB_CLIENT_ID="seu_github_client_id" \
   -e GITHUB_CLIENT_SECRET="seu_github_client_secret" \
   -e GITHUB_CALLBACK_URL="https://seu-dominio.com/api/oauth/github/callback" \
+  -e APP_ID="crusade-ai" \
   crusade-ai
 ```
 
@@ -599,6 +601,7 @@ docker run -p 3000:3000 \
 | `GITHUB_CLIENT_ID` | Sim | Client ID do GitHub OAuth App |
 | `GITHUB_CLIENT_SECRET` | Sim | Client Secret do GitHub OAuth App |
 | `GITHUB_CALLBACK_URL` | Sim | URL de callback do GitHub OAuth (ex: `https://dominio/api/oauth/github/callback`) |
+| `APP_ID` | Não | Identificador da aplicação usado no payload de sessão JWT (default: `crusade-ai`) |
 | `OWNER_OPEN_ID` | Não | OpenID do proprietário (promovido a admin automaticamente) |
 | `BUILT_IN_FORGE_API_URL` | Não | URL da API interna (LLM, storage, etc.) |
 | `BUILT_IN_FORGE_API_KEY` | Não | Bearer token para a API interna |
