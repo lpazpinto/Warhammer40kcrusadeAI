@@ -112,7 +112,7 @@ export function registerGitHubOAuthRoutes(app: Express) {
           // Try to find existing user by verified primary email
           const existingByEmail = await db.getUserByEmail(primaryEmail);
           if (existingByEmail) {
-            // Link GitHub account to existing Manus user
+            // Link GitHub account to existing user
             await db.linkGithubAccount(existingByEmail.id, githubId);
             user = existingByEmail;
             console.log(
@@ -155,7 +155,7 @@ export function registerGitHubOAuthRoutes(app: Express) {
         });
 
         // ── Create session JWT ─────────────────────────────────────────
-        // Use the user's existing openId (preserves Manus identity for linked users)
+        // Use the user's existing openId (preserves identity for linked users)
         const sessionToken = await sdk.createSessionToken(user.openId, {
           name: displayName,
           expiresInMs: ONE_YEAR_MS,

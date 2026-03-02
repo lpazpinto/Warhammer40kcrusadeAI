@@ -1,8 +1,7 @@
 export const ENV = {
   /**
    * Application identifier used in JWT session tokens.
-   * Previously sourced from VITE_APP_ID (Manus OAuth). Now set via APP_ID env var.
-   * If not set, falls back to "crusade-ai" as default.
+   * Set via APP_ID env var. Falls back to "crusade-ai" if not set.
    */
   appId: process.env.APP_ID?.trim() || "crusade-ai",
   cookieSecret: process.env.JWT_SECRET ?? "",
