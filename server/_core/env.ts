@@ -14,6 +14,6 @@ export const ENV = {
   githubClientId: process.env.GITHUB_CLIENT_ID ?? "",
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
   githubCallbackUrl: process.env.GITHUB_CALLBACK_URL ?? "",
-  // TiDB TLS
-  tidbCaPem: process.env.TIDB_CA_PEM ?? "",
+  // TiDB TLS — normalize literal \n sequences (common from PaaS env vars) to real newlines
+  tidbCaPem: (process.env.TIDB_CA_PEM ?? "").replace(/\\n/g, "\n").trim(),
 };
