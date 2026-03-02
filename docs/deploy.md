@@ -65,6 +65,7 @@ Estas variáveis são fundamentais para o funcionamento da aplicação independe
 | Variável | Obrigatória | Default | Descrição | Referência |
 |---|---|---|---|---|
 | `DATABASE_URL` | Sim | — | Connection string MySQL/TiDB no formato `mysql://user:pass@host:port/database` | `server/_core/env.ts:4` |
+| `TIDB_CA_PEM` | Não | — | Certificado CA PEM do TiDB Cloud para conexão SSL. Quando definido, habilita `ssl: { ca, rejectUnauthorized: true }`. Omitir para dev local. | `server/db.ts` |
 | `JWT_SECRET` | Sim | — | Segredo para assinatura de cookies de sessão. Deve ser uma string longa e aleatória (mínimo 32 caracteres). | `server/_core/env.ts:3` |
 | `PORT` | Não | `3000` | Porta HTTP do servidor. Se ocupada, o servidor tenta automaticamente até +20 portas acima. | `server/_core/index.ts` |
 | `NODE_ENV` | Não | — | Definir como `production` para deploy. Controla modo de execução (Vite dev vs. static serving). | `server/_core/env.ts:7` |
@@ -266,11 +267,13 @@ A aplicação utiliza **MySQL 8.0+** ou **TiDB** (compatível com protocolo MySQ
 mysql://usuario:senha@host:porta/nome_do_banco
 ```
 
-Exemplo para TiDB Cloud (com SSL):
+Exemplo para TiDB Cloud:
 
 ```plaintext
-mysql://user:pass@gateway01.us-east-1.prod.aws.tidbcloud.com:4000/crusade?ssl={"rejectUnauthorized":true}
+mysql://user:pass@gateway01.us-east-1.prod.aws.tidbcloud.com:4000/crusade
 ```
+
+> **Nota:** O certificado CA para SSL deve ser configurado separadamente via `TIDB_CA_PEM` (ver seção [Variáveis de Ambiente](#variáveis-de-ambiente)). Não é necessário adicionar parâmetros SSL à connection string.
 
 ### Migrações
 
@@ -339,7 +342,7 @@ A maioria dos provedores PaaS permite configurar health checks via dashboard. Co
 | `DATABASE_URL` não definido ou vazio | Verificar variáveis de ambiente no provedor |
 | Servidor MySQL/TiDB inacessível | Verificar firewall, security groups, e IP allowlist |
 | Credenciais inválidas | Testar conexão com `mysql -u user -p -h host -P port` |
-| SSL necessário (TiDB Cloud) | Adicionar `?ssl={"rejectUnauthorized":true}` à connection string |
+| SSL necessário (TiDB Cloud) | Definir `TIDB_CA_PEM` com o conteúdo PEM do certificado CA fornecido pelo TiDB Cloud |
 
 ### Configuração OAuth
 
@@ -454,8 +457,12 @@ Lista de verificação para migração de produção. Copie este checklist para 
 
 1. Criar cluster Serverless no dashboard do TiDB Cloud
 2. Copiar connection string (formato MySQL padrão)
-3. Adicionar `?ssl={"rejectUnauthorized":true}` à connection string
-4. Definir como `DATABASE_URL` nas variáveis de ambiente do provedor
+3. Definir como `DATABASE_URL` nas variáveis de ambiente do provedor
+4. Para habilitar SSL com certificado CA:
+   - No painel do TiDB Cloud, baixe o arquivo CA (`.pem`) do cluster
+   - No Railway (aba **Variables**), crie a variável `TIDB_CA_PEM` colando o conteúdo completo do arquivo `.pem`
+   - A aplicação detecta `TIDB_CA_PEM` automaticamente e usa `ssl: { ca, rejectUnauthorized: true }`
+5. Para dev local sem TLS, omita `TIDB_CA_PEM` — a conexão funciona sem SSL
 
 ---
 
