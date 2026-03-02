@@ -1,7 +1,7 @@
 # Runbook de Deploy — Warhammer 40K Crusade AI Manager
 
-> **Estado:** Documento de migração — reflete o período de transição da plataforma Manus para hospedagem independente.
-> Para contexto completo sobre a estratégia de saída, consulte [`docs/exit-manus/00-executive-summary.md`](exit-manus/00-executive-summary.md).
+> **Estado:** Runbook de deploy para hospedagem independente (Railway + Monolito + TiDB).
+> Para contexto histórico sobre a migração, consulte [`docs/exit-manus/00-executive-summary.md`](exit-manus/00-executive-summary.md).
 
 *Última atualização: Fevereiro 2026*
 
@@ -9,7 +9,7 @@
 
 ## Sumário
 
-1. [Contexto de Migração](#contexto-de-migração)
+1. [Contexto](#contexto)
 2. [Pré-requisitos](#pré-requisitos)
 3. [Variáveis de Ambiente](#variáveis-de-ambiente)
 4. [Deploy Node.js (Baseline)](#deploy-nodejs-baseline)
@@ -22,9 +22,9 @@
 
 ---
 
-## Contexto de Migração
+## Contexto
 
-Este runbook documenta como implantar a aplicação **fora da plataforma Manus**, de forma agnóstica a provedores. O projeto está em período de transição, o que significa que algumas dependências da plataforma Manus ainda existem no código e serão removidas progressivamente.
+Este runbook documenta como implantar a aplicação de forma agnóstica a provedores.
 
 A arquitetura escolhida é **monolito** (Express serve API + assets estáticos), conforme documentado em [`docs/exit-manus/decisions/ADR-0001-deploy.md`](exit-manus/decisions/ADR-0001-deploy.md). O servidor Express entrega tanto a API tRPC (em `/api/trpc`) quanto o frontend React (SPA com fallback para `index.html`).
 
@@ -32,10 +32,9 @@ A arquitetura escolhida é **monolito** (Express serve API + assets estáticos),
 
 | Issue | Impacto |
 |---|---|
-| [#38 — Dockerfile multi-stage + /healthz](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/38) | Configuração Docker (já mergeada) |
-| [#40 — Auth GitHub OAuth (plano)](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/40) | Plano de migração OAuth (concluído) |
+| [#38 — Dockerfile multi-stage + /healthz](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/38) | Configuração Docker (concluída) |
 | [#41 — Implementar GitHub OAuth + sessão](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/41) | GitHub OAuth implementado (concluído) |
-| [#56 — Remover Manus OAuth](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/56) | Remoção completa do OAuth Manus |
+| [#42 — Remover deps Manus e limpar docs/env](https://github.com/lpazpinto/Warhammer40kcrusadeAI/issues/42) | Limpeza de dependências Manus (concluída) |
 
 ---
 

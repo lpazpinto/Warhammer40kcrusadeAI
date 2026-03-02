@@ -41,7 +41,7 @@ export function useAuth(options?: UseAuthOptions) {
     }
   }, [logoutMutation, utils]);
 
-  // Persist auth state and cleanup legacy key
+  // Persist auth state and remove legacy key from previous auth implementation
   useEffect(() => {
     localStorage.removeItem("manus-runtime-user-info");
     if (meQuery.data) {

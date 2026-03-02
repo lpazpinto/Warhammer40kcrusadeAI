@@ -1,6 +1,6 @@
 # Warhammer 40k Crusade AI Manager
 
-Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 com IA controlando a Horda inimiga, desenvolvido com um pipeline de automação baseado em **GitHub Actions**, **CodeRabbit**, **ChatGPT Codex** e **Manus AI**.
+Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 com IA controlando a Horda inimiga, desenvolvido com um pipeline de automação baseado em **GitHub Actions**, **CodeRabbit** e **ChatGPT Codex**.
 
 > **Repositório:** [lpazpinto/Warhammer40kcrusadeAI](https://github.com/lpazpinto/Warhammer40kcrusadeAI)
 
@@ -148,7 +148,7 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 | **Testes** | Vitest |
 | **CI/CD** | GitHub Actions |
 | **Code Review** | CodeRabbit, ChatGPT Codex |
-| **Agente de Desenvolvimento** | Manus AI |
+| **Agente de Desenvolvimento** | ChatGPT Codex, GitHub Copilot |
 
 ---
 
@@ -158,8 +158,8 @@ Sistema completo de gerenciamento de campanhas de Cruzada do Warhammer 40.000 co
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                              # CI: lint, test, build
-│       ├── manus_autopilot_coderabbit.yml      # Autopilot: review bots → Manus
-│       ├── manus_autopilot_checks.yml          # Autopilot: CI falhou → Manus
+│       ├── manus_autopilot_coderabbit.yml      # Autopilot: review bots → Codex
+│       ├── manus_autopilot_checks.yml          # Autopilot: CI falhou → Codex
 │       └── enable_auto_merge_after_checks.yml  # Auto-merge de PRs manus/*
 ├── client/
 │   ├── src/
@@ -316,9 +316,9 @@ main ──┬── manus/feature-xyz ──► PR ──► Review (CodeRabbit
    @coderabbitai review"
    ```
 
-4. **Aguardar reviews automáticos** do CodeRabbit e do ChatGPT Codex. Se houver feedback acionável, o Manus será acionado automaticamente para implementar as correções.
+4. **Aguardar reviews automáticos** do CodeRabbit e do ChatGPT Codex. Se houver feedback acionável, o Codex será acionado automaticamente para implementar as correções.
 
-5. **Verificar CI verde** (lint, test, build). Se o CI falhar em um PR `manus/*`, o Manus será acionado automaticamente para corrigir.
+5. **Verificar CI verde** (lint, test, build). Se o CI falhar em um PR `manus/*`, o Codex será acionado automaticamente para corrigir.
 
 6. **Merge automático** (squash): PRs `manus/*` com checks verdes e sem conflitos são mergeados automaticamente pelo workflow de auto-merge.
 
@@ -346,7 +346,7 @@ PR aberto
           ├── Debounce de 15 minutos (evita placeholder do CodeRabbit)
           ├── Filtra feedback "actionable" (ignora "reviewing...", "in progress...")
           │
-          └──► Manus AI recebe o feedback agregado
+          └──► Codex recebe o feedback agregado
                   │
                   ├── Lê TODOS os comentários do PR (todas as threads)
                   ├── Implementa as correções necessárias
@@ -364,12 +364,12 @@ CodeRabbit faz review automático de cada Pull Request. Ele analisa o diff e pos
 
 O ChatGPT Codex também faz review automático, postando um comentário "Codex Review" no PR. As sugestões do Codex tendem a focar em **lógica de negócio** além de estilo e bugs, complementando o CodeRabbit.
 
-### 3. Manus AI (Agente de Desenvolvimento)
+### 3. Codex / Copilot (Agente de Desenvolvimento)
 
-O Manus é o agente que **implementa** as mudanças. Ele é acionado automaticamente em dois cenários:
+O Codex é o agente que **implementa** as mudanças. Ele é acionado automaticamente em dois cenários:
 
-- **Feedback de review:** Quando CodeRabbit ou Codex postam feedback acionável, o Manus recebe um prompt agregado com todo o feedback e implementa as correções na mesma branch do PR.
-- **Falha de CI:** Quando o CI ou CodeQL falham em um PR `manus/*`, o Manus é acionado para identificar e corrigir o primeiro erro.
+- **Feedback de review:** Quando CodeRabbit ou Codex postam feedback acionável, o Codex recebe um prompt agregado com todo o feedback e implementa as correções na mesma branch do PR.
+- **Falha de CI:** Quando o CI ou CodeQL falham em um PR `manus/*`, o Codex é acionado para identificar e corrigir o primeiro erro.
 
 ### Proteções Anti-Loop
 
@@ -378,9 +378,9 @@ O pipeline usa **labels** no GitHub para evitar loops e tasks duplicadas:
 | Label | Significado |
 |---|---|
 | `manus-feedback-pending` | Debounce em andamento (15 min). Não disparar outra task. |
-| `manus-busy` | Task do Manus em andamento. Não criar nova task. |
+| `manus-busy` | Task do agente em andamento. Não criar nova task. |
 
-O label `manus-busy` é adicionado antes de criar a task e removido quando os checks passam. Se o CI falhar e o PR já estiver com `manus-busy`, nenhuma task adicional é criada.
+O label `manus-busy` é adicionado antes de criar a task e removido quando os checks passam. Se o CI falhar e o PR já estiver com `manus-busy`, nenhuma nova task é criada.
 
 ---
 
@@ -399,7 +399,7 @@ O repositório possui 4 workflows ativos:
 
 Este é o workflow principal de integração contínua. Executa lint (se presente), testes e build para garantir que o código está funcional.
 
-### 2. `Manus Autopilot (CodeRabbit + Codex)` (`manus_autopilot_coderabbit.yml`)
+### 2. `Autopilot (CodeRabbit + Codex)` (`manus_autopilot_coderabbit.yml`)
 
 | Campo | Valor |
 |---|---|
@@ -408,18 +408,18 @@ Este é o workflow principal de integração contínua. Executa lint (se present
 | **Debounce** | 15 minutos após o primeiro comentário detectado |
 | **Heurística** | Ignora comentários curtos ("reviewing", "in progress"); considera actionable se contém sinais como "should", "fix", "bug", "security", "nitpick", "finishing touches", ou se o texto tem 600+ caracteres |
 | **Labels** | `manus-feedback-pending` (debounce), `manus-busy` (task ativa) |
-| **Ação** | Agrega feedback das últimas 24h dos bots e cria task no Manus com prompt instruindo a ler TODO o feedback do PR |
+| **Ação** | Agrega feedback das últimas 24h dos bots e cria task no Codex com prompt instruindo a ler TODO o feedback do PR |
 
-### 3. `Manus Autopilot (checks)` (`manus_autopilot_checks.yml`)
+### 3. `Autopilot (checks)` (`manus_autopilot_checks.yml`)
 
 | Campo | Valor |
 |---|---|
 | **Trigger** | `workflow_run` quando `CI` ou `CodeQL` completam |
 | **Condição de Ação** | Check falhou (`failure`, `cancelled`, `timed_out`, `action_required`) em PR `manus/*` que está open e não draft |
 | **Em caso de sucesso** | Remove label `manus-busy` e comenta no PR que o autopilot foi liberado |
-| **Em caso de falha** | Adiciona label `manus-busy` e cria task no Manus para corrigir o primeiro erro do run |
+| **Em caso de falha** | Adiciona label `manus-busy` e cria task no Codex para corrigir o primeiro erro do run |
 
-### 4. `Auto-merge Manus PRs` (`enable_auto_merge_after_checks.yml`)
+### 4. `Auto-merge agent PRs` (`enable_auto_merge_after_checks.yml`)
 
 | Campo | Valor |
 |---|---|
@@ -440,7 +440,7 @@ PR criado/atualizado
   │       ├── ✅ Success ──► Auto-merge tenta squash (se manus/*)
   │       │                    └── Remove manus-busy
   │       │
-  │       └── ❌ Failure ──► Manus Autopilot (checks) cria task para corrigir
+  │       └── ❌ Failure ──► Autopilot (checks) cria task para corrigir
   │                            └── Adiciona manus-busy
   │
   └──► CodeRabbit / Codex postam review
@@ -448,7 +448,7 @@ PR criado/atualizado
           ├── Debounce 15 min
           ├── Filtra actionable
           │
-          └──► Manus Autopilot (CodeRabbit + Codex) cria task
+          └──► Autopilot (CodeRabbit + Codex) cria task
                  └── Adiciona manus-busy
 ```
 
@@ -456,21 +456,21 @@ PR criado/atualizado
 
 ## Troubleshooting
 
-### Problema: Placeholder do CodeRabbit gera task vazia no Manus
+### Problema: Placeholder do CodeRabbit gera task vazia
 
-**Sintoma:** O CodeRabbit posta um comentário inicial curto ("I'm reviewing this PR...") e o Manus é acionado antes do review real chegar.
+**Sintoma:** O CodeRabbit posta um comentário inicial curto ("I'm reviewing this PR...") e o agente é acionado antes do review real chegar.
 
 **Solução:** O workflow `manus_autopilot_coderabbit.yml` implementa um debounce de 15 minutos. Após detectar o primeiro comentário de bot, ele espera 15 minutos e só então verifica se há feedback acionável. Comentários curtos como "reviewing", "in progress" e "starting review" são filtrados pela heurística.
 
 ---
 
-### Problema: Múltiplas tasks do Manus em loop
+### Problema: Múltiplas tasks do agente em loop
 
-**Sintoma:** O Manus faz push de correções, o que dispara novos reviews do CodeRabbit, que disparam novas tasks do Manus, criando um loop.
+**Sintoma:** O agente faz push de correções, o que dispara novos reviews do CodeRabbit, que disparam novas tasks, criando um loop.
 
 **Solução:** O sistema usa duas labels de proteção:
 - `manus-feedback-pending` — indica que o debounce está em andamento; nenhuma nova task é criada enquanto esta label existir.
-- `manus-busy` — indica que já existe uma task do Manus em andamento; o workflow não cria outra task.
+- `manus-busy` — indica que já existe uma task do agente em andamento; o workflow não cria outra task.
 
 A label `manus-busy` é removida automaticamente quando os checks passam (via `manus_autopilot_checks.yml`).
 
@@ -509,7 +509,7 @@ git push
 
 **Sintoma:** O CI falha com erro de variável de ambiente não encontrada (ex.: `DATABASE_URL`).
 
-**Solução:** O Manus Autopilot (checks) detecta essa situação e, em vez de tentar corrigir, comenta no PR indicando qual variável ou serviço está faltando. Nesse caso, adicione o secret necessário em **Settings → Secrets and variables → Actions** no GitHub.
+**Solução:** O Autopilot (checks) detecta essa situação e, em vez de tentar corrigir, comenta no PR indicando qual variável ou serviço está faltando. Nesse caso, adicione o secret necessário em **Settings → Secrets and variables → Actions** no GitHub.
 
 ---
 
@@ -652,7 +652,7 @@ Este é um projeto pessoal, mas sugestões são bem-vindas. Abra uma issue para 
 
 ## AI workflow (agents)
 
-Este repositório usa agentes automatizados (Manus, CodeRabbit, Codex, Dependabot).
+Este repositório usa agentes automatizados (CodeRabbit, Codex, GitHub Copilot, Dependabot).
 Regras obrigatórias de contribuição por agentes (branching, PRs, checks, segurança): ver AGENTS.md.
 
 ---

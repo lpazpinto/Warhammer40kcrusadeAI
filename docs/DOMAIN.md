@@ -14,7 +14,7 @@ The database schema lives in `drizzle/schema.ts`. The table below summarises eve
 
 | Entity | DB Table | Purpose | Key Fields |
 |---|---|---|---|
-| **User** | `users` | Authenticated account (Manus OAuth). Has a `role` enum (`admin` \| `user`). | `openId`, `role` |
+| **User** | `users` | Authenticated account (GitHub OAuth). Has a `role` enum (`admin` \| `user`). | `openId`, `role` |
 | **Campaign** | `campaigns` | A Crusade campaign with 4 narrative phases. Owner is a `User`. | `hordeFaction`, `currentPhase`, `battlesPerPhase`, `phase1Result`…`phase4Result` |
 | **Player** | `players` | A "Lord Commander" inside a campaign. Optionally linked to a `User` for multiplayer. | `faction`, `requisitionPoints`, `supplyLimit`, `supplyPoints`, `commandPoints`, `secretObjective` |
 | **CrusadeUnit** | `crusadeUnits` | A unit in a player's Order of Battle (the "Crusade Card"). Tracks XP, rank, honours, scars. | `rank` (enum: `battle_ready` → `legendary`), `experiencePoints`, `battleHonours`, `battleScars` |
