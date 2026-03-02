@@ -1,5 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { createPool } from "mysql2";
 import { 
   InsertUser, 
   users, 
@@ -36,7 +37,15 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      if (ENV.tidbCaPem) {
+        const pool = createPool({
+          uri: process.env.DATABASE_URL,
+          ssl: { ca: ENV.tidbCaPem, rejectUnauthorized: true },
+        });
+        _db = drizzle(pool);
+      } else {
+        _db = drizzle(process.env.DATABASE_URL);
+      }
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
