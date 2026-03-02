@@ -78,7 +78,7 @@ The following commands are available in `package.json`:
 | `pnpm test` | Run Vitest test suite |
 | `pnpm db:push` | Generate and apply database migrations (`drizzle-kit generate && drizzle-kit migrate`) |
 
-**Required environment variables** (see `server/_core/env.ts`): `DATABASE_URL`, `JWT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL`, `OWNER_OPEN_ID`, `OWNER_NAME`, `BUILT_IN_FORGE_API_URL`, `BUILT_IN_FORGE_API_KEY`. Optional: `APP_ID` (default: `crusade-ai`).
+**Required environment variables** (see `server/_core/env.ts`): `DATABASE_URL`, `JWT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL`, `OWNER_OPEN_ID`, `BUILT_IN_FORGE_API_URL`, `BUILT_IN_FORGE_API_KEY`. Optional: `APP_ID` (default: `crusade-ai`).
 
 **TODO:** Document how to set up a local MySQL/TiDB instance for fully offline development.
 

@@ -41,11 +41,17 @@ export function useAuth(options?: UseAuthOptions) {
     }
   }, [logoutMutation, utils]);
 
+  // Persist auth state and cleanup legacy key
+  useEffect(() => {
+    localStorage.removeItem("manus-runtime-user-info");
+    if (meQuery.data) {
+      localStorage.setItem("app-user-info", JSON.stringify(meQuery.data));
+    } else {
+      localStorage.removeItem("app-user-info");
+    }
+  }, [meQuery.data]);
+
   const state = useMemo(() => {
-    localStorage.setItem(
-      "app-user-info",
-      JSON.stringify(meQuery.data)
-    );
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,
@@ -59,11 +65,6 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.error,
     logoutMutation.isPending,
   ]);
-
-  // Cleanup legacy Manus localStorage key during migration
-  useEffect(() => {
-    localStorage.removeItem("manus-runtime-user-info");
-  }, []);
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
