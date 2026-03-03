@@ -127,8 +127,8 @@ pnpm build
 # Gera: dist/client/ (assets estáticos) e dist/server/index.js (servidor)
 
 # 5. Executar migrações do banco de dados
-pnpm db:push
-# Executa: drizzle-kit generate && drizzle-kit migrate
+pnpm db:migrate
+# Aplica migrações SQL já geradas (sem drizzle-kit)
 
 # 6. Iniciar o servidor em modo produção
 pnpm start
@@ -277,15 +277,20 @@ mysql://user:pass@gateway01.us-east-1.prod.aws.tidbcloud.com:4000/crusade
 
 ### Migrações
 
-O comando `pnpm db:push` executa duas operações em sequência:
+O projeto segue um fluxo de dois passos:
 
-1. `drizzle-kit generate` — gera arquivos de migração SQL a partir do schema em `drizzle/schema.ts`
-2. `drizzle-kit migrate` — aplica as migrações pendentes no banco de dados
+1. **Desenvolvimento:** `pnpm db:generate` — gera arquivos de migração SQL a partir do schema em `drizzle/schema.ts` (requer `drizzle-kit`).
+2. **Produção:** `pnpm db:migrate` — aplica as migrações já geradas e commitadas no banco de dados (não requer `drizzle-kit`).
 
 ```bash
-# Executar migrações (requer DATABASE_URL configurado)
-pnpm db:push
+# Gerar migrações (ambiente de desenvolvimento, requer DATABASE_URL)
+pnpm db:generate
+
+# Aplicar migrações (produção/CI, requer DATABASE_URL)
+pnpm db:migrate
 ```
+
+> **Railway Pre-Deploy Command:** `pnpm db:migrate`
 
 ### Seed de dados (opcional)
 
@@ -394,7 +399,7 @@ Lista de verificação para migração de produção. Copie este checklist para 
 ### Pré-cutover
 
 - [ ] Banco de dados provisionado (MySQL 8+ ou TiDB)
-- [ ] Connection string testada localmente (`pnpm db:push` funciona)
+- [ ] Connection string testada localmente (`pnpm db:migrate` funciona)
 - [ ] DNS configurado (se usando domínio customizado)
 - [ ] Variáveis de ambiente configuradas no provedor (ver seção acima)
 - [ ] Build local bem-sucedido (`pnpm build` sem erros)
@@ -403,7 +408,7 @@ Lista de verificação para migração de produção. Copie este checklist para 
 
 ### Cutover
 
-- [ ] Executar migrações no banco de produção (`pnpm db:push`)
+- [ ] Executar migrações no banco de produção (`pnpm db:migrate`)
 - [ ] Executar seed de dados se necessário (`node scripts/seed-resupply-cards.mjs`)
 - [ ] Deploy da aplicação (Node.js direto ou Docker)
 - [ ] Verificar health check: `curl https://seudominio.com/healthz`
