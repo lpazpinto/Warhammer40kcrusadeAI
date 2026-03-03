@@ -58,6 +58,23 @@ export function getGitHubAuthUrl(state: string): string {
 }
 
 /**
+ * Structured error thrown when the GitHub token exchange fails.
+ * Contains only safe diagnostic fields — never the code, secret, or token.
+ */
+export class TokenExchangeError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly errorCode: string | undefined,
+    public readonly errorDescription: string | undefined
+  ) {
+    super(
+      `GitHub token exchange failed: ${status} ${errorCode ?? "unknown"}`
+    );
+    this.name = "TokenExchangeError";
+  }
+}
+
+/**
  * Exchange an authorization code for an access token.
  * POST https://github.com/login/oauth/access_token
  */
@@ -75,21 +92,18 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
     }),
   });
 
-  if (!response.ok) {
-    throw new Error(
-      `GitHub token exchange failed: ${response.status} ${response.statusText}`
-    );
-  }
-
   const data = (await response.json()) as {
     access_token?: string;
     error?: string;
     error_description?: string;
+    message?: string;
   };
 
-  if (data.error || !data.access_token) {
-    throw new Error(
-      `GitHub token exchange error: ${data.error_description || data.error || "no access_token"}`
+  if (!response.ok || data.error || !data.access_token) {
+    throw new TokenExchangeError(
+      response.status,
+      data.error,
+      data.error_description ?? data.message
     );
   }
 
