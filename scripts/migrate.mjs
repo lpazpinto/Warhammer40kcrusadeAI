@@ -15,7 +15,7 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const tidbCaPem = process.env.TIDB_CA_PEM?.trim() || undefined;
+const tidbCaPem = (process.env.TIDB_CA_PEM ?? "").replace(/\\n/g, "\n").trim() || undefined;
 
 const pool = createPool(
   tidbCaPem
@@ -34,7 +34,7 @@ try {
   console.log("[migrate] Migrations applied successfully.");
 } catch (err) {
   console.error("[migrate] Migration failed:", err);
-  process.exit(1);
+  process.exitCode = 1;
 } finally {
   await pool.end();
 }
