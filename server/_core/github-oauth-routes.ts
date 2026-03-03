@@ -20,6 +20,7 @@ import {
   getGitHubUser,
   getGitHubUserEmails,
   findPrimaryVerifiedEmail,
+  TokenExchangeError,
 } from "./github-oauth";
 
 const GITHUB_STATE_COOKIE = "github_oauth_state";
@@ -168,7 +169,22 @@ export function registerGitHubOAuthRoutes(app: Express) {
 
         res.redirect(302, "/");
       } catch (error) {
-        console.error("[GitHub OAuth] Callback failed:", error);
+        if (error instanceof TokenExchangeError) {
+          const proto =
+            (req.headers["x-forwarded-proto"] as string | undefined) ??
+            req.protocol;
+          const host = req.headers.host ?? "unknown";
+          console.error(
+            "[GitHub OAuth] Token exchange failed —",
+            `status=${error.status}`,
+            `error=${error.errorCode ?? "none"}`,
+            `error_description=${error.errorDescription ?? "none"}`,
+            `redirect_uri=${ENV.githubCallbackUrl ?? "(not set)"}`,
+            `incoming=${proto}://${host}`
+          );
+        } else {
+          console.error("[GitHub OAuth] Callback failed:", error);
+        }
         res.status(500).json({ error: "GitHub OAuth callback failed" });
       }
     }
