@@ -29,6 +29,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 
 async function startServer() {
   const app = express();
+  // Trust the first proxy (Railway / reverse-proxy) so that
+  // req.ip and X-Forwarded-* headers are used correctly and
+  // express-rate-limit no longer throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+  app.set("trust proxy", 1);
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
