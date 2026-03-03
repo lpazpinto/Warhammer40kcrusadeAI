@@ -31,7 +31,26 @@ console.log("[migrate] Applying migrations from", migrationsFolder);
 
 try {
   await migrate(db, { migrationsFolder });
-  console.log("[migrate] Migrations applied successfully.");
+
+  // Safety check: assert users.githubId column exists so the deploy never
+  // silently succeeds with an incomplete schema.
+  const [checkRows] = await pool.query(`
+    SELECT COUNT(*) AS cnt
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND COLUMN_NAME = 'githubId'
+  `);
+  const columnExists = Number(checkRows[0]?.cnt ?? 0) > 0;
+  if (!columnExists) {
+    console.error(
+      "[migrate] SAFETY CHECK FAILED: users.githubId column is missing after migration. Deploy aborted."
+    );
+    process.exitCode = 1;
+  } else {
+    console.log("[migrate] Migrations applied successfully.");
+    console.log("[migrate] Safety check passed: users.githubId column exists.");
+  }
 } catch (err) {
   console.error("[migrate] Migration failed:", err);
   process.exitCode = 1;
