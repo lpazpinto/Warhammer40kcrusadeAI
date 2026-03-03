@@ -170,16 +170,22 @@ export function registerGitHubOAuthRoutes(app: Express) {
         res.redirect(302, "/");
       } catch (error) {
         if (error instanceof TokenExchangeError) {
-          const proto =
-            (req.headers["x-forwarded-proto"] as string | undefined) ??
-            req.protocol;
+          const xForwardedProto = req.headers["x-forwarded-proto"];
+          let proto: string;
+          if (Array.isArray(xForwardedProto)) {
+            proto = xForwardedProto[0]?.split(",")[0]?.trim() || req.protocol;
+          } else if (typeof xForwardedProto === "string") {
+            proto = xForwardedProto.split(",")[0].trim() || req.protocol;
+          } else {
+            proto = req.protocol;
+          }
           const host = req.headers.host ?? "unknown";
           console.error(
             "[GitHub OAuth] Token exchange failed —",
             `status=${error.status}`,
             `error=${error.errorCode ?? "none"}`,
             `error_description=${error.errorDescription ?? "none"}`,
-            `redirect_uri=${ENV.githubCallbackUrl ?? "(not set)"}`,
+            `redirect_uri=${ENV.githubCallbackUrl || "(not set)"}`,
             `incoming=${proto}://${host}`
           );
         } else {
