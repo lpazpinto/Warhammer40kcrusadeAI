@@ -44,8 +44,9 @@ RUN pnpm install --prod --frozen-lockfile
 COPY --from=builder /app/dist ./dist
 
 # Copy migration runner and SQL migration files needed for db:migrate
-COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/scripts/migrate.mjs ./scripts/
+COPY --from=builder /app/drizzle/*.sql ./drizzle/
+COPY --from=builder /app/drizzle/meta ./drizzle/meta
 
 # Transfer ownership of the app directory to the non-root user
 RUN chown -R appuser:appgroup /app
