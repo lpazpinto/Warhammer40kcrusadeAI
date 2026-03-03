@@ -29,10 +29,27 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 
 async function startServer() {
   const app = express();
-  // Trust the first proxy (Railway / reverse-proxy) so that
-  // req.ip and X-Forwarded-* headers are used correctly and
-  // express-rate-limit no longer throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
-  app.set("trust proxy", 1);
+
+  const trustProxyEnv = process.env.TRUST_PROXY_HOPS;
+  let trustProxyHops: number | undefined;
+
+  if (trustProxyEnv !== undefined) {
+    const parsed = Number(trustProxyEnv);
+    if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed > 0) {
+      trustProxyHops = parsed;
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    trustProxyHops = 1;
+  }
+
+  if (trustProxyHops !== undefined) {
+    // Trust the configured number of proxies so that
+    // req.ip and X-Forwarded-* headers are used correctly when
+    // running behind a reverse proxy (e.g., Railway) and to avoid
+    // express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+    app.set("trust proxy", trustProxyHops);
+  }
+
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
