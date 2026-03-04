@@ -88,8 +88,6 @@ Variáveis prefixadas com `VITE_` são injetadas no bundle do frontend em tempo 
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `VITE_APP_TITLE` | Não | Título exibido no header e login |
-| `VITE_APP_LOGO` | Não | URL da imagem do logo |
 | `VITE_ANALYTICS_ENDPOINT` | Não | Endpoint de analytics (se configurado) |
 | `VITE_ANALYTICS_WEBSITE_ID` | Não | ID do website no serviço de analytics |
 

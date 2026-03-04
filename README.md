@@ -248,7 +248,6 @@ pnpm dev
 ```env
 DATABASE_URL=mysql://root:@localhost:3306/crusade_db
 JWT_SECRET=qualquer_texto_longo_e_aleatorio_aqui_12345
-VITE_APP_TITLE=Warhammer 40k Crusade AI Manager
 GITHUB_CLIENT_ID=seu_github_client_id
 GITHUB_CLIENT_SECRET=seu_github_client_secret
 GITHUB_CALLBACK_URL=http://localhost:3000/api/oauth/github/callback
