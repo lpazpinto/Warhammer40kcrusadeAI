@@ -126,7 +126,8 @@ try {
       }
     }
 
-    // Fix currentPhase default: old migrations used DEFAULT 0; current schema uses DEFAULT 1.
+    // Fix currentPhase default: current schema requires DEFAULT 1.
+    // Repair whenever the default is anything other than 1 (including NULL or legacy 0).
     const [phaseColRows] = await pool.query(`
       SELECT COLUMN_DEFAULT
       FROM information_schema.COLUMNS
@@ -134,12 +135,16 @@ try {
         AND TABLE_NAME = 'campaigns'
         AND COLUMN_NAME = 'currentPhase'
     `);
-    if (
-      phaseColRows.length > 0 &&
-      phaseColRows[0].COLUMN_DEFAULT !== null &&
-      String(phaseColRows[0].COLUMN_DEFAULT) === "0"
-    ) {
-      console.log("[migrate] Fixing campaigns.currentPhase default from 0 to 1...");
+    const currentPhaseDefault =
+      phaseColRows.length > 0
+        ? phaseColRows[0].COLUMN_DEFAULT !== null
+          ? String(phaseColRows[0].COLUMN_DEFAULT)
+          : null
+        : null;
+    if (currentPhaseDefault !== "1") {
+      console.log(
+        `[migrate] Fixing campaigns.currentPhase default (was: ${currentPhaseDefault ?? "NULL"}) → 1...`
+      );
       await pool.query(
         "ALTER TABLE `campaigns` MODIFY COLUMN `currentPhase` int NOT NULL DEFAULT 1"
       );
@@ -157,7 +162,7 @@ try {
       schemaFixed = true;
     }
 
-    // Final safety check: verify all required columns now exist.
+    // Final safety check: verify all required columns now exist and currentPhase default is 1.
     const requiredNames = REQUIRED_CAMPAIGNS_COLUMNS.map((c) => c.name);
     const placeholders = requiredNames.map(() => "?").join(", ");
     const [verifyRows] = await pool.query(
@@ -169,10 +174,32 @@ try {
       requiredNames
     );
     const foundCount = Number(verifyRows[0]?.cnt ?? 0);
+
+    const [verifyPhaseRows] = await pool.query(`
+      SELECT COLUMN_DEFAULT
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'campaigns'
+        AND COLUMN_NAME = 'currentPhase'
+    `);
+    const verifiedPhaseDefault =
+      verifyPhaseRows.length > 0
+        ? verifyPhaseRows[0].COLUMN_DEFAULT !== null
+          ? String(verifyPhaseRows[0].COLUMN_DEFAULT)
+          : null
+        : null;
+    const phaseDefaultOk = verifiedPhaseDefault === "1";
+
     if (foundCount < requiredNames.length) {
       console.error(
         `[migrate] SAFETY CHECK FAILED: campaigns schema is still incomplete ` +
           `(${foundCount}/${requiredNames.length} required columns found). Deploy aborted.`
+      );
+      process.exitCode = 1;
+    } else if (!phaseDefaultOk) {
+      console.error(
+        `[migrate] SAFETY CHECK FAILED: campaigns.currentPhase default is not 1 ` +
+          `(found: ${verifiedPhaseDefault ?? "NULL"}). Deploy aborted.`
       );
       process.exitCode = 1;
     } else if (schemaFixed) {
