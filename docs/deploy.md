@@ -88,6 +88,8 @@ Variáveis prefixadas com `VITE_` são injetadas no bundle do frontend em tempo 
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
+| `VITE_APP_TITLE` | Não | Título exibido na UI (header/login). Default: `Warhammer Horde AI` |
+| `VITE_APP_LOGO` | Não | URL do logo exibido na UI (header/login). Default: `/favicon.png` |
 | `VITE_ANALYTICS_ENDPOINT` | Não | Endpoint de analytics (se configurado) |
 | `VITE_ANALYTICS_WEBSITE_ID` | Não | ID do website no serviço de analytics |
 
