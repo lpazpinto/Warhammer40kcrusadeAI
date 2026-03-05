@@ -47,7 +47,7 @@ const REQUIRED_PLAYERS_COLUMNS = [
   },
   {
     name: "supplyLimit",
-    alter: "ALTER TABLE `players` ADD COLUMN `supplyLimit` int NOT NULL DEFAULT 0",
+    alter: "ALTER TABLE `players` ADD COLUMN `supplyLimit` int NOT NULL DEFAULT 1000",
   },
   {
     name: "battleTally",
@@ -63,7 +63,7 @@ const REQUIRED_PLAYERS_COLUMNS = [
   },
   {
     name: "commandPoints",
-    alter: "ALTER TABLE `players` ADD COLUMN `commandPoints` int NOT NULL DEFAULT 0",
+    alter: "ALTER TABLE `players` ADD COLUMN `commandPoints` int NOT NULL DEFAULT 2",
   },
   {
     name: "secretObjective",
@@ -292,8 +292,22 @@ try {
     for (const col of REQUIRED_PLAYERS_COLUMNS) {
       if (!existingPlayerCols.has(col.name)) {
         console.log(`[migrate] Adding missing column players.${col.name}...`);
-        await pool.query(col.alter);
-        playersSchemaFixed = true;
+        try {
+          await pool.query(col.alter);
+          playersSchemaFixed = true;
+        } catch (error) {
+          // Make self-heal loop idempotent under concurrent deploys:
+          // if another process added the column first, ignore duplicate-column errors.
+          const err = /** @type {any} */ (error);
+          if (err && (err.code === "ER_DUP_FIELDNAME" || err.errno === 1060)) {
+            console.warn(
+              `[migrate] Column players.${col.name} already exists (duplicate column error). Ignoring.`
+            );
+            // Column exists now; final safety check will confirm.
+            continue;
+          }
+          throw error;
+        }
       }
     }
 
