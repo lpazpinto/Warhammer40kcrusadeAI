@@ -31,6 +31,58 @@ console.log("[migrate] Applying migrations from", migrationsFolder);
 
 // Columns required by current code that may be missing from production DBs
 // created by older migrations.
+
+const REQUIRED_PLAYERS_COLUMNS = [
+  {
+    name: "crusadeForceName",
+    alter: "ALTER TABLE `players` ADD COLUMN `crusadeForceName` varchar(255)",
+  },
+  {
+    name: "armyBadge",
+    alter: "ALTER TABLE `players` ADD COLUMN `armyBadge` varchar(500)",
+  },
+  {
+    name: "requisitionPoints",
+    alter: "ALTER TABLE `players` ADD COLUMN `requisitionPoints` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "supplyLimit",
+    alter: "ALTER TABLE `players` ADD COLUMN `supplyLimit` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "battleTally",
+    alter: "ALTER TABLE `players` ADD COLUMN `battleTally` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "victories",
+    alter: "ALTER TABLE `players` ADD COLUMN `victories` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "supplyPoints",
+    alter: "ALTER TABLE `players` ADD COLUMN `supplyPoints` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "commandPoints",
+    alter: "ALTER TABLE `players` ADD COLUMN `commandPoints` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "secretObjective",
+    alter: "ALTER TABLE `players` ADD COLUMN `secretObjective` text",
+  },
+  {
+    name: "secretObjectiveRevealed",
+    alter: "ALTER TABLE `players` ADD COLUMN `secretObjectiveRevealed` tinyint(1) NOT NULL DEFAULT 0",
+  },
+  {
+    name: "isAlive",
+    alter: "ALTER TABLE `players` ADD COLUMN `isAlive` tinyint(1) NOT NULL DEFAULT 1",
+  },
+  {
+    name: "isReady",
+    alter: "ALTER TABLE `players` ADD COLUMN `isReady` tinyint(1) NOT NULL DEFAULT 0",
+  },
+];
+
 const REQUIRED_CAMPAIGNS_COLUMNS = [
   {
     name: "battlesPerPhase",
@@ -206,6 +258,68 @@ try {
       console.log("[migrate] campaigns schema fixed.");
     } else {
       console.log("[migrate] campaigns schema OK.");
+    }
+  }
+
+  // ── Self-heal players schema ──────────────────────────────────────────────
+  // Production DBs created by older migrations may be missing columns required
+  // by current code.  Check each one and ADD it if absent (idempotent).
+
+  const [playersTableCheckRows] = await pool.query(`
+    SELECT COUNT(*) AS cnt
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'players'
+  `);
+  const playersTableExists = Number(playersTableCheckRows[0]?.cnt ?? 0) > 0;
+
+  if (!playersTableExists) {
+    console.error(
+      "[migrate] SAFETY CHECK FAILED: players table is missing after migration. Deploy aborted."
+    );
+    process.exitCode = 1;
+  } else {
+    const [existingPlayerColRows] = await pool.query(`
+      SELECT COLUMN_NAME
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'players'
+    `);
+    const existingPlayerCols = new Set(existingPlayerColRows.map((r) => r.COLUMN_NAME));
+
+    let playersSchemaFixed = false;
+
+    for (const col of REQUIRED_PLAYERS_COLUMNS) {
+      if (!existingPlayerCols.has(col.name)) {
+        console.log(`[migrate] Adding missing column players.${col.name}...`);
+        await pool.query(col.alter);
+        playersSchemaFixed = true;
+      }
+    }
+
+    // Final safety check: verify all required columns now exist.
+    const requiredPlayerNames = REQUIRED_PLAYERS_COLUMNS.map((c) => c.name);
+    const playerPlaceholders = requiredPlayerNames.map(() => "?").join(", ");
+    const [verifyPlayerRows] = await pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'players'
+         AND COLUMN_NAME IN (${playerPlaceholders})`,
+      requiredPlayerNames
+    );
+    const foundPlayerCount = Number(verifyPlayerRows[0]?.cnt ?? 0);
+
+    if (foundPlayerCount < requiredPlayerNames.length) {
+      console.error(
+        `[migrate] SAFETY CHECK FAILED: players schema is still incomplete ` +
+          `(${foundPlayerCount}/${requiredPlayerNames.length} required columns found). Deploy aborted.`
+      );
+      process.exitCode = 1;
+    } else if (playersSchemaFixed) {
+      console.log("[migrate] players schema fixed.");
+    } else {
+      console.log("[migrate] players schema OK.");
     }
   }
 } catch (err) {
