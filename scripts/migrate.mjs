@@ -34,6 +34,10 @@ console.log("[migrate] Applying migrations from", migrationsFolder);
 
 const REQUIRED_PLAYERS_COLUMNS = [
   {
+    name: "userId",
+    alter: "ALTER TABLE `players` ADD COLUMN `userId` int NOT NULL DEFAULT 0",
+  },
+  {
     name: "crusadeForceName",
     alter: "ALTER TABLE `players` ADD COLUMN `crusadeForceName` varchar(255)",
   },
