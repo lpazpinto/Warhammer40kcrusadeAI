@@ -55,7 +55,7 @@ export type InsertCampaign = typeof campaigns.$inferInsert;
 export const players = mysqlTable("players", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId").notNull(),
-  userId: int("userId"), // Link to users table for multiplayer
+  userId: int("userId").notNull().default(0), // Link to users table for multiplayer
   name: varchar("name", { length: 255 }).notNull(), // Lord Commander name
   faction: varchar("faction", { length: 100 }).notNull(), // e.g., "Astra Militarum"
   detachment: varchar("detachment", { length: 100 }), // e.g., "Combined Arms"
