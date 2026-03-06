@@ -87,6 +87,29 @@ const REQUIRED_PLAYERS_COLUMNS = [
   },
 ];
 
+const REQUIRED_BATTLES_COLUMNS = [
+  {
+    name: "currentTurn",
+    alter: "ALTER TABLE `battles` ADD COLUMN `currentTurn` enum('horde','player') DEFAULT 'horde'",
+  },
+  {
+    name: "currentPhase",
+    alter: "ALTER TABLE `battles` ADD COLUMN `currentPhase` varchar(50) DEFAULT 'command'",
+  },
+  {
+    name: "currentPhaseStep",
+    alter: "ALTER TABLE `battles` ADD COLUMN `currentPhaseStep` varchar(100) DEFAULT 'start'",
+  },
+  {
+    name: "playerTurn",
+    alter: "ALTER TABLE `battles` ADD COLUMN `playerTurn` enum('player','opponent') DEFAULT 'opponent'",
+  },
+  {
+    name: "objectivesControlled",
+    alter: "ALTER TABLE `battles` ADD COLUMN `objectivesControlled` int NOT NULL DEFAULT 0",
+  },
+];
+
 const REQUIRED_CAMPAIGNS_COLUMNS = [
   {
     name: "battlesPerPhase",
@@ -364,6 +387,80 @@ try {
       console.log("[migrate] players schema fixed.");
     } else {
       console.log("[migrate] players schema OK.");
+    }
+  }
+  // ── Self-heal battles schema ──────────────────────────────────────────────
+  // Production DBs created by older migrations are missing columns required by
+  // current code.  Check each one and ADD it if absent (idempotent).
+
+  const [battlesTableCheckRows] = await pool.query(`
+    SELECT COUNT(*) AS cnt
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'battles'
+  `);
+  const battlesTableExists = Number(battlesTableCheckRows[0]?.cnt ?? 0) > 0;
+
+  if (!battlesTableExists) {
+    console.error(
+      "[migrate] SAFETY CHECK FAILED: battles table is missing after migration. Deploy aborted."
+    );
+    process.exitCode = 1;
+  } else {
+    const [existingBattlesColRows] = await pool.query(`
+      SELECT COLUMN_NAME
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'battles'
+    `);
+    const existingBattlesCols = new Set(existingBattlesColRows.map((r) => r.COLUMN_NAME));
+
+    let battlesSchemaFixed = false;
+
+    for (const col of REQUIRED_BATTLES_COLUMNS) {
+      if (!existingBattlesCols.has(col.name)) {
+        console.log(`[migrate] Adding missing column battles.${col.name}...`);
+        try {
+          await pool.query(col.alter);
+          battlesSchemaFixed = true;
+        } catch (error) {
+          // Make self-heal loop idempotent under concurrent deploys:
+          // if another process added the column first, ignore duplicate-column errors.
+          const err = /** @type {any} */ (error);
+          if (err && (err.code === "ER_DUP_FIELDNAME" || err.errno === 1060)) {
+            console.warn(
+              `[migrate] Column battles.${col.name} already exists (duplicate column error). Ignoring.`
+            );
+            continue;
+          }
+          throw error;
+        }
+      }
+    }
+
+    // Final safety check: verify all required columns now exist.
+    const requiredBattlesNames = REQUIRED_BATTLES_COLUMNS.map((c) => c.name);
+    const battlesPlaceholders = requiredBattlesNames.map(() => "?").join(", ");
+    const [verifyBattlesRows] = await pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'battles'
+         AND COLUMN_NAME IN (${battlesPlaceholders})`,
+      requiredBattlesNames
+    );
+    const foundBattlesCount = Number(verifyBattlesRows[0]?.cnt ?? 0);
+
+    if (foundBattlesCount < requiredBattlesNames.length) {
+      console.error(
+        `[migrate] SAFETY CHECK FAILED: battles schema is still incomplete ` +
+          `(${foundBattlesCount}/${requiredBattlesNames.length} required columns found). Deploy aborted.`
+      );
+      process.exitCode = 1;
+    } else if (battlesSchemaFixed) {
+      console.log("[migrate] battles schema fixed.");
+    } else {
+      console.log("[migrate] battles schema OK.");
     }
   }
 } catch (err) {
