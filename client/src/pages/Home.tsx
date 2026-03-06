@@ -1,6 +1,12 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Loader2, Sword } from "lucide-react";
 import { APP_TITLE, getGitHubLoginUrl } from "@/const";
 import { useLocation } from "wouter";
@@ -13,7 +19,7 @@ export default function Home() {
   // Auto-redirect authenticated users to campaigns
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      setLocation('/campaigns');
+      setLocation("/campaigns");
     }
   }, [isAuthenticated, loading, setLocation]);
 
@@ -27,16 +33,17 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-background to-muted">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="text-center mb-8">
           <Sword className="h-20 w-20 mx-auto mb-4 text-primary" />
-          <h1 className="text-5xl font-bold mb-4">{APP_TITLE}</h1>
+          <h1 className="command-title text-5xl font-bold mb-4">{APP_TITLE}</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Gerencie suas campanhas de Cruzada do Warhammer 40.000 com IA controlando a Horda inimiga
+            Gerencie suas campanhas de Cruzada do Warhammer 40.000 com IA
+            controlando a Horda inimiga
           </p>
         </div>
-        
-        <Card className="max-w-md w-full">
+
+        <Card className="command-surface max-w-md w-full">
           <CardHeader>
             <CardTitle>Bem-vindo</CardTitle>
             <CardDescription>

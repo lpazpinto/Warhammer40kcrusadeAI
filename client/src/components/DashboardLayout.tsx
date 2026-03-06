@@ -24,7 +24,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
 const menuItems = [
@@ -53,13 +53,13 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <div className="command-surface flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
             <div className="relative group">
               <div className="relative">
@@ -71,7 +71,9 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight">{APP_TITLE}</h1>
+              <h1 className="command-title text-2xl font-bold tracking-tight">
+                {APP_TITLE}
+              </h1>
               <p className="text-sm text-muted-foreground">
                 Please sign in to continue
               </p>
@@ -82,7 +84,7 @@ export default function DashboardLayout({
               window.location.href = getLoginUrl();
             }}
             size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
+            className="w-full"
           >
             Sign in
           </Button>
@@ -162,13 +164,16 @@ function DashboardLayoutContent({
 
   return (
     <>
-      <div className="relative" ref={sidebarRef}>
+      <div
+        className="relative border-r border-sidebar-border/90 bg-sidebar/80 backdrop-blur-sm"
+        ref={sidebarRef}
+      >
         <Sidebar
           collapsible="icon"
           className="border-r-0"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center">
+          <SidebarHeader className="h-16 justify-center border-b border-sidebar-border/70">
             <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
@@ -192,7 +197,7 @@ function DashboardLayoutContent({
                       className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
                       alt="Logo"
                     />
-                    <span className="font-semibold tracking-tight truncate">
+                    <span className="command-title font-semibold tracking-tight truncate">
                       {APP_TITLE}
                     </span>
                   </div>
@@ -249,7 +254,10 @@ function DashboardLayoutContent({
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent
+                align="end"
+                className="w-48 border-border/90 bg-popover/95"
+              >
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
@@ -271,9 +279,9 @@ function DashboardLayoutContent({
         />
       </div>
 
-      <SidebarInset>
+      <SidebarInset className="bg-transparent">
         {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b border-border/80 h-14 items-center justify-between bg-background/90 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
               <div className="flex items-center gap-3">
@@ -286,7 +294,11 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-4 sm:p-6">
+          <div className="command-surface min-h-full p-4 sm:p-6">
+            {children}
+          </div>
+        </main>
       </SidebarInset>
     </>
   );
