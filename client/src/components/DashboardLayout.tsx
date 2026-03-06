@@ -71,7 +71,7 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="text-center space-y-2">
-              <h1 className="command-title text-2xl font-bold tracking-tight">
+              <h1 className="command-title text-2xl font-bold">
                 {APP_TITLE}
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -197,7 +197,7 @@ function DashboardLayoutContent({
                       className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
                       alt="Logo"
                     />
-                    <span className="command-title font-semibold tracking-tight truncate">
+                    <span className="command-title font-semibold truncate">
                       {APP_TITLE}
                     </span>
                   </div>
