@@ -162,4 +162,169 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+
+  .command-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: calc(var(--radius) + 8px);
+    border: 1px solid color-mix(in oklch, var(--trim) 55%, var(--border) 45%);
+    background:
+      linear-gradient(
+        120deg,
+        color-mix(in oklch, black 76%, var(--background) 24%),
+        color-mix(in oklch, var(--background) 84%, black 16%)
+      ),
+      url("/assets/ui-theme/backgrounds/dossier-alt-bg.png");
+    background-size: cover;
+    box-shadow: var(--shadow-panel);
+    padding: 1.25rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .command-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/assets/ui-theme/overlays/command-sigil-watermark.png")
+      right 1rem center / 220px auto no-repeat;
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .command-hero__header-frame {
+    position: relative;
+    z-index: 1;
+    padding-top: 1.5rem;
+    background: url("/assets/ui-theme/overlays/dossier-header-strip.png") top
+      left / 100% 24px no-repeat;
+  }
+
+  .command-hero__title {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    line-height: 1.05;
+    font-weight: 700;
+    margin-top: 0.35rem;
+  }
+
+  .command-hero__description {
+    margin-top: 0.75rem;
+    color: var(--color-muted-foreground);
+    max-width: 70ch;
+  }
+
+  .command-hero__actions,
+  .command-hero__intel {
+    position: relative;
+    z-index: 1;
+  }
+
+  .dossier-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: calc(var(--radius) + 6px);
+    border: 1px solid color-mix(in oklch, var(--border) 65%, var(--accent) 35%);
+    background: linear-gradient(
+      170deg,
+      color-mix(in oklch, var(--background) 80%, black 20%),
+      color-mix(in oklch, var(--background) 88%, var(--muted) 12%)
+    );
+    box-shadow: var(--shadow-panel);
+  }
+
+  .dossier-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/assets/ui-theme/overlays/panel-grain-overlay.png")
+      center / cover no-repeat;
+    opacity: 0.16;
+    pointer-events: none;
+  }
+
+  .dossier-panel__header,
+  .dossier-panel__content {
+    position: relative;
+    z-index: 1;
+    padding: 1rem 1.25rem;
+  }
+
+  .dossier-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .dossier-panel__title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .dossier-panel__icon {
+    margin-top: 0.1rem;
+    color: color-mix(in oklch, var(--accent) 45%, var(--foreground) 55%);
+  }
+
+  .dossier-panel__title {
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .dossier-panel__subtitle {
+    margin-top: 0.2rem;
+    font-size: 0.86rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .dossier-divider {
+    height: 8px;
+    margin: 0 1.25rem;
+    background:
+      linear-gradient(
+        90deg,
+        transparent 0 2%,
+        color-mix(in oklch, var(--accent) 35%, var(--border) 65%) 18%,
+        color-mix(in oklch, var(--accent) 35%, var(--border) 65%) 82%,
+        transparent 98%
+      ),
+      radial-gradient(
+        circle at center,
+        color-mix(in oklch, var(--primary) 30%, var(--accent) 70%) 0 2px,
+        transparent 3px
+      );
+    background-repeat: no-repeat;
+    background-size:
+      100% 2px,
+      100% 8px;
+    background-position: center;
+    opacity: 0.8;
+  }
+
+  .status-seal {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    border: 1px solid color-mix(in oklch, var(--border) 62%, var(--accent) 38%);
+    padding: 0.2rem 0.6rem 0.2rem 0.25rem;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--background) 85%, black 15%);
+  }
+
+  .status-seal__image {
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: contain;
+    opacity: 0.9;
+  }
+
+  .status-seal__label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
 }
