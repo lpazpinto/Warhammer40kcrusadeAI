@@ -120,7 +120,7 @@ export default function CampaignDetail() {
 
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="space-y-3">
-              <p className="command-title text-xs text-muted-foreground">Campaign Dossier</p>
+              <p className="command-title text-xs text-muted-foreground">Dossiê da Campanha</p>
               <h1 className="text-3xl md:text-5xl font-bold">{campaign.name}</h1>
               <p className="text-muted-foreground max-w-2xl">Frente ativa contra {campaign.hordeFaction}. Conduza a campanha fase a fase e preserve os recursos da força.</p>
             </div>
