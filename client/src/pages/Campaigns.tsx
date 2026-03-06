@@ -91,7 +91,7 @@ export default function Campaigns() {
         <section className="command-surface p-6 md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
-              <p className="command-title text-xs text-muted-foreground">Command Center</p>
+              <p className="command-title text-xs text-muted-foreground">Centro de Comando</p>
               <h1 className="text-3xl md:text-5xl font-bold">Campanhas de Cruzada</h1>
               <p className="max-w-3xl text-muted-foreground">
                 Coordene forças imperiais, acompanhe as frentes narrativas e responda às movimentações da Horda.

@@ -100,7 +100,7 @@ export default function PlayerDetail() {
 
         <section className="command-surface p-6 md:p-8">
           <div className="space-y-3">
-            <p className="command-title text-xs text-muted-foreground">Force Dossier</p>
+            <p className="command-title text-xs text-muted-foreground">Dossiê da Força</p>
             <h1 className="text-3xl md:text-5xl font-bold">{player.name}</h1>
             <p className="text-lg text-muted-foreground">{player.faction} {player.detachment && `• ${player.detachment}`}</p>
             {player.crusadeForceName && (
@@ -138,7 +138,7 @@ export default function PlayerDetail() {
 
         <Card className="command-surface">
           <CardHeader className="border-b border-border/50">
-            <CardTitle className="flex items-center gap-2"><ScrollText className="h-5 w-5 text-primary" /> Order of Battle</CardTitle>
+            <CardTitle className="flex items-center gap-2"><ScrollText className="h-5 w-5 text-primary" /> Ordem de Batalha</CardTitle>
             <CardDescription>
               Unidades de Cruzada desta força • {units?.length || 0} unidades
             </CardDescription>
@@ -154,7 +154,7 @@ export default function PlayerDetail() {
                           <div className="flex flex-wrap items-center gap-3 mb-2">
                             <h3 className="text-xl font-bold">{unit.unitName}</h3>
                             {unit.crusadeName && <span className="text-muted-foreground italic">"{unit.crusadeName}"</span>}
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                            <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Editar apelido" onClick={() => {
                               const newName = prompt('Digite um apelido para esta unidade (deixe vazio para remover):', unit.crusadeName || '');
                               if (newName !== null) {
                                 updateUnit.mutate({ id: unit.id, crusadeName: newName || undefined });
