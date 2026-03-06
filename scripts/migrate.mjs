@@ -116,6 +116,17 @@ const REQUIRED_BATTLES_COLUMNS = [
   },
 ];
 
+const REQUIRED_BATTLE_PARTICIPANTS_COLUMNS = [
+  {
+    name: "supplyPoints",
+    alter: "ALTER TABLE `battleParticipants` ADD COLUMN `supplyPoints` int NOT NULL DEFAULT 0",
+  },
+  {
+    name: "supplyPointsSpent",
+    alter: "ALTER TABLE `battleParticipants` ADD COLUMN `supplyPointsSpent` int NOT NULL DEFAULT 0",
+  },
+];
+
 const REQUIRED_CAMPAIGNS_COLUMNS = [
   {
     name: "battlesPerPhase",
@@ -509,6 +520,80 @@ try {
       } else {
         console.log("[migrate] battles schema OK.");
       }
+    }
+  }
+  // ── Self-heal battleParticipants schema ──────────────────────────────────
+  // Production DBs created by older migrations may be missing supply-point
+  // columns required by current code.  Check each one and ADD if absent.
+
+  const [battleParticipantsTableCheckRows] = await pool.query(`
+    SELECT COUNT(*) AS cnt
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'battleParticipants'
+  `);
+  const battleParticipantsTableExists = Number(battleParticipantsTableCheckRows[0]?.cnt ?? 0) > 0;
+
+  if (!battleParticipantsTableExists) {
+    console.error(
+      "[migrate] SAFETY CHECK FAILED: battleParticipants table is missing after migration. Deploy aborted."
+    );
+    process.exitCode = 1;
+  } else {
+    const [existingBattleParticipantsColRows] = await pool.query(`
+      SELECT COLUMN_NAME
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'battleParticipants'
+    `);
+    const existingBattleParticipantsCols = new Set(existingBattleParticipantsColRows.map((r) => r.COLUMN_NAME));
+
+    let battleParticipantsSchemaFixed = false;
+
+    for (const col of REQUIRED_BATTLE_PARTICIPANTS_COLUMNS) {
+      if (!existingBattleParticipantsCols.has(col.name)) {
+        console.log(`[migrate] Adding missing column battleParticipants.${col.name}...`);
+        try {
+          await pool.query(col.alter);
+          battleParticipantsSchemaFixed = true;
+        } catch (error) {
+          // Make self-heal loop idempotent under concurrent deploys:
+          // if another process added the column first, ignore duplicate-column errors.
+          const err = /** @type {any} */ (error);
+          if (err && (err.code === "ER_DUP_FIELDNAME" || err.errno === 1060)) {
+            console.warn(
+              `[migrate] Column battleParticipants.${col.name} already exists (duplicate column error). Ignoring.`
+            );
+            continue;
+          }
+          throw error;
+        }
+      }
+    }
+
+    // Final safety check: verify all required columns now exist.
+    const requiredBattleParticipantsNames = REQUIRED_BATTLE_PARTICIPANTS_COLUMNS.map((c) => c.name);
+    const battleParticipantsPlaceholders = requiredBattleParticipantsNames.map(() => "?").join(", ");
+    const [verifyBattleParticipantsRows] = await pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'battleParticipants'
+         AND COLUMN_NAME IN (${battleParticipantsPlaceholders})`,
+      requiredBattleParticipantsNames
+    );
+    const foundBattleParticipantsCount = Number(verifyBattleParticipantsRows[0]?.cnt ?? 0);
+
+    if (foundBattleParticipantsCount < requiredBattleParticipantsNames.length) {
+      console.error(
+        `[migrate] SAFETY CHECK FAILED: battleParticipants schema is still incomplete ` +
+          `(${foundBattleParticipantsCount}/${requiredBattleParticipantsNames.length} required columns found). Deploy aborted.`
+      );
+      process.exitCode = 1;
+    } else if (battleParticipantsSchemaFixed) {
+      console.log("[migrate] battleParticipants schema fixed.");
+    } else {
+      console.log("[migrate] battleParticipants schema OK.");
     }
   }
 } catch (err) {
