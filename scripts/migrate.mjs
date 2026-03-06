@@ -120,10 +120,15 @@ const REQUIRED_BATTLE_PARTICIPANTS_COLUMNS = [
   {
     name: "supplyPoints",
     alter: "ALTER TABLE `battleParticipants` ADD COLUMN `supplyPoints` int NOT NULL DEFAULT 0",
+    modify: "ALTER TABLE `battleParticipants` MODIFY COLUMN `supplyPoints` int NOT NULL DEFAULT 0",
+    // COLUMN_TYPE intentionally omitted: MySQL/TiDB can report "int" or "int(11)"; DATA_TYPE is sufficient.
+    expected: { DATA_TYPE: "int", IS_NULLABLE: "NO", COLUMN_DEFAULT: "0" },
   },
   {
     name: "supplyPointsSpent",
     alter: "ALTER TABLE `battleParticipants` ADD COLUMN `supplyPointsSpent` int NOT NULL DEFAULT 0",
+    modify: "ALTER TABLE `battleParticipants` MODIFY COLUMN `supplyPointsSpent` int NOT NULL DEFAULT 0",
+    expected: { DATA_TYPE: "int", IS_NULLABLE: "NO", COLUMN_DEFAULT: "0" },
   },
 ];
 
@@ -524,7 +529,8 @@ try {
   }
   // ── Self-heal battleParticipants schema ──────────────────────────────────
   // Production DBs created by older migrations may be missing supply-point
-  // columns required by current code.  Check each one and ADD if absent.
+  // columns required by current code, or have them with wrong type/nullability.
+  // Check each one: ADD if absent, MODIFY if contract drifted.
 
   const [battleParticipantsTableCheckRows] = await pool.query(`
     SELECT COUNT(*) AS cnt
@@ -541,12 +547,14 @@ try {
     process.exitCode = 1;
   } else {
     const [existingBattleParticipantsColRows] = await pool.query(`
-      SELECT COLUMN_NAME
+      SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
       FROM information_schema.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()
         AND TABLE_NAME = 'battleParticipants'
     `);
-    const existingBattleParticipantsCols = new Set(existingBattleParticipantsColRows.map((r) => r.COLUMN_NAME));
+    const existingBattleParticipantsCols = new Map(
+      existingBattleParticipantsColRows.map((r) => [r.COLUMN_NAME, r])
+    );
 
     let battleParticipantsSchemaFixed = false;
 
@@ -568,21 +576,41 @@ try {
           }
           throw error;
         }
+      } else {
+        // Column exists — check contract drift (DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT).
+        const actual = existingBattleParticipantsCols.get(col.name);
+        const exp = col.expected;
+        const normalizedDefault =
+          actual.COLUMN_DEFAULT !== null ? String(actual.COLUMN_DEFAULT) : null;
+        const hasDrift =
+          actual.DATA_TYPE !== exp.DATA_TYPE ||
+          actual.IS_NULLABLE !== exp.IS_NULLABLE ||
+          normalizedDefault !== exp.COLUMN_DEFAULT;
+        if (hasDrift) {
+          console.log(
+            `[migrate] Fixing contract drift on battleParticipants.${col.name} ` +
+              `(DATA_TYPE: ${actual.DATA_TYPE}, IS_NULLABLE: ${actual.IS_NULLABLE}, ` +
+              `COLUMN_DEFAULT: ${normalizedDefault ?? "NULL"})...`
+          );
+          await pool.query(col.modify);
+          battleParticipantsSchemaFixed = true;
+        }
       }
     }
 
-    // Final safety check: verify all required columns now exist.
+    // Final safety check: verify all required columns exist and their contract
+    // (DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT) matches the schema.
     const requiredBattleParticipantsNames = REQUIRED_BATTLE_PARTICIPANTS_COLUMNS.map((c) => c.name);
     const battleParticipantsPlaceholders = requiredBattleParticipantsNames.map(() => "?").join(", ");
     const [verifyBattleParticipantsRows] = await pool.query(
-      `SELECT COUNT(*) AS cnt
+      `SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
        FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE()
          AND TABLE_NAME = 'battleParticipants'
          AND COLUMN_NAME IN (${battleParticipantsPlaceholders})`,
       requiredBattleParticipantsNames
     );
-    const foundBattleParticipantsCount = Number(verifyBattleParticipantsRows[0]?.cnt ?? 0);
+    const foundBattleParticipantsCount = verifyBattleParticipantsRows.length;
 
     if (foundBattleParticipantsCount < requiredBattleParticipantsNames.length) {
       console.error(
@@ -590,10 +618,44 @@ try {
           `(${foundBattleParticipantsCount}/${requiredBattleParticipantsNames.length} required columns found). Deploy aborted.`
       );
       process.exitCode = 1;
-    } else if (battleParticipantsSchemaFixed) {
-      console.log("[migrate] battleParticipants schema fixed.");
     } else {
-      console.log("[migrate] battleParticipants schema OK.");
+      // All columns exist — validate type/nullability/default contract.
+      const bpActualMap = Object.fromEntries(
+        verifyBattleParticipantsRows.map((r) => [r.COLUMN_NAME, r])
+      );
+      const bpContractErrors = [];
+      for (const col of REQUIRED_BATTLE_PARTICIPANTS_COLUMNS) {
+        const actual = bpActualMap[col.name];
+        const exp = col.expected;
+        if (actual.DATA_TYPE !== exp.DATA_TYPE) {
+          bpContractErrors.push(
+            `battleParticipants.${col.name}: DATA_TYPE expected '${exp.DATA_TYPE}', got '${actual.DATA_TYPE}'`
+          );
+        }
+        const normalizedDefault =
+          actual.COLUMN_DEFAULT !== null ? String(actual.COLUMN_DEFAULT) : null;
+        if (normalizedDefault !== exp.COLUMN_DEFAULT) {
+          bpContractErrors.push(
+            `battleParticipants.${col.name}: COLUMN_DEFAULT expected '${exp.COLUMN_DEFAULT ?? "NULL"}', got '${normalizedDefault ?? "NULL"}'`
+          );
+        }
+        if (actual.IS_NULLABLE !== exp.IS_NULLABLE) {
+          bpContractErrors.push(
+            `battleParticipants.${col.name}: IS_NULLABLE expected '${exp.IS_NULLABLE}', got '${actual.IS_NULLABLE}'`
+          );
+        }
+      }
+      if (bpContractErrors.length > 0) {
+        console.error(
+          `[migrate] SAFETY CHECK FAILED: battleParticipants schema contract violations:\n  ` +
+            bpContractErrors.join("\n  ")
+        );
+        process.exitCode = 1;
+      } else if (battleParticipantsSchemaFixed) {
+        console.log("[migrate] battleParticipants schema fixed.");
+      } else {
+        console.log("[migrate] battleParticipants schema OK.");
+      }
     }
   }
 } catch (err) {
