@@ -169,13 +169,16 @@
     border-radius: calc(var(--radius) + 8px);
     border: 1px solid color-mix(in oklch, var(--trim) 55%, var(--border) 45%);
     background:
+      radial-gradient(
+        130% 90% at 100% 0%,
+        color-mix(in oklch, var(--accent) 16%, transparent),
+        transparent 62%
+      ),
       linear-gradient(
         120deg,
         color-mix(in oklch, black 76%, var(--background) 24%),
         color-mix(in oklch, var(--background) 84%, black 16%)
-      ),
-      url("/assets/ui-theme/backgrounds/dossier-alt-bg.png");
-    background-size: cover;
+      );
     box-shadow: var(--shadow-panel);
     padding: 1.25rem;
     display: grid;
@@ -196,8 +199,21 @@
     position: relative;
     z-index: 1;
     padding-top: 1.5rem;
-    background: url("/assets/ui-theme/overlays/dossier-header-strip.png") top
-      left / 100% 24px no-repeat;
+    background:
+      linear-gradient(
+          90deg,
+          color-mix(in oklch, var(--trim) 30%, transparent),
+          color-mix(in oklch, var(--trim) 65%, transparent) 52%,
+          color-mix(in oklch, var(--trim) 30%, transparent)
+        )
+        top left / 100% 2px no-repeat,
+      repeating-linear-gradient(
+          90deg,
+          transparent 0 12px,
+          color-mix(in oklch, var(--trim) 55%, transparent) 12px 15px,
+          transparent 15px 25px
+        )
+        top left / 100% 24px no-repeat;
   }
 
   .command-hero__title {
@@ -236,10 +252,31 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: url("/assets/ui-theme/overlays/panel-grain-overlay.png")
-      center / cover no-repeat;
-    opacity: 0.16;
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        color-mix(in oklch, var(--foreground) 6%, transparent) 0,
+        color-mix(in oklch, var(--foreground) 6%, transparent) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        color-mix(in oklch, black 9%, transparent) 0,
+        color-mix(in oklch, black 9%, transparent) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+    mix-blend-mode: soft-light;
+    opacity: 0.13;
     pointer-events: none;
+  }
+
+  @media (prefers-reduced-transparency: reduce),
+    (prefers-reduced-data: reduce) {
+    .dossier-panel::after {
+      display: none;
+    }
   }
 
   .dossier-panel__header,
