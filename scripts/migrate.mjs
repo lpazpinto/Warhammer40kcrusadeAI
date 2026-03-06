@@ -91,22 +91,28 @@ const REQUIRED_BATTLES_COLUMNS = [
   {
     name: "currentTurn",
     alter: "ALTER TABLE `battles` ADD COLUMN `currentTurn` enum('horde','player') DEFAULT 'horde'",
+    expected: { DATA_TYPE: "enum", COLUMN_TYPE: "enum('horde','player')", IS_NULLABLE: "YES", COLUMN_DEFAULT: "horde" },
   },
   {
     name: "currentPhase",
     alter: "ALTER TABLE `battles` ADD COLUMN `currentPhase` varchar(50) DEFAULT 'command'",
+    expected: { DATA_TYPE: "varchar", COLUMN_TYPE: "varchar(50)", IS_NULLABLE: "YES", COLUMN_DEFAULT: "command" },
   },
   {
     name: "currentPhaseStep",
     alter: "ALTER TABLE `battles` ADD COLUMN `currentPhaseStep` varchar(100) DEFAULT 'start'",
+    expected: { DATA_TYPE: "varchar", COLUMN_TYPE: "varchar(100)", IS_NULLABLE: "YES", COLUMN_DEFAULT: "start" },
   },
   {
     name: "playerTurn",
     alter: "ALTER TABLE `battles` ADD COLUMN `playerTurn` enum('player','opponent') DEFAULT 'opponent'",
+    expected: { DATA_TYPE: "enum", COLUMN_TYPE: "enum('player','opponent')", IS_NULLABLE: "YES", COLUMN_DEFAULT: "opponent" },
   },
   {
     name: "objectivesControlled",
     alter: "ALTER TABLE `battles` ADD COLUMN `objectivesControlled` int NOT NULL DEFAULT 0",
+    // COLUMN_TYPE intentionally omitted: MySQL/TiDB can report "int" or "int(11)"; DATA_TYPE is sufficient.
+    expected: { DATA_TYPE: "int", IS_NULLABLE: "NO", COLUMN_DEFAULT: "0" },
   },
 ];
 
@@ -438,18 +444,19 @@ try {
       }
     }
 
-    // Final safety check: verify all required columns now exist.
+    // Final safety check: verify all required columns exist and their contract
+    // (DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT) matches the schema.
     const requiredBattlesNames = REQUIRED_BATTLES_COLUMNS.map((c) => c.name);
     const battlesPlaceholders = requiredBattlesNames.map(() => "?").join(", ");
     const [verifyBattlesRows] = await pool.query(
-      `SELECT COUNT(*) AS cnt
+      `SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
        FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE()
          AND TABLE_NAME = 'battles'
          AND COLUMN_NAME IN (${battlesPlaceholders})`,
       requiredBattlesNames
     );
-    const foundBattlesCount = Number(verifyBattlesRows[0]?.cnt ?? 0);
+    const foundBattlesCount = verifyBattlesRows.length;
 
     if (foundBattlesCount < requiredBattlesNames.length) {
       console.error(
@@ -457,10 +464,51 @@ try {
           `(${foundBattlesCount}/${requiredBattlesNames.length} required columns found). Deploy aborted.`
       );
       process.exitCode = 1;
-    } else if (battlesSchemaFixed) {
-      console.log("[migrate] battles schema fixed.");
     } else {
-      console.log("[migrate] battles schema OK.");
+      // All columns exist — validate type/nullability/default contract.
+      const battlesActualMap = Object.fromEntries(
+        verifyBattlesRows.map((r) => [r.COLUMN_NAME, r])
+      );
+      const contractErrors = [];
+      for (const col of REQUIRED_BATTLES_COLUMNS) {
+        const actual = battlesActualMap[col.name];
+        const exp = col.expected;
+        if (actual.DATA_TYPE !== exp.DATA_TYPE) {
+          contractErrors.push(
+            `battles.${col.name}: DATA_TYPE expected '${exp.DATA_TYPE}', got '${actual.DATA_TYPE}'`
+          );
+        }
+        if (exp.COLUMN_TYPE !== undefined && actual.COLUMN_TYPE !== exp.COLUMN_TYPE) {
+          contractErrors.push(
+            `battles.${col.name}: COLUMN_TYPE expected '${exp.COLUMN_TYPE}', got '${actual.COLUMN_TYPE}'`
+          );
+        }
+        if (actual.IS_NULLABLE !== exp.IS_NULLABLE) {
+          contractErrors.push(
+            `battles.${col.name}: IS_NULLABLE expected '${exp.IS_NULLABLE}', got '${actual.IS_NULLABLE}'`
+          );
+        }
+        // Normalize COLUMN_DEFAULT: information_schema may return a string or number;
+        // exp.COLUMN_DEFAULT is always a string or null.
+        const normalizedDefault =
+          actual.COLUMN_DEFAULT !== null ? String(actual.COLUMN_DEFAULT) : null;
+        if (normalizedDefault !== exp.COLUMN_DEFAULT) {
+          contractErrors.push(
+            `battles.${col.name}: COLUMN_DEFAULT expected '${exp.COLUMN_DEFAULT ?? "NULL"}', got '${normalizedDefault ?? "NULL"}'`
+          );
+        }
+      }
+      if (contractErrors.length > 0) {
+        console.error(
+          `[migrate] SAFETY CHECK FAILED: battles schema contract violations:\n  ` +
+            contractErrors.join("\n  ")
+        );
+        process.exitCode = 1;
+      } else if (battlesSchemaFixed) {
+        console.log("[migrate] battles schema fixed.");
+      } else {
+        console.log("[migrate] battles schema OK.");
+      }
     }
   }
 } catch (err) {
