@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Sword, Upload, Users, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Plus, Sword, Upload, Users, CheckCircle2, XCircle, ScrollText, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -17,18 +17,18 @@ export default function CampaignDetail() {
   const campaignId = parseInt(id || '0');
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  
+
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
-  
+
   const [newPlayer, setNewPlayer] = useState({
     name: "",
     faction: "",
     detachment: "",
     crusadeForceName: "",
   });
-  
+
   const [armyListContent, setArmyListContent] = useState("");
 
   const { data: campaign, isLoading: campaignLoading } = trpc.campaign.get.useQuery(
@@ -43,19 +43,16 @@ export default function CampaignDetail() {
   const createPlayer = trpc.player.create.useMutation({
     onSuccess: async (data) => {
       console.log('[createPlayer] Success response:', data);
-      
-      // Validate that we received a valid ID
+
       if (!data || !data.id || isNaN(data.id) || data.id <= 0) {
         console.error('[createPlayer] Invalid ID received:', data);
         toast.error('Erro: ID inválido retornado ao criar jogador');
         return;
       }
-      
+
       toast.success("Lord Commander criado com sucesso!");
       setPlayerDialogOpen(false);
       setNewPlayer({ name: "", faction: "", detachment: "", crusadeForceName: "" });
-      
-      // Wait for refetch to complete
       await refetchPlayers();
     },
     onError: (error) => {
@@ -75,8 +72,6 @@ export default function CampaignDetail() {
       toast.error(`Erro ao importar exército: ${error.message}`);
     },
   });
-
-
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,103 +110,101 @@ export default function CampaignDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+      <div className="container mx-auto py-8 space-y-6">
+        <section className="command-surface p-6 md:p-8">
+          <div className="flex items-center gap-2 text-xs command-title text-muted-foreground mb-3">
             <Link href="/campaigns" className="hover:text-foreground">Campanhas</Link>
             <span>/</span>
             <span>{campaign.name}</span>
           </div>
-          
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">{campaign.name}</h1>
-              <p className="text-muted-foreground">
-                vs {campaign.hordeFaction} • Fase {campaign.currentPhase}/{4}
-              </p>
-            </div>
-            
-            <Button size="lg" asChild>
-              <Link href={`/battle/setup/${campaign.id}`}>
-                <Sword className="mr-2 h-5 w-5" />
-                Iniciar Batalha
-              </Link>
-            </Button>
-          </div>
-        </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-3">
+              <p className="command-title text-xs text-muted-foreground">Campaign Dossier</p>
+              <h1 className="text-3xl md:text-5xl font-bold">{campaign.name}</h1>
+              <p className="text-muted-foreground max-w-2xl">Frente ativa contra {campaign.hordeFaction}. Conduza a campanha fase a fase e preserve os recursos da força.</p>
+            </div>
+
+            <div className="flex w-full xl:w-auto flex-col sm:flex-row gap-3">
+              <Button size="lg" asChild className="w-full sm:w-auto">
+                <Link href={`/battle/setup/${campaign.id}`}>
+                  <Sword className="mr-2 h-5 w-5" />
+                  Iniciar Batalha
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => setPlayerDialogOpen(true)} className="w-full sm:w-auto">
+                <Plus className="mr-2 h-5 w-5" />
+                Reforçar Comandantes
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+              <p className="text-xs command-title text-muted-foreground">Status</p>
+              <p className="mt-1 font-semibold">{campaign.status === 'ongoing' ? 'Em Andamento' : campaign.status === 'paused' ? 'Pausada' : 'Concluída'}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+              <p className="text-xs command-title text-muted-foreground">Fase Atual</p>
+              <p className="mt-1 font-semibold">{campaign.currentPhase} / 4</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+              <p className="text-xs command-title text-muted-foreground">Batalhas por Fase</p>
+              <p className="mt-1 font-semibold">{campaign.battlesPerPhase}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+              <p className="text-xs command-title text-muted-foreground">SP para Vitória</p>
+              <p className="mt-1 font-semibold">{campaign.strategicPointsForVictory}</p>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-3">
+          <section className="xl:col-span-2">
+            <Card className="command-surface">
+              <CardHeader className="border-b border-border/50">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <CardTitle>Lord Commanders</CardTitle>
-                    <CardDescription>Jogadores participando desta campanha</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Lord Commanders</CardTitle>
+                    <CardDescription>Jogadores ativos nesta frente de guerra</CardDescription>
                   </div>
-                  
+
                   <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Adicionar Jogador
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Jogador
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Adicionar Lord Commander</DialogTitle>
                         <DialogDescription>
                           Crie um novo jogador para esta campanha
                         </DialogDescription>
                       </DialogHeader>
-                      
+
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                           <Label htmlFor="playerName">Nome do Lord Commander</Label>
-                          <Input
-                            id="playerName"
-                            placeholder="Ex: Lord Commander Dreir"
-                            value={newPlayer.name}
-                            onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
-                          />
+                          <Input id="playerName" placeholder="Ex: Lord Commander Dreir" value={newPlayer.name} onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })} />
                         </div>
-                        
                         <div className="grid gap-2">
                           <Label htmlFor="faction">Facção</Label>
-                          <Input
-                            id="faction"
-                            placeholder="Ex: Astra Militarum"
-                            value={newPlayer.faction}
-                            onChange={(e) => setNewPlayer({ ...newPlayer, faction: e.target.value })}
-                          />
+                          <Input id="faction" placeholder="Ex: Astra Militarum" value={newPlayer.faction} onChange={(e) => setNewPlayer({ ...newPlayer, faction: e.target.value })} />
                         </div>
-                        
                         <div className="grid gap-2">
                           <Label htmlFor="detachment">Destacamento (opcional)</Label>
-                          <Input
-                            id="detachment"
-                            placeholder="Ex: Combined Arms"
-                            value={newPlayer.detachment}
-                            onChange={(e) => setNewPlayer({ ...newPlayer, detachment: e.target.value })}
-                          />
+                          <Input id="detachment" placeholder="Ex: Combined Arms" value={newPlayer.detachment} onChange={(e) => setNewPlayer({ ...newPlayer, detachment: e.target.value })} />
                         </div>
-                        
                         <div className="grid gap-2">
                           <Label htmlFor="forceName">Nome da Força de Cruzada (opcional)</Label>
-                          <Input
-                            id="forceName"
-                            placeholder="Ex: 13th Death Korps Regiment"
-                            value={newPlayer.crusadeForceName}
-                            onChange={(e) => setNewPlayer({ ...newPlayer, crusadeForceName: e.target.value })}
-                          />
+                          <Input id="forceName" placeholder="Ex: 13th Death Korps Regiment" value={newPlayer.crusadeForceName} onChange={(e) => setNewPlayer({ ...newPlayer, crusadeForceName: e.target.value })} />
                         </div>
                       </div>
-                      
+
                       <DialogFooter>
-                        <Button
-                          onClick={() => createPlayer.mutate({ campaignId, userId: user?.id || 0, ...newPlayer })}
-                          disabled={!newPlayer.name || !newPlayer.faction || createPlayer.isPending}
-                        >
+                        <Button onClick={() => createPlayer.mutate({ campaignId, userId: user?.id || 0, ...newPlayer })} disabled={!newPlayer.name || !newPlayer.faction || createPlayer.isPending}>
                           {createPlayer.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Criar Jogador
                         </Button>
@@ -220,7 +213,7 @@ export default function CampaignDetail() {
                   </Dialog>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {playersLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -228,63 +221,52 @@ export default function CampaignDetail() {
                 ) : players && players.length > 0 ? (
                   <div className="space-y-4">
                     {players.map((player) => (
-                      <Card key={player.id} className="hover:border-primary transition-colors">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
+                      <Card key={player.id} className="border border-border/70 bg-background/30">
+                        <CardContent className="pt-5">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div className="flex-1">
                               <h3 className="text-lg font-semibold mb-1">{player.name}</h3>
-                              <p className="text-sm text-muted-foreground mb-3">
-                                {player.faction} {player.detachment && `• ${player.detachment}`}
-                              </p>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                  <div className="text-muted-foreground">RP</div>
+                              <p className="text-sm text-muted-foreground mb-3">{player.faction} {player.detachment && `• ${player.detachment}`}</p>
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                <div className="rounded-md border border-border/50 px-2 py-1.5">
+                                  <div className="text-muted-foreground text-xs">RP</div>
                                   <div className="font-semibold">{player.requisitionPoints}</div>
                                 </div>
-                                <div>
-                                  <div className="text-muted-foreground">Batalhas</div>
+                                <div className="rounded-md border border-border/50 px-2 py-1.5">
+                                  <div className="text-muted-foreground text-xs">Batalhas</div>
                                   <div className="font-semibold">{player.battleTally}</div>
                                 </div>
-                                <div>
-                                  <div className="text-muted-foreground">Vitórias</div>
+                                <div className="rounded-md border border-border/50 px-2 py-1.5">
+                                  <div className="text-muted-foreground text-xs">Vitórias</div>
                                   <div className="font-semibold">{player.victories}</div>
                                 </div>
-                                <div>
-                                  <div className="text-muted-foreground">SP</div>
+                                <div className="rounded-md border border-border/50 px-2 py-1.5">
+                                  <div className="text-muted-foreground text-xs">SP</div>
                                   <div className="font-semibold">{player.supplyPoints}</div>
                                 </div>
                               </div>
                             </div>
-                            
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  // Validate player ID before setting
-                                  if (player.id && !isNaN(player.id) && player.id > 0) {
-                                    setSelectedPlayerId(player.id);
-                                    setImportDialogOpen(true);
-                                  } else {
-                                    console.error('Invalid player ID:', player.id);
-                                    toast.error('ID do jogador inválido');
-                                  }
-                                }}
-                              >
+
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button size="sm" variant="outline" onClick={() => {
+                                if (player.id && !isNaN(player.id) && player.id > 0) {
+                                  setSelectedPlayerId(player.id);
+                                  setImportDialogOpen(true);
+                                } else {
+                                  console.error('Invalid player ID:', player.id);
+                                  toast.error('ID do jogador inválido');
+                                }
+                              }}>
                                 <Upload className="mr-2 h-4 w-4" />
                                 Importar Exército
                               </Button>
-                              
-                              <Button 
-                                size="sm" 
-                                asChild={!!(player.id && !isNaN(player.id) && player.id > 0)}
-                                disabled={!player.id || isNaN(player.id) || player.id <= 0}
-                              >
+
+                              <Button size="sm" asChild={!!(player.id && !isNaN(player.id) && player.id > 0)} disabled={!player.id || isNaN(player.id) || player.id <= 0}>
                                 {player.id && !isNaN(player.id) && player.id > 0 ? (
-                                  <Link href={`/player/${player.id}`}>Ver Detalhes</Link>
+                                  <Link href={`/player/${player.id}`}>Ver Dossiê</Link>
                                 ) : (
-                                  <span>Ver Detalhes</span>
+                                  <span>Ver Dossiê</span>
                                 )}
                               </Button>
                             </div>
@@ -294,57 +276,35 @@ export default function CampaignDetail() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-10 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Nenhum jogador adicionado ainda</p>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
+          </section>
 
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações da Campanha</CardTitle>
+          <section className="space-y-5">
+            <Card className="command-surface">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2"><ScrollText className="h-5 w-5 text-primary" /> Briefing da Campanha</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">Status</div>
-                  <div className="font-semibold">
-                    {campaign.status === 'ongoing' ? 'Em Andamento' :
-                     campaign.status === 'paused' ? 'Pausada' : 'Concluída'}
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-muted-foreground">Facção da Horda</div>
+              <CardContent className="space-y-4 text-sm">
+                <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                  <div className="text-xs text-muted-foreground command-title">Facção da Horda</div>
                   <div className="font-semibold">{campaign.hordeFaction}</div>
                 </div>
-                
-                <div>
-                  <div className="text-sm text-muted-foreground">Batalhas por Fase</div>
-                  <div className="font-semibold">{campaign.battlesPerPhase}</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-muted-foreground">Pontos Estratégicos para Vitória</div>
+                <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                  <div className="text-xs text-muted-foreground command-title">Pontos para Vitória</div>
                   <div className="font-semibold">{campaign.strategicPointsForVictory}</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-muted-foreground">Fase Atual</div>
-                  <div className="font-semibold">{campaign.currentPhase}</div>
                 </div>
               </CardContent>
             </Card>
-            
-            {/* Narrative Objective Card */}
-            <Card className="mt-4">
+
+            <Card className="command-surface">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span>Objetivo Narrativo - Fase {campaign.currentPhase}</span>
-                </CardTitle>
+                <CardTitle>Objetivo Narrativo - Fase {campaign.currentPhase}</CardTitle>
                 <CardDescription>
                   {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.titlePt || campaign.currentNarrativeObjective}
                 </CardDescription>
@@ -356,8 +316,8 @@ export default function CampaignDetail() {
                     {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.descriptionPt}
                   </p>
                 </div>
-                
-                <div className="grid gap-4 md:grid-cols-2">
+
+                <div className="grid gap-3">
                   <div className="border rounded-lg p-3 bg-green-500/10 border-green-500/20">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -367,7 +327,7 @@ export default function CampaignDetail() {
                       {NARRATIVE_OBJECTIVES[campaign.currentNarrativeObjective]?.successBenefitPt}
                     </p>
                   </div>
-                  
+
                   <div className="border rounded-lg p-3 bg-red-500/10 border-red-500/20">
                     <div className="flex items-center gap-2 mb-2">
                       <XCircle className="h-4 w-4 text-red-500" />
@@ -380,7 +340,7 @@ export default function CampaignDetail() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </section>
         </div>
 
         <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
@@ -391,43 +351,25 @@ export default function CampaignDetail() {
                 Faça upload do arquivo .txt exportado do aplicativo oficial do Warhammer 40k
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="grid gap-4 py-4 overflow-y-auto flex-1">
               <div className="grid gap-2">
                 <Label htmlFor="file">Arquivo .txt</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  accept=".txt"
-                  onChange={handleFileUpload}
-                />
+                <Input id="file" type="file" accept=".txt" onChange={handleFileUpload} />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="content">Conteúdo (ou cole aqui)</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Cole o conteúdo da lista de exército aqui..."
-                  value={armyListContent}
-                  onChange={(e) => setArmyListContent(e.target.value)}
-                  rows={15}
-                  className="font-mono text-xs min-h-[300px]"
-                />
+                <Textarea id="content" placeholder="Cole o conteúdo da lista de exército aqui..." value={armyListContent} onChange={(e) => setArmyListContent(e.target.value)} rows={15} className="font-mono text-xs min-h-[300px]" />
               </div>
             </div>
-            
+
             <DialogFooter className="flex-shrink-0">
-              <Button
-                onClick={() => {
-                  if (selectedPlayerId) {
-                    importArmy.mutate({
-                      playerId: selectedPlayerId,
-                      armyListContent,
-                    });
-                  }
-                }}
-                disabled={!armyListContent || !selectedPlayerId || importArmy.isPending}
-              >
+              <Button onClick={() => {
+                if (selectedPlayerId) {
+                  importArmy.mutate({ playerId: selectedPlayerId, armyListContent });
+                }
+              }} disabled={!armyListContent || !selectedPlayerId || importArmy.isPending}>
                 {importArmy.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Importar Exército
               </Button>
@@ -438,4 +380,3 @@ export default function CampaignDetail() {
     </div>
   );
 }
-
