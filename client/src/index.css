@@ -77,20 +77,8 @@
   --chart-4: oklch(0.43 0.05 120);
   --chart-5: oklch(0.67 0.08 85);
 
-  --surface-elevated: color-mix(in oklch, var(--card) 94%, white 6%);
   --surface-panel: color-mix(in oklch, var(--background) 80%, black 20%);
   --trim: color-mix(in oklch, var(--accent) 50%, var(--border) 50%);
-  --shadow-command: 0 14px 30px
-    color-mix(in oklch, black 82%, var(--primary) 18%);
-  --shadow-panel: 0 10px 24px color-mix(in oklch, black 88%, var(--accent) 12%);
-}
-
-.dark {
-  --surface-elevated: color-mix(in oklch, var(--card) 94%, white 6%);
-  --surface-panel: color-mix(in oklch, var(--background) 80%, black 20%);
-  --trim: color-mix(in oklch, var(--accent) 50%, var(--border) 50%);
-  --shadow-command: 0 14px 30px
-    color-mix(in oklch, black 82%, var(--primary) 18%);
   --shadow-panel: 0 10px 24px color-mix(in oklch, black 88%, var(--accent) 12%);
 }
 
