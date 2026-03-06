@@ -315,6 +315,32 @@ try {
       }
     }
 
+    // Enforce players.userId contract: must be int NOT NULL DEFAULT 0.
+    // If an older nullable/no-default column already existed the ADD COLUMN
+    // loop would have skipped it, leaving schema drift.
+    const [userIdDefRows] = await pool.query(`
+      SELECT IS_NULLABLE, COLUMN_DEFAULT, DATA_TYPE
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'players'
+        AND COLUMN_NAME = 'userId'
+    `);
+    const userIdDef = userIdDefRows[0];
+    const mustFixUserId =
+      !userIdDef ||
+      userIdDef.IS_NULLABLE !== "NO" ||
+      String(userIdDef.COLUMN_DEFAULT ?? "") !== "0" ||
+      userIdDef.DATA_TYPE !== "int";
+
+    if (mustFixUserId) {
+      console.log("[migrate] Enforcing players.userId contract (int NOT NULL DEFAULT 0)...");
+      await pool.query("UPDATE `players` SET `userId` = 0 WHERE `userId` IS NULL");
+      await pool.query(
+        "ALTER TABLE `players` MODIFY COLUMN `userId` int NOT NULL DEFAULT 0"
+      );
+      playersSchemaFixed = true;
+    }
+
     // Final safety check: verify all required columns now exist.
     const requiredPlayerNames = REQUIRED_PLAYERS_COLUMNS.map((c) => c.name);
     const playerPlaceholders = requiredPlayerNames.map(() => "?").join(", ");
