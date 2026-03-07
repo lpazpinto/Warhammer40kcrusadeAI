@@ -313,6 +313,18 @@ export default function Campaigns() {
               icon={<Sword className="h-4 w-4" />}
             >
               <div className="flex flex-col items-center justify-center py-8 text-center">
+                <picture>
+                  <source
+                    srcSet="/assets/ui-theme/icons/empty-state-emblem.webp"
+                    type="image/webp"
+                  />
+                  <img
+                    src="/assets/ui-theme/icons/empty-state-emblem.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="w-20 h-20 opacity-30 mb-4 object-contain"
+                  />
+                </picture>
                 <Button onClick={() => setDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Campanha

@@ -101,6 +101,21 @@
         color-mix(in oklch, var(--background) 76%, var(--muted) 24%)
       );
   }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url("/assets/ui-theme/backgrounds/grimdark-metal-bg.webp")
+      center / cover no-repeat;
+    opacity: 0.035;
+    pointer-events: none;
+    z-index: -1;
+  }
+  @media (prefers-reduced-data: reduce) {
+    body::before {
+      display: none;
+    }
+  }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -189,9 +204,23 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: url("/assets/ui-theme/overlays/command-sigil-watermark.png")
+    background: url("/assets/ui-theme/overlays/command-sigil-watermark.webp")
       right 1rem center / 220px auto no-repeat;
     opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .command-hero::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    background: url("/assets/ui-theme/overlays/dossier-header-strip.webp")
+      top center / 100% auto no-repeat;
+    mix-blend-mode: soft-light;
+    opacity: 0.3;
     pointer-events: none;
   }
 

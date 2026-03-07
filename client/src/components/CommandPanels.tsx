@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const sealByTone = {
-  operational: "/assets/ui-theme/seals/seal-active-operational.png",
-  warning: "/assets/ui-theme/seals/seal-warning-caution.png",
-  critical: "/assets/ui-theme/seals/seal-critical-emergency.png",
-  victory: "/assets/ui-theme/seals/seal-victory-commendation.png",
+  operational: "/assets/ui-theme/seals/seal-active-operational.webp",
+  warning: "/assets/ui-theme/seals/seal-warning-caution.webp",
+  critical: "/assets/ui-theme/seals/seal-critical-emergency.webp",
+  victory: "/assets/ui-theme/seals/seal-victory-commendation.webp",
 } as const;
 
 type SealTone = keyof typeof sealByTone;
