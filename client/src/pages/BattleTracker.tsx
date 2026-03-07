@@ -41,9 +41,9 @@ import StartOfRoundModal from "@/components/StartOfRoundModal";
 import SecondaryMissionResolutionModal from "@/components/SecondaryMissionResolutionModal";
 import { getSecondaryMissionById } from "@shared/secondaryMissions";
 import { getMiseryCardById } from "@shared/miseryCards";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CommandHero, DossierPanel } from "@/components/CommandPanels";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ScrollText, Info } from "lucide-react";
 import { Link } from "wouter";
 
 function BattleTrackerInner() {
@@ -648,23 +648,59 @@ function BattleTrackerInner() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Rastreador de Batalha</h1>
-            {battle && (
-              <p className="text-muted-foreground">
-                Batalha #{battle.battleNumber} - {battle.deployment || "Deployment não definido"}
-              </p>
-            )}
-          </div>
-          <Link href={battle ? `/campaign/${battle.campaignId}` : "/campaigns"}>
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Button>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs command-title text-muted-foreground">
+          <Link href="/campaigns" className="hover:text-foreground transition-colors">
+            Campanhas
           </Link>
+          <span>/</span>
+          {battle && (
+            <>
+              <Link href={`/campaign/${battle.campaignId}`} className="hover:text-foreground transition-colors">
+                Campanha
+              </Link>
+              <span>/</span>
+            </>
+          )}
+          <span>Batalha #{battle?.battleNumber ?? battleId}</span>
         </div>
+
+        {/* CommandHero header */}
+        <CommandHero
+          eyebrow="Rastreador de Batalha"
+          title={`Batalha #${battle?.battleNumber ?? battleId}`}
+          description={battle?.missionPack
+            ? `${battle.missionPack} — ${battle.deployment ?? "Deployment não definido"}`
+            : battle?.deployment ?? "Deployment não definido"}
+          actions={
+            <Button variant="outline" asChild>
+              <Link href={battle ? `/campaign/${battle.campaignId}` : "/campaigns"}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Link>
+            </Button>
+          }
+          intel={
+            <>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Round</div>
+                <div className="font-bold">{localCurrentRound} / 5</div>
+              </div>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Fase Atual</div>
+                <div className="font-bold capitalize">{localCurrentPhase}</div>
+              </div>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Turno</div>
+                <div className="font-bold">{localCurrentTurn === 'opponent' ? 'Horda' : 'Jogador'}</div>
+              </div>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Status</div>
+                <div className="font-bold capitalize">{battle?.status ?? "—"}</div>
+              </div>
+            </>
+          }
+        />
 
         {/* Battle Round Indicator - Prominent display */}
         <BattleRoundIndicator
@@ -736,7 +772,7 @@ function BattleTrackerInner() {
             {localCurrentPhase === "command" && !showCommandSteps && (
               <div className="space-y-3">
                 {!commandPhaseCompleted && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-400">
                     ⚠️ <strong>Fase de Comando Incompleta:</strong> Você precisa completar todos os passos da Fase de Comando antes de avançar para a próxima fase.
                   </div>
                 )}
@@ -766,7 +802,7 @@ function BattleTrackerInner() {
             {localCurrentPhase === "movement" && !showMovementSteps && (
               <div className="space-y-3">
                 {!movementPhaseCompleted && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-400">
                     ⚠️ <strong>Fase de Movimento Incompleta:</strong> Você precisa completar todos os passos da Fase de Movimento antes de avançar para a próxima fase.
                   </div>
                 )}
@@ -796,7 +832,7 @@ function BattleTrackerInner() {
             {localCurrentPhase === "shooting" && !showShootingSteps && (
               <div className="space-y-3">
                 {!shootingPhaseCompleted && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-400">
                     ⚠️ <strong>Fase de Tiro Incompleta:</strong> Você precisa completar todos os passos da Fase de Tiro antes de avançar para a próxima fase.
                   </div>
                 )}
@@ -826,7 +862,7 @@ function BattleTrackerInner() {
             {localCurrentPhase === "charge" && !showChargeSteps && (
               <div className="space-y-3">
                 {!chargePhaseCompleted && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-400">
                     ⚠️ <strong>Fase de Carga Incompleta:</strong> Você precisa completar todos os passos da Fase de Carga antes de avançar para a próxima fase.
                   </div>
                 )}
@@ -856,7 +892,7 @@ function BattleTrackerInner() {
             {localCurrentPhase === "fight" && !showFightSteps && (
               <div className="space-y-3">
                 {!fightPhaseCompleted && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-400">
                     ⚠️ <strong>Fase de Combate Incompleta:</strong> Você precisa completar todos os passos da Fase de Combate antes de avançar para a próxima fase.
                   </div>
                 )}
@@ -941,102 +977,102 @@ function BattleTrackerInner() {
         <div className="grid gap-6 lg:grid-cols-2">
             {/* Battle Info */}
             {battle && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações da Batalha</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <p className="font-medium capitalize">{battle.status}</p>
+              <DossierPanel
+                title="Informações da Batalha"
+                subtitle="Dados do engajamento atual"
+                icon={<Info className="h-5 w-5" />}
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-md border border-border/50 px-2 py-1.5">
+                    <div className="text-xs command-title text-muted-foreground">Status</div>
+                    <div className="font-semibold capitalize">{battle.status}</div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Battle Round</p>
-                    <p className="font-medium">
-                      Round {battle.battleRound || 1} - {(battle as any).currentTurn === 'horde' ? 'Turno da Horda' : 'Turno do Jogador'}
-                    </p>
+                  <div className="rounded-md border border-border/50 px-2 py-1.5">
+                    <div className="text-xs command-title text-muted-foreground">Round</div>
+                    <div className="font-semibold">
+                      {battle.battleRound || 1} — {(battle as any).currentTurn === 'horde' ? 'Horda' : 'Jogador'}
+                    </div>
                   </div>
                   {battle.deployment && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Deployment</p>
-                      <p className="font-medium">{battle.deployment}</p>
+                    <div className="rounded-md border border-border/50 px-2 py-1.5">
+                      <div className="text-xs command-title text-muted-foreground">Deployment</div>
+                      <div className="font-semibold">{battle.deployment}</div>
                     </div>
                   )}
                   {battle.missionPack && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Mission Pack</p>
-                      <p className="font-medium">{battle.missionPack}</p>
+                    <div className="rounded-md border border-border/50 px-2 py-1.5 col-span-2">
+                      <div className="text-xs command-title text-muted-foreground">Missão</div>
+                      <div className="font-semibold">{battle.missionPack}</div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </DossierPanel>
             )}
 
             {/* Battle Events Log */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Histórico da Batalha</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {battleEvents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum evento registrado ainda</p>
-                ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {battleEvents.slice().reverse().map((event, index) => {
-                      // Determine border color based on event type
-                      const borderColorMap: Record<string, string> = {
-                        'phase_change': 'border-blue-500',
-                        'horde_spawn': 'border-red-500',
-                        'unit_destroyed': 'border-green-500',
-                        'mission_completed': 'border-yellow-500',
-                        'mission_failed': 'border-orange-500',
-                        'misery_card_revealed': 'border-purple-500',
-                        'misery_card_discarded': 'border-gray-500',
-                        'resupply_purchase': 'border-cyan-500',
-                      };
-                      const borderColor = borderColorMap[event.type] || 'border-primary';
-                      
-                      // Format event description
-                      const getEventDescription = () => {
-                        switch (event.type) {
-                          case 'phase_change':
-                            const phaseNames: Record<string, string> = {
-                              command: 'Comando', movement: 'Movimento', shooting: 'Tiro',
-                              charge: 'Carga', fight: 'Combate'
-                            };
-                            return `Fase de ${phaseNames[event.phase || ''] || event.phase}`;
-                          case 'horde_spawn':
-                            return `👾 Spawn: ${event.details?.unitName} (Zona ${event.details?.spawnZone})`;
-                          case 'unit_destroyed':
-                            return `☠️ ${event.details?.unitName} destruída${event.details?.destroyedBy ? ` por ${event.details.destroyedBy}` : ''}`;
-                          case 'mission_completed':
-                            return `✅ Missão concluída: ${event.details?.missionName}`;
-                          case 'mission_failed':
-                            return `❌ Missão falhou: ${event.details?.missionName}`;
-                          case 'misery_card_revealed':
-                            return `🃏 Carta de Miséria revelada: ${event.details?.cardName}`;
-                          case 'misery_card_discarded':
-                            return `🗑️ Carta de Miséria descartada: ${event.details?.cardName}`;
-                          case 'resupply_purchase':
-                            return `🛒 Compra: ${event.details?.unitName} (${event.details?.cardCost} SP) - ${event.details?.playerName}`;
-                          default:
-                            return 'Evento desconhecido';
-                        }
-                      };
-                      
-                      return (
-                        <div key={index} className={`text-sm border-l-2 ${borderColor} pl-3 py-1`}>
-                          <p className="font-medium">{getEventDescription()}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Round {event.round} - {event.turn === 'opponent' ? 'Horda' : 'Jogador'} - {event.timestamp.toLocaleTimeString()}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <DossierPanel
+              title="Histórico da Batalha"
+              subtitle="Registro de eventos do engajamento"
+              icon={<ScrollText className="h-5 w-5" />}
+            >
+              {battleEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum evento registrado ainda</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {battleEvents.slice().reverse().map((event, index) => {
+                    // Determine border color based on event type
+                    const borderColorMap: Record<string, string> = {
+                      'phase_change': 'border-blue-500',
+                      'horde_spawn': 'border-red-500',
+                      'unit_destroyed': 'border-green-500',
+                      'mission_completed': 'border-yellow-500',
+                      'mission_failed': 'border-orange-500',
+                      'misery_card_revealed': 'border-purple-500',
+                      'misery_card_discarded': 'border-gray-500',
+                      'resupply_purchase': 'border-cyan-500',
+                    };
+                    const borderColor = borderColorMap[event.type] || 'border-primary';
+                    
+                    // Format event description
+                    const getEventDescription = () => {
+                      switch (event.type) {
+                        case 'phase_change':
+                          const phaseNames: Record<string, string> = {
+                            command: 'Comando', movement: 'Movimento', shooting: 'Tiro',
+                            charge: 'Carga', fight: 'Combate'
+                          };
+                          return `Fase de ${phaseNames[event.phase || ''] || event.phase}`;
+                        case 'horde_spawn':
+                          return `👾 Spawn: ${event.details?.unitName} (Zona ${event.details?.spawnZone})`;
+                        case 'unit_destroyed':
+                          return `☠️ ${event.details?.unitName} destruída${event.details?.destroyedBy ? ` por ${event.details.destroyedBy}` : ''}`;
+                        case 'mission_completed':
+                          return `✅ Missão concluída: ${event.details?.missionName}`;
+                        case 'mission_failed':
+                          return `❌ Missão falhou: ${event.details?.missionName}`;
+                        case 'misery_card_revealed':
+                          return `🃏 Carta de Miséria revelada: ${event.details?.cardName}`;
+                        case 'misery_card_discarded':
+                          return `🗑️ Carta de Miséria descartada: ${event.details?.cardName}`;
+                        case 'resupply_purchase':
+                          return `🛒 Compra: ${event.details?.unitName} (${event.details?.cardCost} SP) - ${event.details?.playerName}`;
+                        default:
+                          return 'Evento desconhecido';
+                      }
+                    };
+                    
+                    return (
+                      <div key={index} className={`text-sm border-l-2 ${borderColor} pl-3 py-1`}>
+                        <p className="font-medium">{getEventDescription()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Round {event.round} - {event.turn === 'opponent' ? 'Horda' : 'Jogador'} - {event.timestamp.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </DossierPanel>
 
         </div>
         

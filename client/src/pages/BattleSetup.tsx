@@ -1,5 +1,5 @@
+import { CommandHero, DossierPanel } from "@/components/CommandPanels";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, ArrowRight, Dice3, Check } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, Dice3, Check, Map, Coins, ShoppingCart, Users, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -90,14 +90,12 @@ export default function BattleSetup() {
   if (!campaign) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardContent className="pt-6">
-            <p>Campanha não encontrada</p>
-            <Button asChild className="mt-4">
-              <Link href="/campaigns">Voltar</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="command-surface rounded-lg p-6 text-center space-y-4">
+          <p>Campanha não encontrada</p>
+          <Button asChild>
+            <Link href="/campaigns">Voltar para Campanhas</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -235,41 +233,96 @@ export default function BattleSetup() {
     }
   };
 
+  const STEPS = [
+    { label: "Missão", icon: <Map className="h-4 w-4" /> },
+    { label: "Pontos", icon: <Coins className="h-4 w-4" /> },
+    { label: "Requisições", icon: <ShoppingCart className="h-4 w-4" /> },
+    { label: "Unidades", icon: <Users className="h-4 w-4" /> },
+    { label: "Confirmação", icon: <ClipboardCheck className="h-4 w-4" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8">
-        <Button variant="ghost" asChild className="mb-6">
-          <Link href={`/campaign/${id}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para Campanha
+      <div className="container mx-auto py-8 space-y-6">
+        <div className="flex items-center gap-2 text-xs command-title text-muted-foreground">
+          <Link href="/campaigns" className="hover:text-foreground transition-colors">
+            Campanhas
           </Link>
-        </Button>
-
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Configurar Batalha</h1>
-          <p className="text-xl text-muted-foreground">{campaign.name}</p>
+          <span>/</span>
+          <Link href={`/campaign/${id}`} className="hover:text-foreground transition-colors">
+            {campaign.name}
+          </Link>
+          <span>/</span>
+          <span>Configurar Batalha</span>
         </div>
 
-        {/* Progress indicator */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <div
-              key={s}
-              className={`h-2 w-16 rounded-full transition-colors ${
-                s === step ? 'bg-primary' : s < step ? 'bg-primary/50' : 'bg-muted'
-              }`}
-            />
-          ))}
+        <CommandHero
+          eyebrow="Briefing Tático"
+          title="Configurar Batalha"
+          description={`Prepare o teatro de operações para a campanha ${campaign.name}`}
+          actions={
+            <Button variant="outline" asChild>
+              <Link href={`/campaign/${id}`}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para Campanha
+              </Link>
+            </Button>
+          }
+          intel={
+            <>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Facção Inimiga</div>
+                <div className="font-bold">{campaign.hordeFaction || "—"}</div>
+              </div>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Jogadores</div>
+                <div className="font-bold">{players?.length ?? "—"}</div>
+              </div>
+              <div className="border border-border/60 bg-background/50 p-4 rounded">
+                <div className="text-xs command-title text-muted-foreground mb-1">Passo</div>
+                <div className="font-bold">{step} / 5</div>
+              </div>
+            </>
+          }
+        />
+
+        {/* Tactical progress indicator */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1">
+          {STEPS.map((s, idx) => {
+            const stepNum = idx + 1;
+            const isActive = stepNum === step;
+            const isDone = stepNum < step;
+            return (
+              <div key={stepNum} className="flex items-center gap-1 flex-shrink-0">
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs command-title transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary/10 text-primary"
+                      : isDone
+                      ? "border-primary/40 bg-primary/5 text-primary/70"
+                      : "border-border/50 bg-background/30 text-muted-foreground"
+                  }`}
+                >
+                  <span className={isDone ? "text-primary/70" : isActive ? "text-primary" : ""}>{s.icon}</span>
+                  <span>{s.label}</span>
+                  {isDone && <Check className="h-3 w-3 text-primary/70 ml-0.5" />}
+                </div>
+                {idx < STEPS.length - 1 && (
+                  <div className={`h-px w-4 flex-shrink-0 ${isDone ? "bg-primary/40" : "bg-border/40"}`} />
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Step 1: Mission Selection */}
         {step === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Passo 1: Selecionar Missão</CardTitle>
-              <CardDescription>Escolha a tabela de missões e o modo de seleção</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <DossierPanel
+            title="Passo 1: Selecionar Missão"
+            subtitle="Escolha a tabela de missões e o modo de seleção"
+            icon={<Map className="h-5 w-5" />}
+          >
+            <div className="space-y-6">
               {/* Mission Table Selection */}
               <div className="space-y-3">
                 <Label>Tabela de Missões</Label>
@@ -323,39 +376,39 @@ export default function BattleSetup() {
                   <Label>Escolher Missão</Label>
                   <div className="grid gap-2">
                     {(config.missionTable === 'A' ? MISSION_TABLE_A : MISSION_TABLE_B).map((mission) => (
-                      <Card
+                      <div
                         key={mission.id}
-                        className={`cursor-pointer transition-colors ${
-                          config.selectedMission?.id === mission.id ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
+                        className={`cursor-pointer rounded-lg border p-4 flex items-center justify-between transition-colors ${
+                          config.selectedMission?.id === mission.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border/60 bg-background/30 hover:border-primary/50'
                         }`}
                         onClick={() => setConfig({ ...config, selectedMission: mission })}
                       >
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold">{mission.name}</div>
-                            <div className="text-sm text-muted-foreground">{mission.pageReference}</div>
-                          </div>
-                          {config.selectedMission?.id === mission.id && (
-                            <Check className="h-5 w-5 text-primary" />
-                          )}
-                        </CardContent>
-                      </Card>
+                        <div>
+                          <div className="font-semibold">{mission.name}</div>
+                          <div className="text-sm text-muted-foreground">{mission.pageReference}</div>
+                        </div>
+                        {config.selectedMission?.id === mission.id && (
+                          <Check className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </DossierPanel>
         )}
 
         {/* Step 2: Points Allocation */}
         {step === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Passo 2: Definir Pontos</CardTitle>
-              <CardDescription>Quantos pontos totais para esta batalha?</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <DossierPanel
+            title="Passo 2: Definir Pontos"
+            subtitle="Quantos pontos totais para esta batalha?"
+            icon={<Coins className="h-5 w-5" />}
+          >
+            <div className="space-y-6">
               <div className="space-y-3">
                 <Label htmlFor="points">Pontos Totais</Label>
                 <Input
@@ -387,18 +440,18 @@ export default function BattleSetup() {
                   ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DossierPanel>
         )}
 
         {/* Step 3: Requisitions */}
         {step === 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Passo 3: Gastar Requisições</CardTitle>
-              <CardDescription>Jogadores podem gastar Pontos de Requisição para comprar upgrades</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <DossierPanel
+            title="Passo 3: Gastar Requisições"
+            subtitle="Jogadores podem gastar Pontos de Requisição para comprar upgrades"
+            icon={<ShoppingCart className="h-5 w-5" />}
+          >
+            <div className="space-y-6">
               {players && players.map((player) => {
                 const playerRP = player.requisitionPoints || 0;
                 const purchasedRequisitions = config.playerRequisitions[player.id] || [];
@@ -406,7 +459,7 @@ export default function BattleSetup() {
                 const remainingRP = playerRP - spentRP;
 
                 return (
-                  <div key={player.id} className="border rounded-lg p-4 space-y-4">
+                  <div key={player.id} className="rounded-lg border border-border/70 bg-background/35 p-4 space-y-4">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="font-semibold text-lg">{player.name}</h3>
@@ -422,7 +475,7 @@ export default function BattleSetup() {
 
                     {purchasedRequisitions.length > 0 && (
                       <div className="space-y-2">
-                        <p className="text-sm font-medium">Requisições Compradas:</p>
+                        <p className="text-sm font-medium command-title">Requisições Compradas:</p>
                         <div className="flex flex-wrap gap-2">
                           {purchasedRequisitions.map((reqId, idx) => {
                             const req = REQUISITIONS.find(r => r.id === reqId);
@@ -437,7 +490,7 @@ export default function BattleSetup() {
                     )}
 
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Requisições Disponíveis:</p>
+                      <p className="text-sm font-medium command-title">Requisições Disponíveis:</p>
                       <div className="grid gap-2">
                         {REQUISITIONS.map((requisition) => {
                           const canAfford = typeof requisition.cost === 'number' 
@@ -447,7 +500,7 @@ export default function BattleSetup() {
                           return (
                             <div
                               key={requisition.id}
-                              className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                              className="flex items-start gap-3 p-3 border border-border/60 rounded-lg hover:bg-muted/30 transition-colors"
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
@@ -463,7 +516,7 @@ export default function BattleSetup() {
                                   {requisition.description}
                                 </p>
                                 {requisition.restrictions && (
-                                  <p className="text-xs text-amber-600 mt-1">
+                                  <p className="text-xs text-amber-400 mt-1">
                                     Restrição: {requisition.restrictions}
                                   </p>
                                 )}
@@ -520,24 +573,24 @@ export default function BattleSetup() {
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </DossierPanel>
         )}
 
         {/* Step 4: Unit Selection */}
         {step === 4 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Passo 4: Selecionar Unidades</CardTitle>
-              <CardDescription>Cada jogador seleciona suas unidades para a batalha</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <DossierPanel
+            title="Passo 4: Selecionar Unidades"
+            subtitle="Cada jogador seleciona suas unidades para a batalha"
+            icon={<Users className="h-5 w-5" />}
+          >
+            <div className="space-y-6">
               {players && players.map((player) => {
                 const pointsPerPlayer = Math.floor(config.totalPoints / players.length);
                 const selectedUnits = config.playerUnits[player.id] || [];
                 
                 return (
-                  <div key={player.id} className="space-y-3 p-4 border rounded-lg">
+                  <div key={player.id} className="space-y-3 p-4 rounded-lg border border-border/70 bg-background/35">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold text-lg">{player.name}</h3>
@@ -567,58 +620,58 @@ export default function BattleSetup() {
               <p className="text-sm text-muted-foreground mt-4">
                 Por enquanto, todas as unidades do Order of Battle serão incluídas automaticamente.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </DossierPanel>
         )}
 
         {/* Step 5: Confirmation */}
         {step === 5 && (
-          <Card>
-            <CardHeader>
-                      <CardTitle>Passo 5: Confirmação</CardTitle>
-              <CardDescription>Revise as configurações da batalha</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-muted-foreground">Missão</Label>
-                  <div className="text-lg font-semibold">
+          <DossierPanel
+            title="Passo 5: Confirmação"
+            subtitle="Revise as configurações da batalha antes de iniciar"
+            icon={<ClipboardCheck className="h-5 w-5" />}
+          >
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                  <div className="text-xs text-muted-foreground command-title mb-1">Missão</div>
+                  <div className="font-semibold">
                     {config.selectedMission?.name}
-                    <Badge variant="outline" className="ml-2">
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Badge variant="outline" className="text-xs">
                       {config.selectedMission?.pageReference}
                     </Badge>
+                    {config.missionSelection === 'random' && (
+                      <Badge variant="secondary" className="text-xs">Aleatória</Badge>
+                    )}
                   </div>
-                  {config.missionSelection === 'random' && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      (Selecionada aleatoriamente da Tabela {config.missionTable})
-                    </p>
-                  )}
                 </div>
 
-                <div>
-                  <Label className="text-muted-foreground">Pontos Totais</Label>
-                  <div className="text-lg font-semibold">{config.totalPoints} pontos</div>
-                  <p className="text-sm text-muted-foreground">
-                    {Math.floor(config.totalPoints / (players?.length || 1))} pontos por jogador
-                  </p>
+                <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                  <div className="text-xs text-muted-foreground command-title mb-1">Pontos Totais</div>
+                  <div className="font-semibold">{config.totalPoints} pts</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {Math.floor(config.totalPoints / (players?.length || 1))} pts por jogador
+                  </div>
                 </div>
 
-                <div>
-                  <Label className="text-muted-foreground">Jogadores</Label>
-                  <div className="text-lg font-semibold">{players?.length || 0} jogadores</div>
+                <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                  <div className="text-xs text-muted-foreground command-title mb-1">Jogadores</div>
+                  <div className="font-semibold">{players?.length || 0} jogador(es)</div>
                   {players && players.length > 0 && (
-                    <ul className="mt-2 space-y-1">
+                    <ul className="mt-1 space-y-0.5">
                       {players.map((player) => (
-                        <li key={player.id} className="text-sm">
-                          • {player.name} ({player.faction})
+                        <li key={player.id} className="text-xs text-muted-foreground">
+                          {player.name} — {player.faction}
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DossierPanel>
         )}
 
         {/* Navigation buttons */}
@@ -663,9 +716,9 @@ export default function BattleSetup() {
           ) : playerUnits && playerUnits.length > 0 ? (
             <div className="space-y-4">
               {/* Points summary */}
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-4 rounded-md border border-border/60 bg-background/40">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Pontos Selecionados:</span>
+                  <span className="text-sm command-title text-muted-foreground">Pontos Selecionados</span>
                   <span className="text-lg font-bold">
                     {tempSelectedUnits.reduce((sum, id) => {
                       const unit = playerUnits.find(u => u.id === id);
@@ -680,7 +733,7 @@ export default function BattleSetup() {
                 {playerUnits.map((unit) => (
                   <div
                     key={unit.id}
-                    className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    className="flex items-center space-x-3 p-3 border border-border/60 rounded-lg hover:bg-muted/30 cursor-pointer"
                     onClick={() => toggleUnit(unit.id, unit.pointsCost)}
                   >
                     <Checkbox
