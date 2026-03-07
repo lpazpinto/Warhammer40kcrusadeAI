@@ -206,7 +206,7 @@
     inset: 0;
     background: url("/assets/ui-theme/overlays/command-sigil-watermark.webp")
       right 1rem center / 220px auto no-repeat;
-    opacity: 0.08;
+    opacity: 0.14;
     pointer-events: none;
   }
 
@@ -216,11 +216,11 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 72px;
+    height: 80px;
     background: url("/assets/ui-theme/overlays/dossier-header-strip.webp")
       top center / 100% auto no-repeat;
     mix-blend-mode: soft-light;
-    opacity: 0.3;
+    opacity: 0.5;
     pointer-events: none;
   }
 
@@ -392,5 +392,42 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
+  }
+
+  /* === Login page thematic treatment === */
+  .login-page {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .login-bg-overlay {
+    position: fixed;
+    inset: 0;
+    background: url("/assets/ui-theme/backgrounds/grimdark-metal-bg.webp")
+      center / cover no-repeat;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .login-hero {
+    /* position: relative is the only required CSS here;
+       flex layout is provided by Tailwind classes on the element */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .login-sigil {
+    position: absolute;
+    top: -5rem;
+    bottom: -5rem;
+    left: -6rem;
+    right: -6rem;
+    background: url("/assets/ui-theme/overlays/command-sigil-watermark.webp")
+      center / 380px auto no-repeat;
+    opacity: 0.13;
+    pointer-events: none;
   }
 }
