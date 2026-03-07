@@ -683,7 +683,7 @@ function BattleTrackerInner() {
           intel={
             <>
               <div className="border border-border/60 bg-background/50 p-4 rounded">
-                <div className="text-xs command-title text-muted-foreground mb-1">Round</div>
+                <div className="text-xs command-title text-muted-foreground mb-1">Rodada</div>
                 <div className="font-bold">{localCurrentRound} / 5</div>
               </div>
               <div className="border border-border/60 bg-background/50 p-4 rounded">
@@ -988,14 +988,14 @@ function BattleTrackerInner() {
                     <div className="font-semibold capitalize">{battle.status}</div>
                   </div>
                   <div className="rounded-md border border-border/50 px-2 py-1.5">
-                    <div className="text-xs command-title text-muted-foreground">Round</div>
+                    <div className="text-xs command-title text-muted-foreground">Rodada</div>
                     <div className="font-semibold">
-                      {battle.battleRound || 1} — {(battle as any).currentTurn === 'horde' ? 'Horda' : 'Jogador'}
+                      {localCurrentRound} — {localCurrentTurn === 'opponent' ? 'Horda' : 'Jogador'}
                     </div>
                   </div>
                   {battle.deployment && (
                     <div className="rounded-md border border-border/50 px-2 py-1.5">
-                      <div className="text-xs command-title text-muted-foreground">Deployment</div>
+                      <div className="text-xs command-title text-muted-foreground">Desdobramento</div>
                       <div className="font-semibold">{battle.deployment}</div>
                     </div>
                   )}
