@@ -405,18 +405,37 @@
     inset: 0;
     background: url("/assets/ui-theme/backgrounds/grimdark-metal-bg.webp")
       center / cover no-repeat;
-    opacity: 0.12;
+    opacity: 0.15;
     pointer-events: none;
     z-index: -1;
   }
 
   .login-hero {
-    /* position: relative is the only required CSS here;
-       flex layout is provided by Tailwind classes on the element */
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* Adds clearance for the ::before accent line (see .login-hero::before),
+       which mirrors the gradient separator in .command-hero__header-frame */
+    padding-top: 0.5rem;
+  }
+
+  .login-hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -1.5rem;
+    right: -1.5rem;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklch, var(--primary) 45%, var(--accent) 55%) 25%,
+      color-mix(in oklch, var(--primary) 45%, var(--accent) 55%) 75%,
+      transparent
+    );
+    opacity: 0.6;
+    pointer-events: none;
   }
 
   .login-sigil {
@@ -427,7 +446,7 @@
     right: -6rem;
     background: url("/assets/ui-theme/overlays/command-sigil-watermark.webp")
       center / 380px auto no-repeat;
-    opacity: 0.13;
+    opacity: 0.15;
     pointer-events: none;
   }
 }
