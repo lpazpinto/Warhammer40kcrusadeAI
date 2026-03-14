@@ -418,6 +418,7 @@
     /* Adds clearance for the ::before accent line (see .login-hero::before),
        which mirrors the gradient separator in .command-hero__header-frame */
     padding-top: 0.5rem;
+    overflow-x: clip;
   }
 
   .login-hero::before {
