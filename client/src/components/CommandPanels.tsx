@@ -44,15 +44,17 @@ export function CommandHero({
   description,
   actions,
   intel,
+  className,
 }: {
   eyebrow: string;
   title: string;
   description: string;
   actions?: ReactNode;
   intel?: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="command-hero">
+    <section className={cn("command-hero", className)}>
       <div className="command-hero__header-frame">
         <p className="command-title text-xs text-muted-foreground">{eyebrow}</p>
         <h1 className="command-hero__title">{title}</h1>

@@ -1,11 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
-import {
-  CommandHero,
-  DossierPanel,
-  StatusSeal,
-} from "@/components/CommandPanels";
+import { DossierPanel, StatusSeal } from "@/components/CommandPanels";
 import {
   Dialog,
   DialogContent,
@@ -91,7 +87,7 @@ export default function Campaigns() {
         <DossierPanel
           title="Acesso ao Centro de Comando"
           subtitle="Autentique-se para consultar os dossiês ativos"
-          className="max-w-md w-full"
+          className="dossier-panel--themed max-w-md w-full"
         >
           <Button asChild className="w-full">
             <a href={getLoginUrl()}>Fazer Login</a>
@@ -107,125 +103,158 @@ export default function Campaigns() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 space-y-6">
-        <CommandHero
-          eyebrow="Centro de Comando"
-          title="Campanhas de Cruzada"
-          description="Coordene forças imperiais, acompanhe as frentes narrativas e responda às movimentações da Horda."
-          actions={
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="w-full lg:w-auto">
-                  <Plus className="mr-2 h-5 w-5" />
-                  Nova Campanha
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Criar Nova Campanha</DialogTitle>
-                  <DialogDescription>
-                    Configure uma nova campanha de Cruzada contra a Horda
-                  </DialogDescription>
-                </DialogHeader>
+        <header className="campaign-command-header">
+          <picture className="campaign-command-header__strip" aria-hidden="true">
+            <source
+              srcSet="/assets/ui-theme/overlays/dossier-header-strip.webp"
+              type="image/webp"
+            />
+            <img
+              src="/assets/ui-theme/overlays/dossier-header-strip.png"
+              alt=""
+              aria-hidden="true"
+              className="campaign-command-header__strip-image"
+            />
+          </picture>
 
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Nome da Campanha</Label>
-                    <Input
-                      id="name"
-                      placeholder="Ex: Defesa de Armageddon"
-                      value={newCampaign.name}
-                      onChange={e =>
-                        setNewCampaign({ ...newCampaign, name: e.target.value })
-                      }
-                    />
+          <picture className="campaign-command-header__sigil" aria-hidden="true">
+            <source
+              srcSet="/assets/ui-theme/overlays/command-sigil-watermark.webp"
+              type="image/webp"
+            />
+            <img
+              src="/assets/ui-theme/overlays/command-sigil-watermark.png"
+              alt=""
+              aria-hidden="true"
+              className="campaign-command-header__sigil-image"
+            />
+          </picture>
+
+          <div className="campaign-command-header__content">
+            <div className="campaign-command-header__heading">
+              <p className="command-title text-xs text-muted-foreground">
+                Centro de Comando
+              </p>
+              <h1 className="campaign-command-header__title">Campanhas de Cruzada</h1>
+              <p className="campaign-command-header__description">
+                Coordene forças imperiais, acompanhe as frentes narrativas e
+                responda às movimentações da Horda.
+              </p>
+            </div>
+
+            <div className="campaign-command-header__actions">
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="w-full lg:w-auto">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Nova Campanha
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Criar Nova Campanha</DialogTitle>
+                    <DialogDescription>
+                      Configure uma nova campanha de Cruzada contra a Horda
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Nome da Campanha</Label>
+                      <Input
+                        id="name"
+                        placeholder="Ex: Defesa de Armageddon"
+                        value={newCampaign.name}
+                        onChange={e =>
+                          setNewCampaign({ ...newCampaign, name: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="faction">Facção da Horda</Label>
+                      <Select
+                        value={newCampaign.hordeFaction}
+                        onValueChange={value =>
+                          setNewCampaign({ ...newCampaign, hordeFaction: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a facção inimiga" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {factions?.map(faction => (
+                            <SelectItem key={faction} value={faction}>
+                              {faction}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="battlesPerPhase">Batalhas por Fase</Label>
+                      <Input
+                        id="battlesPerPhase"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={newCampaign.battlesPerPhase}
+                        onChange={e =>
+                          setNewCampaign({
+                            ...newCampaign,
+                            battlesPerPhase: parseInt(e.target.value) || 3,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="strategicPoints">
+                        Pontos Estratégicos para Vitória
+                      </Label>
+                      <Input
+                        id="strategicPoints"
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={newCampaign.strategicPointsForVictory}
+                        onChange={e =>
+                          setNewCampaign({
+                            ...newCampaign,
+                            strategicPointsForVictory:
+                              parseInt(e.target.value) || 10,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="faction">Facção da Horda</Label>
-                    <Select
-                      value={newCampaign.hordeFaction}
-                      onValueChange={value =>
-                        setNewCampaign({ ...newCampaign, hordeFaction: value })
+                  <DialogFooter>
+                    <Button
+                      onClick={() => createCampaign.mutate(newCampaign)}
+                      disabled={
+                        !newCampaign.name ||
+                        !newCampaign.hordeFaction ||
+                        createCampaign.isPending
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a facção inimiga" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {factions?.map(faction => (
-                          <SelectItem key={faction} value={faction}>
-                            {faction}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      {createCampaign.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Criar Campanha
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="battlesPerPhase">Batalhas por Fase</Label>
-                    <Input
-                      id="battlesPerPhase"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={newCampaign.battlesPerPhase}
-                      onChange={e =>
-                        setNewCampaign({
-                          ...newCampaign,
-                          battlesPerPhase: parseInt(e.target.value) || 3,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="strategicPoints">
-                      Pontos Estratégicos para Vitória
-                    </Label>
-                    <Input
-                      id="strategicPoints"
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={newCampaign.strategicPointsForVictory}
-                      onChange={e =>
-                        setNewCampaign({
-                          ...newCampaign,
-                          strategicPointsForVictory:
-                            parseInt(e.target.value) || 10,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button
-                    onClick={() => createCampaign.mutate(newCampaign)}
-                    disabled={
-                      !newCampaign.name ||
-                      !newCampaign.hordeFaction ||
-                      createCampaign.isPending
-                    }
-                  >
-                    {createCampaign.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Criar Campanha
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          }
-          intel={
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="campaign-command-header__intel grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-border/60 bg-background/50 p-4">
                 <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
                   <ScrollText className="h-3.5 w-3.5" /> Campanhas Registradas
                 </div>
-                <p className="mt-2 text-3xl font-bold">
-                  {campaigns?.length ?? 0}
-                </p>
+                <p className="mt-2 text-3xl font-bold">{campaigns?.length ?? 0}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-background/50 p-4">
                 <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
@@ -240,8 +269,8 @@ export default function Campaigns() {
                 <p className="mt-2 text-3xl font-bold">4</p>
               </div>
             </div>
-          }
-        />
+          </div>
+        </header>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -260,9 +289,10 @@ export default function Campaigns() {
                     title={campaign.name}
                     subtitle={`Frente hostil: ${campaign.hordeFaction}`}
                     icon={<Users className="h-4 w-4" />}
-                    className="h-full transition-transform duration-200 hover:-translate-y-1 cursor-pointer"
+                    className="dossier-panel--themed h-full transition-transform duration-200 hover:-translate-y-1 cursor-pointer"
                     actions={
                       <StatusSeal
+                        className="status-seal--stamped"
                         tone={
                           campaign.status === "ongoing"
                             ? "operational"
@@ -311,6 +341,7 @@ export default function Campaigns() {
               title="Nenhuma campanha criada"
               subtitle="Abra uma nova frente de guerra para iniciar o registro de operações"
               icon={<Sword className="h-4 w-4" />}
+              className="dossier-panel--themed"
             >
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <picture>

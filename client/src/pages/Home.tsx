@@ -34,14 +34,36 @@ export default function Home() {
   if (!isAuthenticated) {
     return (
       <div className="login-page min-h-screen flex flex-col items-center justify-center p-4">
-        {/* Enhanced grimdark metal background layer — visibly reinforces the theme */}
-        <div className="login-bg-overlay" aria-hidden="true" />
+        {/* Explicit runtime asset layer: grimdark metal background */}
+        <picture className="login-bg-overlay" aria-hidden="true">
+          <source
+            srcSet="/assets/ui-theme/backgrounds/grimdark-metal-bg.webp"
+            type="image/webp"
+          />
+          <img
+            src="/assets/ui-theme/backgrounds/grimdark-metal-bg.png"
+            alt=""
+            aria-hidden="true"
+            className="login-bg-overlay__image"
+          />
+        </picture>
 
         {/* Hero + card area — constrained to max-w-md so the watermark is centered
              behind both title and login card as a single visual unit */}
         <div className="login-hero max-w-md w-full">
-          {/* Command sigil watermark behind the login area */}
-          <div className="login-sigil" aria-hidden="true" />
+          {/* Explicit runtime asset layer: command sigil watermark */}
+          <picture className="login-sigil" aria-hidden="true">
+            <source
+              srcSet="/assets/ui-theme/overlays/command-sigil-watermark.webp"
+              type="image/webp"
+            />
+            <img
+              src="/assets/ui-theme/overlays/command-sigil-watermark.png"
+              alt=""
+              aria-hidden="true"
+              className="login-sigil__image"
+            />
+          </picture>
 
           <div className="text-center mb-8 relative z-10 w-full">
             <Sword className="h-20 w-20 mx-auto mb-4 text-primary" />
@@ -52,7 +74,7 @@ export default function Home() {
             </p>
           </div>
 
-          <Card className="command-surface w-full relative z-10">
+          <Card className="login-dossier-card command-surface command-surface--themed w-full relative z-10">
             <CardHeader>
               <CardTitle>Bem-vindo</CardTitle>
               <CardDescription>
