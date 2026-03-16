@@ -35,35 +35,39 @@ export default function Home() {
     return (
       <div className="login-page min-h-screen flex flex-col items-center justify-center p-4">
         {/* Explicit runtime asset layer: grimdark metal background */}
-        <picture className="login-bg-overlay" aria-hidden="true">
-          <source
-            srcSet="/assets/ui-theme/backgrounds/grimdark-metal-bg.webp"
-            type="image/webp"
-          />
-          <img
-            src="/assets/ui-theme/backgrounds/grimdark-metal-bg.png"
-            alt=""
-            aria-hidden="true"
-            className="login-bg-overlay__image"
-          />
-        </picture>
+        <div className="login-bg-overlay" aria-hidden="true">
+          <picture className="login-bg-overlay__picture">
+            <source
+              srcSet="/assets/ui-theme/backgrounds/grimdark-metal-bg.webp"
+              type="image/webp"
+            />
+            <img
+              src="/assets/ui-theme/backgrounds/grimdark-metal-bg.png"
+              alt=""
+              aria-hidden="true"
+              className="login-bg-overlay__image"
+            />
+          </picture>
+        </div>
 
         {/* Hero + card area — constrained to max-w-md so the watermark is centered
              behind both title and login card as a single visual unit */}
         <div className="login-hero max-w-md w-full">
           {/* Explicit runtime asset layer: command sigil watermark */}
-          <picture className="login-sigil" aria-hidden="true">
-            <source
-              srcSet="/assets/ui-theme/overlays/command-sigil-watermark.webp"
-              type="image/webp"
-            />
-            <img
-              src="/assets/ui-theme/overlays/command-sigil-watermark.png"
-              alt=""
-              aria-hidden="true"
-              className="login-sigil__image"
-            />
-          </picture>
+          <div className="login-sigil" aria-hidden="true">
+            <picture className="login-sigil__picture">
+              <source
+                srcSet="/assets/ui-theme/overlays/command-sigil-watermark.webp"
+                type="image/webp"
+              />
+              <img
+                src="/assets/ui-theme/overlays/command-sigil-watermark.png"
+                alt=""
+                aria-hidden="true"
+                className="login-sigil__image"
+              />
+            </picture>
+          </div>
 
           <div className="text-center mb-8 relative z-10 w-full">
             <Sword className="h-20 w-20 mx-auto mb-4 text-primary" />

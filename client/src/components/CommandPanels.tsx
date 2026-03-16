@@ -24,15 +24,17 @@ export function StatusSeal({
   const base = sealByTone[tone];
   return (
     <div className={cn("status-seal", className)}>
-      <picture>
-        <source srcSet={`${base}.webp`} type="image/webp" />
-        <img
-          src={`${base}.png`}
-          alt=""
-          aria-hidden="true"
-          className="status-seal__image"
-        />
-      </picture>
+      <span className="status-seal__asset" aria-hidden="true">
+        <picture className="status-seal__asset-picture">
+          <source srcSet={`${base}.webp`} type="image/webp" />
+          <img
+            src={`${base}.png`}
+            alt=""
+            aria-hidden="true"
+            className="status-seal__image"
+          />
+        </picture>
+      </span>
       <span className="status-seal__label">{label}</span>
     </div>
   );
