@@ -306,6 +306,13 @@
     pointer-events: none;
   }
 
+  .campaign-command-header__strip-picture,
+  .campaign-command-header__sigil-picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
   .campaign-command-header__strip {
     inset: 0 auto auto 0;
     width: 100%;
@@ -493,6 +500,13 @@
     background: color-mix(in oklch, var(--background) 85%, black 15%);
   }
 
+  .status-seal__asset,
+  .status-seal__asset-picture {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .status-seal__image {
     width: 1.5rem;
     height: 1.5rem;
@@ -531,6 +545,13 @@
     inset: 0;
     pointer-events: none;
     z-index: 0;
+  }
+
+  .login-bg-overlay__picture,
+  .login-sigil__picture {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 
   .login-bg-overlay__image {
