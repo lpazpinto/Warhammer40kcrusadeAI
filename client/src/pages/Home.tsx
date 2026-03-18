@@ -71,6 +71,9 @@ export default function Home() {
 
           <div className="text-center mb-8 relative z-10 w-full">
             <Sword className="h-20 w-20 mx-auto mb-4 text-primary" />
+            <p className="command-title text-xs text-muted-foreground mb-3">
+              Identificação Imperial
+            </p>
             <h1 className="command-title text-5xl font-bold mb-4">{APP_TITLE}</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Gerencie suas campanhas de Cruzada do Warhammer 40.000 com IA
