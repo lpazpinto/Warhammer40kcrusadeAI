@@ -191,6 +191,10 @@
     text-transform: uppercase;
   }
 
+  h1.command-title {
+    font-family: "Cinzel", serif;
+  }
+
   .command-hero {
     position: relative;
     overflow: hidden;
@@ -620,6 +624,25 @@
     height: 100%;
     object-fit: contain;
     opacity: 0.15;
+  }
+
+  .login-identity-mark {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+  }
+
+  .login-identity-mark__picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .login-identity-mark__image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px color-mix(in oklch, var(--primary) 55%, transparent));
   }
 
   .login-dossier-card {

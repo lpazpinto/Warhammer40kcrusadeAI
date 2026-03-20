@@ -3,7 +3,9 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 export const APP_TITLE =
   import.meta.env.VITE_APP_TITLE || "Warhammer Horde AI";
 
-export const APP_LOGO = import.meta.env.VITE_APP_LOGO || "/favicon.png";
+export const APP_LOGO =
+  import.meta.env.VITE_APP_LOGO ||
+  "/assets/ui-theme/icons/app-identity-mark.svg";
 
 // Generate GitHub login URL at runtime.
 export const getGitHubLoginUrl = () => {

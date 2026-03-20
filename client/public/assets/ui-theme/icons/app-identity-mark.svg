@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Outer octagon frame — command seal silhouette -->
+  <polygon
+    points="29,4 71,4 96,29 96,71 71,96 29,96 4,71 4,29"
+    stroke="rgba(255,210,140,0.92)"
+    stroke-width="2.5"
+    fill="none"
+  />
+  <!-- Inner octagon — refinement ring -->
+  <polygon
+    points="35,14 65,14 86,35 86,65 65,86 35,86 14,65 14,35"
+    stroke="rgba(255,210,140,0.35)"
+    stroke-width="1"
+    fill="none"
+  />
+  <!-- Cardinal targeting lines — command language -->
+  <line x1="50" y1="19" x2="50" y2="36" stroke="rgba(255,210,140,0.92)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="50" y1="64" x2="50" y2="81" stroke="rgba(255,210,140,0.92)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="19" y1="50" x2="36" y2="50" stroke="rgba(255,210,140,0.92)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="64" y1="50" x2="81" y2="50" stroke="rgba(255,210,140,0.92)" stroke-width="2" stroke-linecap="round"/>
+  <!-- Central command point -->
+  <circle cx="50" cy="50" r="7" fill="rgba(255,210,140,0.92)"/>
+  <!-- Corner diagonal tick marks -->
+  <line x1="32" y1="32" x2="39" y2="39" stroke="rgba(255,210,140,0.65)" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="68" y1="32" x2="61" y2="39" stroke="rgba(255,210,140,0.65)" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="32" y1="68" x2="39" y2="61" stroke="rgba(255,210,140,0.65)" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="68" y1="68" x2="61" y2="61" stroke="rgba(255,210,140,0.65)" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
