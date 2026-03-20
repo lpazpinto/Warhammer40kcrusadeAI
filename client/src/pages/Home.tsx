@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Sword } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { APP_TITLE, getGitHubLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
@@ -70,7 +70,20 @@ export default function Home() {
           </div>
 
           <div className="text-center mb-8 relative z-10 w-full">
-            <Sword className="h-20 w-20 mx-auto mb-4 text-primary" />
+            <div className="login-identity-mark" aria-hidden="true">
+              <picture className="login-identity-mark__picture">
+                <source
+                  srcSet="/assets/ui-theme/icons/empty-state-emblem.webp"
+                  type="image/webp"
+                />
+                <img
+                  src="/assets/ui-theme/icons/empty-state-emblem.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="login-identity-mark__image"
+                />
+              </picture>
+            </div>
             <p className="command-title text-xs text-muted-foreground mb-3">
               Identificação Imperial
             </p>
