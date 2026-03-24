@@ -69,29 +69,34 @@ export default function Home() {
             </picture>
           </div>
 
-          <div className="text-center mb-8 relative z-10 w-full">
-            <div className="login-identity-mark" aria-hidden="true">
-              <picture className="login-identity-mark__picture">
-                <source
-                  srcSet="/assets/ui-theme/icons/empty-state-emblem.webp"
-                  type="image/webp"
-                />
-                <img
-                  src="/assets/ui-theme/icons/empty-state-emblem.png"
-                  alt=""
-                  aria-hidden="true"
-                  className="login-identity-mark__image"
-                />
-              </picture>
+          {/* Hero panel — strip, emblem, title, subtitle in one cohesive block */}
+          <div className="login-hero-panel w-full">
+            <div className="login-hero-panel__content text-center">
+              <div className="login-identity-mark" aria-hidden="true">
+                <picture className="login-identity-mark__picture">
+                  <source
+                    srcSet="/assets/ui-theme/icons/empty-state-emblem.webp"
+                    type="image/webp"
+                  />
+                  <img
+                    src="/assets/ui-theme/icons/empty-state-emblem.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="login-identity-mark__image"
+                  />
+                </picture>
+              </div>
+              <p className="command-title text-xs text-muted-foreground mb-3">
+                Identificação Imperial
+              </p>
+              <h1 className="command-title text-5xl font-bold mb-4">
+                {APP_TITLE}
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Gerencie suas campanhas de Cruzada do Warhammer 40.000 com IA
+                controlando a Horda inimiga
+              </p>
             </div>
-            <p className="command-title text-xs text-muted-foreground mb-3">
-              Identificação Imperial
-            </p>
-            <h1 className="command-title text-5xl font-bold mb-4">{APP_TITLE}</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Gerencie suas campanhas de Cruzada do Warhammer 40.000 com IA
-              controlando a Horda inimiga
-            </p>
           </div>
 
           <Card className="login-dossier-card command-surface command-surface--themed w-full relative z-10">

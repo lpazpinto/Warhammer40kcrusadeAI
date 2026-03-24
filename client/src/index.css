@@ -574,18 +574,32 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Adds clearance for the ::before accent line (see .login-hero::before),
-       which mirrors the gradient separator in .command-hero__header-frame */
-    padding-top: 1.5rem;
     overflow-x: clip;
   }
 
-  .login-hero::before {
+  /* === Login hero panel — cohesive block: strip + emblem + title + subtitle === */
+  .login-hero-panel {
+    position: relative;
+    z-index: 10;
+    overflow: hidden;
+    border-radius: calc(var(--radius) + 8px);
+    border: 1px solid color-mix(in oklch, var(--trim) 52%, var(--border) 48%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, black 72%, var(--background) 28%) 0%,
+      color-mix(in oklch, var(--background) 64%, black 36%) 100%
+    );
+    box-shadow: var(--shadow-panel);
+    margin-bottom: 0.5rem;
+  }
+
+  /* Thin gradient accent line at the very top of the hero panel */
+  .login-hero-panel::before {
     content: "";
     position: absolute;
     top: 0;
-    left: -1.5rem;
-    right: -1.5rem;
+    left: 0;
+    right: 0;
     height: 2px;
     background: linear-gradient(
       90deg,
@@ -594,23 +608,30 @@
       color-mix(in oklch, var(--primary) 45%, var(--accent) 55%) 75%,
       transparent
     );
-    opacity: 0.6;
+    opacity: 0.7;
     pointer-events: none;
   }
 
-  .login-hero::after {
+  /* Dossier header strip — anchors the strip to the top of the hero panel */
+  .login-hero-panel::after {
     content: "";
     position: absolute;
-    top: -0.25rem;
-    left: -1.5rem;
-    right: -1.5rem;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 88px;
     background: url("/assets/ui-theme/overlays/dossier-header-strip.webp")
       top center / 100% auto no-repeat;
     mix-blend-mode: soft-light;
-    opacity: 0.52;
+    opacity: 0.55;
     pointer-events: none;
-    z-index: 0;
+  }
+
+  /* Content sits above the strip pseudo-element */
+  .login-hero-panel__content {
+    position: relative;
+    z-index: 1;
+    padding: 4.75rem 2rem 2.5rem;
   }
 
   .login-sigil {
@@ -646,7 +667,8 @@
   }
 
   .login-dossier-card {
-    border-color: color-mix(in oklch, var(--trim) 78%, var(--border) 22%);
+    border-color: color-mix(in oklch, var(--trim) 60%, var(--border) 40%);
+    border-top-color: color-mix(in oklch, var(--trim) 28%, transparent 72%);
     background:
       linear-gradient(
         170deg,
@@ -654,7 +676,7 @@
         color-mix(in oklch, var(--background) 82%, var(--muted) 18%)
       );
     box-shadow:
-      0 0 0 1px color-mix(in oklch, var(--accent) 26%, transparent),
+      0 0 0 1px color-mix(in oklch, var(--accent) 20%, transparent),
       0 20px 34px color-mix(in oklch, black 86%, var(--primary) 14%);
   }
 
