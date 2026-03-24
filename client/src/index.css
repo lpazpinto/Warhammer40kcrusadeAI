@@ -777,4 +777,108 @@
     font-weight: 700;
     line-height: 1;
   }
+
+  /* Smaller value variant for long text content (e.g. faction names) */
+  .campaign-intel-box__value--sm {
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  /* === Campaign Detail — Commander Cards === */
+
+  .commander-card {
+    border-radius: var(--radius-md);
+    border-top: 1px solid color-mix(in oklch, var(--border) 60%, var(--accent) 40%);
+    border-right: 1px solid color-mix(in oklch, var(--border) 60%, var(--accent) 40%);
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 60%, var(--accent) 40%);
+    border-left: 2px solid color-mix(in oklch, var(--primary) 60%, var(--accent) 40%);
+    background: color-mix(in oklch, var(--background) 65%, black 35%);
+    padding: 1.25rem;
+    transition:
+      transform 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .commander-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--accent) 22%, transparent),
+      0 10px 28px color-mix(in oklch, black 60%, transparent);
+  }
+
+  .commander-card__name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+  }
+
+  .commander-card__faction {
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-muted-foreground);
+  }
+
+  .commander-card__stat {
+    border-radius: calc(var(--radius) - 2px);
+    border: 1px solid color-mix(in oklch, var(--border) 55%, var(--accent) 45%);
+    background: color-mix(in oklch, var(--background) 72%, black 28%);
+    padding: 0.45rem 0.5rem;
+    text-align: center;
+  }
+
+  .commander-card__stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  .commander-card__stat-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 0.1rem;
+    line-height: 1;
+  }
+
+  /* === Campaign Detail — Objective Outcome Blocks === */
+
+  .objective-outcome {
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+  }
+
+  .objective-outcome--success {
+    border-top: 1px solid color-mix(in oklch, oklch(60% 0.15 142) 28%, var(--border) 72%);
+    border-right: 1px solid color-mix(in oklch, oklch(60% 0.15 142) 28%, var(--border) 72%);
+    border-bottom: 1px solid color-mix(in oklch, oklch(60% 0.15 142) 28%, var(--border) 72%);
+    border-left: 2px solid oklch(60% 0.15 142);
+    background: color-mix(in oklch, var(--background) 88%, oklch(60% 0.15 142) 12%);
+  }
+
+  .objective-outcome--failure {
+    border-top: 1px solid color-mix(in oklch, oklch(55% 0.2 25) 28%, var(--border) 72%);
+    border-right: 1px solid color-mix(in oklch, oklch(55% 0.2 25) 28%, var(--border) 72%);
+    border-bottom: 1px solid color-mix(in oklch, oklch(55% 0.2 25) 28%, var(--border) 72%);
+    border-left: 2px solid oklch(55% 0.2 25);
+    background: color-mix(in oklch, var(--background) 88%, oklch(55% 0.2 25) 12%);
+  }
+
+  .objective-outcome__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .objective-outcome__label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 }
