@@ -71,6 +71,21 @@ export default function Home() {
 
           {/* Hero panel — strip, emblem, title, subtitle in one cohesive block */}
           <div className="login-hero-panel w-full">
+            {/* Internal sigil watermark for panel depth */}
+            <div className="login-hero-panel__sigil" aria-hidden="true">
+              <picture className="login-hero-panel__sigil-picture">
+                <source
+                  srcSet="/assets/ui-theme/overlays/command-sigil-watermark.webp"
+                  type="image/webp"
+                />
+                <img
+                  src="/assets/ui-theme/overlays/command-sigil-watermark.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="login-hero-panel__sigil-image"
+                />
+              </picture>
+            </div>
             <div className="login-hero-panel__content text-center">
               <div className="login-identity-mark" aria-hidden="true">
                 <picture className="login-identity-mark__picture">
