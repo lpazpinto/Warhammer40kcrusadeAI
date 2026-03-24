@@ -585,8 +585,6 @@
     border-radius: calc(var(--radius) + 8px);
     border: 1px solid color-mix(in oklch, var(--trim) 52%, var(--border) 48%);
     background:
-      /* Subtle grain for surface texture */
-      url("/assets/ui-theme/overlays/panel-grain-overlay.webp") center / 256px repeat,
       /* Radial depth: slightly lighter core fading to near-black periphery */
       radial-gradient(
         ellipse 95% 80% at 50% 40%,
