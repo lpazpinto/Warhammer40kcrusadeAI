@@ -155,22 +155,6 @@ export default function CampaignDetail() {
       <div className="container mx-auto py-8 space-y-6">
         {/* ── Hero / Dossier Header ─────────────────────────────────── */}
         <header className="campaign-command-header">
-          {/* Dossier header strip overlay */}
-          <div className="campaign-command-header__strip" aria-hidden="true">
-            <picture className="campaign-command-header__strip-picture">
-              <source
-                srcSet="/assets/ui-theme/overlays/dossier-header-strip.webp"
-                type="image/webp"
-              />
-              <img
-                src="/assets/ui-theme/overlays/dossier-header-strip.png"
-                alt=""
-                aria-hidden="true"
-                className="campaign-command-header__strip-image"
-              />
-            </picture>
-          </div>
-
           {/* Command sigil watermark */}
           <div className="campaign-command-header__sigil" aria-hidden="true">
             <picture className="campaign-command-header__sigil-picture">
