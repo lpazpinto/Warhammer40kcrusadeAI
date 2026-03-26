@@ -304,6 +304,24 @@
     box-shadow: var(--shadow-panel);
   }
 
+  .campaign-command-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/assets/ui-theme/backgrounds/grimdark-metal-bg.webp")
+      center / cover no-repeat;
+    opacity: 0.07;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @media (prefers-reduced-data: reduce) {
+    .campaign-command-header::before {
+      display: none;
+    }
+  }
+
   .campaign-command-header__strip,
   .campaign-command-header__sigil {
     position: absolute;
@@ -432,6 +450,46 @@
 
   .dossier-panel--themed::after {
     opacity: 0.2;
+  }
+
+  /* === Campaign card rotating backgrounds (stable, deterministic via id % 3) === */
+  .campaign-card--bg-1::before,
+  .campaign-card--bg-2::before,
+  .campaign-card--bg-3::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    mix-blend-mode: soft-light;
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .campaign-card--bg-1::before {
+    background-image: url("/assets/ui-theme/backgrounds/grimdark-metal-bg.webp");
+    background-position: center;
+  }
+
+  .campaign-card--bg-2::before {
+    background-image: url("/assets/ui-theme/backgrounds/dossier-alt-bg.webp");
+    background-position: center;
+    opacity: 0.22;
+  }
+
+  .campaign-card--bg-3::before {
+    background-image: url("/assets/ui-theme/backgrounds/dossier-alt-bg.webp");
+    background-position: top left;
+    mix-blend-mode: overlay;
+    opacity: 0.15;
+  }
+
+  @media (prefers-reduced-data: reduce) {
+    .campaign-card--bg-1::before,
+    .campaign-card--bg-2::before,
+    .campaign-card--bg-3::before {
+      display: none;
+    }
   }
 
   .dossier-panel__header,
