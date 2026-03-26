@@ -312,7 +312,7 @@
     background: url("/assets/ui-theme/overlays/command-center-hero-bg.webp")
       center 35% / cover no-repeat;
     /* screen blend makes artwork clearly visible on the dark panel body */
-    opacity: 0.42;
+    opacity: 0.52;
     mix-blend-mode: screen;
     pointer-events: none;
     z-index: 0;
@@ -324,36 +324,15 @@
     }
   }
 
-  .campaign-command-header__strip,
-  .campaign-command-header__sigil {
-    position: absolute;
-    pointer-events: none;
-  }
-
-  .campaign-command-header__strip-picture,
   .campaign-command-header__sigil-picture {
     display: block;
     width: 100%;
     height: 100%;
   }
 
-  .campaign-command-header__strip {
-    inset: 0 auto auto 0;
-    width: 100%;
-    height: 90px;
-    z-index: 0;
-    opacity: 0.65;
-  }
-
-  .campaign-command-header__strip-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top;
-    mix-blend-mode: soft-light;
-  }
-
   .campaign-command-header__sigil {
+    position: absolute;
+    pointer-events: none;
     top: 50%;
     right: 1.5rem;
     transform: translateY(-50%);
