@@ -26,6 +26,12 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
+/** Returns a stable CSS class based on campaign id, cycling through 3 backgrounds. */
+function getCampaignBgClass(id: number): string {
+  const idx = ((id - 1) % 3) + 1;
+  return `campaign-card--bg-${idx}`;
+}
+
 export default function Campaigns() {
   const { loading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
@@ -293,7 +299,7 @@ export default function Campaigns() {
                     title={campaign.name}
                     subtitle={`Frente hostil: ${campaign.hordeFaction}`}
                     icon={<Users className="h-4 w-4" />}
-                    className="dossier-panel--themed h-full transition-transform duration-200 hover:-translate-y-1 cursor-pointer"
+                    className={`dossier-panel--themed h-full transition-transform duration-200 hover:-translate-y-1 cursor-pointer ${getCampaignBgClass(campaign.id)}`}
                     actions={
                       <StatusSeal
                         className="status-seal--stamped"
