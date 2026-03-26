@@ -308,10 +308,12 @@
     content: "";
     position: absolute;
     inset: 0;
+    /* focus on the body of the artwork, not just the top strip */
     background: url("/assets/ui-theme/overlays/command-center-hero-bg.webp")
-      center / cover no-repeat;
-    opacity: 0.12;
-    mix-blend-mode: soft-light;
+      center 35% / cover no-repeat;
+    /* screen blend makes artwork clearly visible on the dark panel body */
+    opacity: 0.42;
+    mix-blend-mode: screen;
     pointer-events: none;
     z-index: 0;
   }
@@ -460,29 +462,36 @@
     position: absolute;
     inset: 0;
     background-size: cover;
-    mix-blend-mode: soft-light;
-    opacity: 0.32;
+    /* screen blend brightens artwork on dark surfaces, making it clearly visible */
+    mix-blend-mode: screen;
+    opacity: 0.55;
     pointer-events: none;
     z-index: 0;
+    transition: opacity 200ms ease;
   }
 
+  /* Each card has a distinct focal crop to feel like a different theater of war */
   .campaign-card--bg-1::before {
     background-image: url("/assets/ui-theme/campaign-bg/campaign-bg-01.webp");
-    background-position: center;
+    background-position: 20% center;
   }
 
   .campaign-card--bg-2::before {
     background-image: url("/assets/ui-theme/campaign-bg/campaign-bg-02.webp");
-    background-position: center;
-    opacity: 0.38;
+    background-position: center 25%;
+    opacity: 0.58;
   }
 
   .campaign-card--bg-3::before {
     background-image: url("/assets/ui-theme/campaign-bg/campaign-bg-03.webp");
-    background-position: top left;
-    mix-blend-mode: overlay;
-    opacity: 0.28;
+    background-position: 75% 35%;
+    opacity: 0.52;
   }
+
+  /* Subtle hover boost to reinforce depth on interactive cards */
+  .campaign-card--bg-1:hover::before { opacity: 0.65; }
+  .campaign-card--bg-2:hover::before { opacity: 0.68; }
+  .campaign-card--bg-3:hover::before { opacity: 0.62; }
 
   @media (prefers-reduced-data: reduce) {
     .campaign-card--bg-1::before,
