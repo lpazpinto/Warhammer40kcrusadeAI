@@ -4,6 +4,15 @@ import fs from "fs";
 import { type Server } from "http";
 import path from "path";
 
+// Shared SPA catch-all rate limiter used by both dev (setupVite) and
+// production (serveStatic) to keep limits consistent in one place.
+const spaFallbackLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120,            // 120 requests per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /**
  * Development mode: sets up Vite dev server with HMR.
  *
@@ -42,14 +51,7 @@ export async function setupVite(app: Express, server: Server) {
 
   // Development SPA fallback can trigger filesystem reads on every request.
   // Apply rate limiting to reduce DoS risk from request floods.
-  const devSpaLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 120,            // 120 requests per window per IP
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  app.use("*", devSpaLimiter, async (req, res, next) => {
+  app.use("*", spaFallbackLimiter, async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
@@ -99,15 +101,8 @@ export function serveStatic(app: Express) {
 
   // SPA fallback: any route not matched by API or static files serves index.html.
   // Rate-limited to prevent file-system exhaustion (CodeQL: Missing rate limiting).
-  const spaLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 120,            // 120 requests per window per IP
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
   const indexPath = path.resolve(distPath, "index.html");
-  app.use("*", spaLimiter, (_req, res, next) => {
+  app.use("*", spaFallbackLimiter, (_req, res, next) => {
     res.sendFile(indexPath, (err) => {
       if (err) {
         console.error(`[Static] Failed to send index.html:`, err);
