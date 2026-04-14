@@ -1,0 +1,8 @@
+# Global owner: all files require review from @lpazpinto
+* @lpazpinto
+
+# Security-sensitive files require explicit owner review
+SECURITY.md @lpazpinto
+.github/workflows/ @lpazpinto
+.github/dependabot.yml @lpazpinto
+.github/CODEOWNERS @lpazpinto

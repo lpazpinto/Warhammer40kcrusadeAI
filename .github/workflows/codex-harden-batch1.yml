@@ -18,19 +18,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Run Codex (apply hardening changes)
-        uses: openai/codex-action@v1
+        uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1.6
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: .github/codex/prompts/harden-batch1.md
+          prompt-file: codex/prompts/harden-batch1.md
           safety-strategy: drop-sudo
           codex-args: '["--ask-for-approval","never"]'
           output-file: codex-output.md
 
       - name: Create Pull Request with changes
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
         with:
           title: "Hardening: fix Scorecard findings (Batch 1 - Codex)"
           commit-message: "chore(security): harden workflows and repo policy files"
