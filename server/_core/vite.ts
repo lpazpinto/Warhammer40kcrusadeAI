@@ -39,7 +39,17 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
+
+  // Development SPA fallback can trigger filesystem reads on every request.
+  // Apply rate limiting to reduce DoS risk from request floods.
+  const devSpaLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 120,            // 120 requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.use("*", devSpaLimiter, async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
