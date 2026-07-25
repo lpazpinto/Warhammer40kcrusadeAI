@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Run Codex (apply hardening changes)
-        uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1.6
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1.11
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: codex/prompts/harden-batch1.md
